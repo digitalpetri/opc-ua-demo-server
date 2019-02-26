@@ -1,0 +1,4 @@
+rootProject.name = 'demo-server'
+
+include(":launcher")
+include(":server")
