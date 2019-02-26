@@ -1,8 +1,6 @@
 package com.isw.opcua.server
 
 import com.isw.opcua.server.namespaces.CttNamespace
-import com.isw.opcua.server.namespaces.addCttNodes
-import com.isw.opcua.server.namespaces.addMassNodes
 import com.isw.opcua.server.util.KeyStoreManager
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.json.toJson

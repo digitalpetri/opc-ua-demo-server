@@ -5,9 +5,6 @@ import com.isw.opcua.server.sampling.SampledDataItem
 import com.isw.opcua.server.sampling.TickManager
 import com.isw.opcua.server.util.AbstractLifecycle
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import org.apache.logging.log4j.core.AbstractLifeCycle
 import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.server.NamespaceNodeManager
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
@@ -49,6 +46,7 @@ class CttNamespace(
     override fun onStartup() {
         addCttNodes()
         addMassNodes()
+        addTurtlesFolder()
     }
 
     override fun onShutdown() {
@@ -64,11 +62,9 @@ class CttNamespace(
     override fun browse(context: AccessContext, nodeId: NodeId): CompletableFuture<List<Reference>> {
         val node: UaNode? = nodeManager[nodeId]
 
-        return if (node != null) {
-            completedFuture<List<Reference>>(node.references)
-        } else {
-            failedUaFuture(StatusCodes.Bad_NodeIdUnknown)
-        }
+        val references: List<Reference>? = node?.references ?: maybeTurtleReferences(nodeId)
+
+        return references?.let { completedFuture(it) } ?: failedUaFuture(StatusCodes.Bad_NodeIdUnknown)
     }
 
     override fun read(
@@ -79,7 +75,7 @@ class CttNamespace(
     ) {
 
         val values = readValueIds.map { readValueId ->
-            val node: UaNode? = nodeManager[readValueId.nodeId]
+            val node: UaNode? = nodeManager[readValueId.nodeId] ?: maybeTurtleNode(readValueId.nodeId)
 
             val value: DataValue? = node?.readAttribute(
                 AttributeContext(context),
