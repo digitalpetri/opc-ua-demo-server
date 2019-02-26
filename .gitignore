@@ -28,3 +28,5 @@ gradle-app.setting
 # Maven #
 **/target/*
 target/*
+
+server/src/main/home/data/*

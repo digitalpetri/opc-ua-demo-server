@@ -57,18 +57,19 @@ class ServerKeyStore private constructor(
         val keyPair =
             SelfSignedCertificateGenerator.generateRsaKeyPair(settings.defaultKeyLength)
 
-        val applicationUri = "urn:industrialsoftworks:milo:opcua:server:$applicationUuid"
+        val applicationUri = "urn:eclipse:milo:opcua:server:$applicationUuid"
 
         val builder = SelfSignedCertificateBuilder(keyPair)
             .setCommonName("Eclipse Milo OPC UA Demo Server")
             .setOrganization("Industrial Softworks")
+            .setOrganizationalUnit("dev")
             .setLocalityName("Folsom")
             .setStateName("CA")
             .setCountryCode("US")
             .setApplicationUri(applicationUri)
 
         // Get as many hostnames and IP addresses as we can listed in the certificate.
-        for (hostname in HostnameUtil.getHostnames("0.0.0.0", false)) {
+        for (hostname in HostnameUtil.getHostnames("0.0.0.0", true)) {
             if (IP_ADDR_PATTERN.matcher(hostname).matches()) {
                 builder.addIpAddress(hostname)
             } else {

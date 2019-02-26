@@ -1,4 +1,3 @@
-rootProject.name = 'demo-server'
+rootProject.name = 'milo-demo-server'
 
-include(":launcher")
 include(":server")

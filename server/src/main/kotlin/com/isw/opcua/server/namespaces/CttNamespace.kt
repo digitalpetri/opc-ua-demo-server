@@ -1,5 +1,11 @@
 package com.isw.opcua.server.namespaces
 
+import com.google.common.collect.Maps
+import com.isw.opcua.server.sampling.SampledDataItem
+import com.isw.opcua.server.sampling.TickManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.server.NamespaceNodeManager
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
@@ -20,6 +26,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.WriteValue
 import org.eclipse.milo.opcua.stack.core.util.FutureUtils.failedUaFuture
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
+import java.util.concurrent.ConcurrentMap
 
 class CttNamespace(
     private val namespaceIndex: UShort,
@@ -30,7 +37,13 @@ class CttNamespace(
         const val NAMESPACE_URI = "urn:industrialsoftworks:opcua:server:ctt"
     }
 
+    private val supervisor = SupervisorJob()
+    private val coroutineScope = CoroutineScope(supervisor + Dispatchers.Default)
+    private val tickManager = TickManager(coroutineScope)
+
     private val nodeManager = NamespaceNodeManager(server)
+
+    private val sampledNodes: ConcurrentMap<DataItem, SampledDataItem> = Maps.newConcurrentMap()
 
     override fun getNamespaceUri(): String = NAMESPACE_URI
 
@@ -96,20 +109,51 @@ class CttNamespace(
         context.complete(results)
     }
 
-    override fun onDataItemsCreated(dataItems: List<DataItem>) {
-        TODO("not implemented")
+    override fun onDataItemsCreated(items: List<DataItem>) {
+        items.forEach { item ->
+            val nodeId: NodeId = item.readValueId.nodeId
+            val node: UaNode? = nodeManager.get(nodeId)
+
+            if (node != null) {
+                val sampledNode = SampledNode(item, coroutineScope, node)
+                sampledNodes[item] = sampledNode
+                sampledNode.startup()
+            }
+        }
     }
 
-    override fun onDataItemsModified(dataItems: List<DataItem>) {
-        TODO("not implemented")
+    override fun onDataItemsModified(items: List<DataItem>) {
+        items.forEach { item ->
+            sampledNodes[item]?.modifyRate(item.samplingInterval)
+        }
     }
 
-    override fun onDataItemsDeleted(dataItems: List<DataItem>) {
-        TODO("not implemented")
+    override fun onDataItemsDeleted(items: List<DataItem>) {
+        items.forEach { item ->
+            sampledNodes.remove(item)?.shutdown()
+        }
     }
 
-    override fun onMonitoringModeChanged(monitoredItems: List<MonitoredItem>) {
-        TODO("not implemented")
+    override fun onMonitoringModeChanged(items: List<MonitoredItem>) {
+        items.forEach { sampledNodes[it]?.samplingEnabled = it.isSamplingEnabled }
+    }
+
+    inner class SampledNode(
+        item: DataItem,
+        scope: CoroutineScope,
+        private val node: UaNode
+    ) : SampledDataItem(item, scope, tickManager) {
+
+        override suspend fun sampleCurrentValue(currentTime: Long): DataValue {
+            return node.readAttribute(
+                AttributeContext(server),
+                item.readValueId.attributeId,
+                TimestampsToReturn.Both,
+                item.readValueId.indexRange,
+                item.readValueId.dataEncoding
+            )
+        }
+
     }
 
 }

@@ -22,6 +22,7 @@ import org.eclipse.milo.opcua.stack.core.util.ManifestUtil
 import org.eclipse.milo.opcua.stack.server.EndpointConfiguration
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.nio.file.Files
 import java.security.cert.X509Certificate
 import java.util.*
 
@@ -47,6 +48,18 @@ class DemoServer(dataDir: File) {
             val configFile = dataDir
                 .resolve("config")
                 .resolve("server.json")
+
+            configFile.apply {
+                if (!exists()) {
+                    Files.copy(
+                        DemoServer::class.java
+                            .classLoader
+                            .getResourceAsStream("default-server.json"),
+                        this.toPath()
+                    )
+                }
+                assert(exists())
+            }
 
             from.json.file(configFile)
         }
@@ -156,7 +169,7 @@ class DemoServer(dataDir: File) {
                 val hostname = it.removeSurrounding("<", ">")
 
                 if (hostname == "hostname") {
-                    setOf(HostnameUtil.getHostname())
+                    HostnameUtil.getHostnames(HostnameUtil.getHostname())
                 } else {
                     HostnameUtil.getHostnames(hostname)
                 }
@@ -219,7 +232,7 @@ class DemoServer(dataDir: File) {
                  */
 
                 val discoveryBuilder = builder.copy()
-                    .setPath("/discovery")
+                    .setPath("/milo/discovery")
                     .setSecurityPolicy(SecurityPolicy.None)
                     .setSecurityMode(MessageSecurityMode.None)
 

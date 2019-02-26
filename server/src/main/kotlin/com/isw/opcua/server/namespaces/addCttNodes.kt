@@ -36,8 +36,44 @@ fun CttNamespace.addCttNodes() {
         Identifiers.HasComponent
     )
 
+    addMassNodes(cttFolder.nodeId)
     addStaticNodes(cttFolder.nodeId)
 }
+
+private fun CttNamespace.addMassNodes(parentNodeId: NodeId) {
+    val massFolder = addFolderNode(parentNodeId, "Mass")
+
+    addMassInt32Nodes(massFolder.nodeId)
+}
+
+private fun CttNamespace.addMassInt32Nodes(parentNodeId: NodeId) {
+    for (i in 0 until 100) {
+        val folderNode = addFolderNode(parentNodeId, "%03d".format(i))
+
+        for (j in 0 until 100) {
+            val name = "%03d".format(j)
+
+            val node = UaVariableNodeBuilder(server).run {
+                setNodeId(folderNode.nodeId.resolve(name))
+                setAccessLevel(ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
+                setUserAccessLevel(ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
+                setBrowseName(QualifiedName(namespaceIndex, name))
+                setDisplayName(LocalizedText.english(name))
+                setDataType(Identifiers.Int32)
+                setTypeDefinition(Identifiers.BaseDataVariableType)
+                setMinimumSamplingInterval(100.0)
+
+                build()
+            }
+
+            node.value = DataValue(Variant(0))
+
+            nodeManager.addNode(node)
+            node.inverseReferenceTo(folderNode.nodeId, Identifiers.Organizes)
+        }
+    }
+}
+
 
 private fun CttNamespace.addStaticNodes(parentNodeId: NodeId) {
     val staticFolder = addFolderNode(parentNodeId, "Static")
@@ -80,6 +116,7 @@ private fun CttNamespace.addScalarNodes(parentNodeId: NodeId) {
             setDisplayName(LocalizedText.english(name))
             setDataType(dataType.nodeId)
             setTypeDefinition(Identifiers.BaseDataVariableType)
+            setMinimumSamplingInterval(100.0)
 
             build()
         }
@@ -120,6 +157,7 @@ private fun CttNamespace.addArrayNodes(parentNodeId: NodeId) {
             setTypeDefinition(Identifiers.BaseDataVariableType)
             setValueRank(ValueRank.OneDimension.value)
             setArrayDimensions(arrayOf(uint(0)))
+            setMinimumSamplingInterval(100.0)
 
             build()
         }
@@ -168,6 +206,7 @@ private fun CttNamespace.addAnalogTypeNodes(parentNodeId: NodeId) {
         node.dataType = dataType.nodeId
         node.accessLevel = ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE))
         node.userAccessLevel = ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE))
+        node.minimumSamplingInterval = 100.0
 
         node.euRange = Range(0.0, 100.0)
         node.value = DataValue(Variant(dataType.defaultValue()))

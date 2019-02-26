@@ -1,0 +1,18 @@
+{
+  "serverConfig": {
+    "bindAddressList": [
+      "0.0.0.0"
+    ],
+    "bindPort": 62541,
+    "endpointAddressList": [
+      "<hostname>",
+      "<localhost>"
+    ],
+    "securityPolicyList": [
+      "Basic256Sha256",
+      "Aes128_Sha256_RsaOaep",
+      "Aes256_Sha256_RsaPss"
+    ],
+    "discoveryRegistrationEndpoint": "opc.tcp://localhost:4840/UADiscovery"
+  }
+}
