@@ -1,6 +1,6 @@
 package com.isw.opcua.server
 
-import com.isw.opcua.server.namespaces.CttNamespace
+import com.isw.opcua.server.namespaces.DemoNamespace
 import com.isw.opcua.server.util.KeyStoreManager
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.json.toJson
@@ -44,7 +44,7 @@ class DemoServer(dataDir: File) {
 
     private val config: Config
     private val server: OpcUaServer
-    private val cttNamespace: CttNamespace
+    private val demoNamespace: DemoNamespace
 
     init {
         config = with(Config()) {
@@ -121,18 +121,18 @@ class DemoServer(dataDir: File) {
 
         server = OpcUaServer(serverConfig)
 
-        cttNamespace = server.namespaceManager.registerAndAdd(CttNamespace.NAMESPACE_URI) { idx ->
-            CttNamespace(idx, coroutineScope, server)
+        demoNamespace = server.namespaceManager.registerAndAdd(DemoNamespace.NAMESPACE_URI) { idx ->
+            DemoNamespace(idx, coroutineScope, server)
         }
     }
 
     fun startup() {
-        cttNamespace.startup()
+        demoNamespace.startup()
         server.startup().get()
     }
 
     fun shutdown() {
-        cttNamespace.shutdown()
+        demoNamespace.shutdown()
         runBlocking { supervisor.cancelAndJoin() }
         server.shutdown().get()
     }

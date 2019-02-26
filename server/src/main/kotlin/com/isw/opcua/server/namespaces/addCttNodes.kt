@@ -21,7 +21,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.Range
 import java.util.*
 
 
-fun CttNamespace.addCttNodes() {
+fun DemoNamespace.addCttNodes() {
     val cttFolder = UaFolderNode(
         server,
         NodeId(namespaceIndex, "CTT"),
@@ -39,21 +39,21 @@ fun CttNamespace.addCttNodes() {
     addStaticNodes(cttFolder.nodeId)
 }
 
-private fun CttNamespace.addStaticNodes(parentNodeId: NodeId) {
+private fun DemoNamespace.addStaticNodes(parentNodeId: NodeId) {
     val staticFolder = addFolderNode(parentNodeId, "Static")
 
     addAllProfilesNode(staticFolder.nodeId)
     addDaProfileNode(staticFolder.nodeId)
 }
 
-private fun CttNamespace.addAllProfilesNode(parentNodeId: NodeId) {
+private fun DemoNamespace.addAllProfilesNode(parentNodeId: NodeId) {
     val allProfilesFolder = addFolderNode(parentNodeId, "All Profiles")
 
     addScalarNodes(allProfilesFolder.nodeId)
     addArrayNodes(allProfilesFolder.nodeId)
 }
 
-private fun CttNamespace.addScalarNodes(parentNodeId: NodeId) {
+private fun DemoNamespace.addScalarNodes(parentNodeId: NodeId) {
     val scalarFolder = addFolderNode(parentNodeId, "Scalar")
 
     val scalarTypes = listOf(
@@ -92,7 +92,7 @@ private fun CttNamespace.addScalarNodes(parentNodeId: NodeId) {
     }
 }
 
-private fun CttNamespace.addArrayNodes(parentNodeId: NodeId) {
+private fun DemoNamespace.addArrayNodes(parentNodeId: NodeId) {
     val arrayFolder = addFolderNode(parentNodeId, "Array")
 
     val arrayTypes = listOf(
@@ -134,13 +134,13 @@ private fun CttNamespace.addArrayNodes(parentNodeId: NodeId) {
 
 }
 
-private fun CttNamespace.addDaProfileNode(parentNodeId: NodeId) {
+private fun DemoNamespace.addDaProfileNode(parentNodeId: NodeId) {
     val daProfileFolder = addFolderNode(parentNodeId, "DA Profile")
 
     addAnalogTypeNodes(daProfileFolder.nodeId)
 }
 
-private fun CttNamespace.addAnalogTypeNodes(parentNodeId: NodeId) {
+private fun DemoNamespace.addAnalogTypeNodes(parentNodeId: NodeId) {
     val analogTypeFolder = addFolderNode(parentNodeId, "Analog Type")
 
     val analogTypes = listOf(
@@ -183,7 +183,7 @@ private fun CttNamespace.addAnalogTypeNodes(parentNodeId: NodeId) {
 
 }
 
-fun CttNamespace.addFolderNode(parentNodeId: NodeId, name: String): UaFolderNode {
+fun DemoNamespace.addFolderNode(parentNodeId: NodeId, name: String): UaFolderNode {
     val folderNode = UaFolderNode(
         server,
         parentNodeId.resolve(name),

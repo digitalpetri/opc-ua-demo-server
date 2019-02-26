@@ -13,7 +13,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 
 
-internal fun CttNamespace.addTurtlesFolder() {
+internal fun DemoNamespace.addTurtlesFolder() {
     val turtlesFolder = UaFolderNode(
         server,
         NodeId(namespaceIndex, "[turtles]"),
@@ -51,7 +51,7 @@ internal fun CttNamespace.addTurtlesFolder() {
     addTurtleTypeNode()
 }
 
-private fun CttNamespace.addTurtleTypeNode() {
+private fun DemoNamespace.addTurtleTypeNode() {
     val turtleType = UaObjectTypeNode(
         server,
         NodeId(namespaceIndex, "TurtleType"),
@@ -71,7 +71,7 @@ private fun CttNamespace.addTurtleTypeNode() {
     )
 }
 
-internal fun CttNamespace.maybeTurtleNode(nodeId: NodeId): UaObjectNode? {
+internal fun DemoNamespace.maybeTurtleNode(nodeId: NodeId): UaObjectNode? {
     val turtleNumber: Long? = nodeId.turtleNumber()
 
     return turtleNumber?.let {
@@ -84,7 +84,7 @@ internal fun CttNamespace.maybeTurtleNode(nodeId: NodeId): UaObjectNode? {
     }
 }
 
-internal fun CttNamespace.maybeTurtleReferences(nodeId: NodeId): List<Reference>? {
+internal fun DemoNamespace.maybeTurtleReferences(nodeId: NodeId): List<Reference>? {
     val turtleNumber = nodeId.turtleNumber()
 
     return turtleNumber?.let {

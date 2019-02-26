@@ -8,7 +8,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 
 
-fun CttNamespace.addMassNodes() {
+fun DemoNamespace.addMassNodes() {
     val massFolder = UaFolderNode(
         server,
         NodeId(namespaceIndex, "Mass"),
@@ -26,11 +26,12 @@ fun CttNamespace.addMassNodes() {
     addMassInt32Nodes(massFolder.nodeId)
 }
 
-private fun CttNamespace.addMassInt32Nodes(parentNodeId: NodeId) {
-    for (i in 0 until 100) {
-        val folderNode = addFolderNode(parentNodeId, "%03d".format(i))
+private fun DemoNamespace.addMassInt32Nodes(parentNodeId: NodeId) {
 
-        for (j in 0 until 100) {
+    for (i in 'A'..'Z') {
+        val folderNode = addFolderNode(parentNodeId, i.toString())
+
+        for (j in 0 until 1000) {
             val name = "%03d".format(j)
 
             val node = UaVariableNode.UaVariableNodeBuilder(server).run {
@@ -41,7 +42,7 @@ private fun CttNamespace.addMassInt32Nodes(parentNodeId: NodeId) {
                 setDisplayName(LocalizedText.english(name))
                 setDataType(Identifiers.Int32)
                 setTypeDefinition(Identifiers.BaseDataVariableType)
-                setMinimumSamplingInterval(100.0)
+                setMinimumSamplingInterval(0.0)
 
                 build()
             }
