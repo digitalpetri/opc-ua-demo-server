@@ -36,44 +36,8 @@ fun CttNamespace.addCttNodes() {
         Identifiers.HasComponent
     )
 
-    addMassNodes(cttFolder.nodeId)
     addStaticNodes(cttFolder.nodeId)
 }
-
-private fun CttNamespace.addMassNodes(parentNodeId: NodeId) {
-    val massFolder = addFolderNode(parentNodeId, "Mass")
-
-    addMassInt32Nodes(massFolder.nodeId)
-}
-
-private fun CttNamespace.addMassInt32Nodes(parentNodeId: NodeId) {
-    for (i in 0 until 100) {
-        val folderNode = addFolderNode(parentNodeId, "%03d".format(i))
-
-        for (j in 0 until 100) {
-            val name = "%03d".format(j)
-
-            val node = UaVariableNodeBuilder(server).run {
-                setNodeId(folderNode.nodeId.resolve(name))
-                setAccessLevel(ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
-                setUserAccessLevel(ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
-                setBrowseName(QualifiedName(namespaceIndex, name))
-                setDisplayName(LocalizedText.english(name))
-                setDataType(Identifiers.Int32)
-                setTypeDefinition(Identifiers.BaseDataVariableType)
-                setMinimumSamplingInterval(100.0)
-
-                build()
-            }
-
-            node.value = DataValue(Variant(0))
-
-            nodeManager.addNode(node)
-            node.inverseReferenceTo(folderNode.nodeId, Identifiers.Organizes)
-        }
-    }
-}
-
 
 private fun CttNamespace.addStaticNodes(parentNodeId: NodeId) {
     val staticFolder = addFolderNode(parentNodeId, "Static")
@@ -219,7 +183,7 @@ private fun CttNamespace.addAnalogTypeNodes(parentNodeId: NodeId) {
 
 }
 
-private fun CttNamespace.addFolderNode(parentNodeId: NodeId, name: String): UaFolderNode {
+fun CttNamespace.addFolderNode(parentNodeId: NodeId, name: String): UaFolderNode {
     val folderNode = UaFolderNode(
         server,
         parentNodeId.resolve(name),
@@ -238,12 +202,12 @@ private fun CttNamespace.addFolderNode(parentNodeId: NodeId, name: String): UaFo
 }
 
 
-private fun NodeId.resolve(child: String): NodeId {
+fun NodeId.resolve(child: String): NodeId {
     val id = this.identifier.toString()
     return NodeId(this.namespaceIndex, "$id/$child")
 }
 
-private fun UaNode.referenceTo(targetNodeId: NodeId, typeId: NodeId) {
+fun UaNode.referenceTo(targetNodeId: NodeId, typeId: NodeId) {
     this.addReference(
         Reference(
             this.nodeId,
@@ -254,7 +218,7 @@ private fun UaNode.referenceTo(targetNodeId: NodeId, typeId: NodeId) {
     )
 }
 
-private fun UaNode.inverseReferenceTo(targetNodeId: NodeId, typeId: NodeId) {
+fun UaNode.inverseReferenceTo(targetNodeId: NodeId, typeId: NodeId) {
     this.addReference(
         Reference(
             this.nodeId,
@@ -321,7 +285,7 @@ private object EuRangeCheckDelegate : AttributeDelegate {
                 val d = v.toDouble()
 
                 if (d in low..high) {
-                    node.value = value
+                    super.setValue(context, node, value)
                 } else {
                     throw UaException(StatusCodes.Bad_OutOfRange)
                 }
