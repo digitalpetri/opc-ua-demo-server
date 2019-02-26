@@ -3,9 +3,11 @@ package com.isw.opcua.server.namespaces
 import com.google.common.collect.Maps
 import com.isw.opcua.server.sampling.SampledDataItem
 import com.isw.opcua.server.sampling.TickManager
+import com.isw.opcua.server.util.AbstractLifecycle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import org.apache.logging.log4j.core.AbstractLifeCycle
 import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.server.NamespaceNodeManager
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
@@ -30,20 +32,28 @@ import java.util.concurrent.ConcurrentMap
 
 class CttNamespace(
     private val namespaceIndex: UShort,
+    private val coroutineScope: CoroutineScope,
     internal val server: OpcUaServer
-) : Namespace {
+) : AbstractLifecycle(), Namespace {
 
     companion object {
         const val NAMESPACE_URI = "urn:industrialsoftworks:opcua:server:ctt"
     }
 
-    private val supervisor = SupervisorJob()
-    private val coroutineScope = CoroutineScope(supervisor + Dispatchers.Default)
     private val tickManager = TickManager(coroutineScope)
 
     private val nodeManager = NamespaceNodeManager(server)
 
     private val sampledNodes: ConcurrentMap<DataItem, SampledDataItem> = Maps.newConcurrentMap()
+
+    override fun onStartup() {
+        addCttNodes()
+        addMassNodes()
+    }
+
+    override fun onShutdown() {
+        sampledNodes.values.forEach { it.shutdown() }
+    }
 
     override fun getNamespaceUri(): String = NAMESPACE_URI
 

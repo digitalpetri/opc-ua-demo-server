@@ -13,6 +13,10 @@
       "Aes128_Sha256_RsaOaep",
       "Aes256_Sha256_RsaPss"
     ],
-    "discoveryRegistrationEndpoint": "opc.tcp://localhost:4840/UADiscovery"
+    "registration": {
+      "endpointUrl": "opc.tcp://localhost:4840/UADiscovery",
+      "securityPolicy": "Basic256Sha256",
+      "securityMode": "SignAndEncrypt"
+    }
   }
 }

@@ -6,6 +6,7 @@ import com.isw.opcua.server.namespaces.addMassNodes
 import com.isw.opcua.server.util.KeyStoreManager
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.json.toJson
+import kotlinx.coroutines.*
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil
@@ -40,10 +41,15 @@ class DemoServer(dataDir: File) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
+    private val supervisor = SupervisorJob()
+    private val coroutineScope = CoroutineScope(supervisor + Dispatchers.Default)
+
+    private val config: Config
     private val server: OpcUaServer
+    private val cttNamespace: CttNamespace
 
     init {
-        val config: Config = with(Config()) {
+        config = with(Config()) {
             addSpec(ServerConfig)
 
             val configFile = dataDir
@@ -115,20 +121,21 @@ class DemoServer(dataDir: File) {
             .setEndpoints(createEndpointConfigurations(config, certificateManager.certificates.first()))
             .build()
 
-        server = OpcUaServer(serverConfig).apply {
-            val ns = namespaceManager.registerAndAdd(CttNamespace.NAMESPACE_URI) { idx ->
-                CttNamespace(idx, server)
-            }
-            ns.addCttNodes()
-            ns.addMassNodes()
+        server = OpcUaServer(serverConfig)
+
+        cttNamespace = server.namespaceManager.registerAndAdd(CttNamespace.NAMESPACE_URI) { idx ->
+            CttNamespace(idx, coroutineScope, server)
         }
     }
 
     fun startup() {
+        cttNamespace.startup()
         server.startup().get()
     }
 
     fun shutdown() {
+        cttNamespace.shutdown()
+        runBlocking { supervisor.cancelAndJoin() }
         server.shutdown().get()
     }
 

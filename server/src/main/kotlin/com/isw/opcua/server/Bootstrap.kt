@@ -6,6 +6,7 @@ import org.apache.logging.log4j.core.config.Configurator
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
+import kotlin.system.measureTimeMillis
 
 fun main() {
     val userDir = File(System.getProperty("user.dir"))
@@ -40,9 +41,13 @@ fun main() {
 
     val future = CompletableFuture<Unit>()
 
-    Runtime.getRuntime().addShutdownHook(Thread {
-        demoServer.shutdown()
-        future.complete(Unit)
+    Runtime.getRuntime().addShutdownHook(object : Thread("ShutdownHook") {
+        override fun run() {
+            println("shutting down server...")
+            val elapsed = measureTimeMillis { demoServer.shutdown() }
+            println("...server shutdown complete in ${elapsed}ms")
+            future.complete(Unit)
+        }
     })
 
     future.get()

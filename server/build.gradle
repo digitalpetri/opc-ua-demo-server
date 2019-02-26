@@ -1,12 +1,18 @@
 plugins {
     id 'java'
+    id 'application'
     id 'org.jetbrains.kotlin.jvm' version '1.3.21'
+    id 'com.github.johnrengelman.shadow' version '4.0.4'
 }
 
 group 'com.isw.opcua'
 version '1.0-SNAPSHOT'
 
 sourceCompatibility = 1.8
+
+application {
+    mainClassName = 'com.isw.opcua.server.MiloDemoServer'
+}
 
 repositories {
     mavenLocal()
@@ -18,6 +24,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.1.1"
 
+    implementation "org.eclipse.milo:sdk-client:0.3.0-SNAPSHOT"
     implementation "org.eclipse.milo:sdk-server:0.3.0-SNAPSHOT"
 
     implementation "com.uchuhimo:konf:0.13.1"
