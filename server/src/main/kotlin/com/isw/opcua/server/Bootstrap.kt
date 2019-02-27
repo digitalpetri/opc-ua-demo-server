@@ -3,6 +3,7 @@
 package com.isw.opcua.server
 
 import org.apache.logging.log4j.core.config.Configurator
+import org.eclipse.milo.opcua.stack.core.Stack
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
@@ -36,6 +37,8 @@ fun main() {
 
         Configurator.initialize(null, path)
     }
+
+    Stack.ConnectionLimits.RATE_LIMIT_ENABLED = false
 
     val demoServer = DemoServer(dataDir).also { it.startup() }
 

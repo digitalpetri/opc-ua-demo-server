@@ -9,6 +9,7 @@ import org.eclipse.milo.opcua.sdk.server.model.types.variables.AnalogItemType
 import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode
+import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode.UaVariableNodeBuilder
 import org.eclipse.milo.opcua.sdk.server.nodes.delegates.AttributeDelegate
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
@@ -16,6 +17,7 @@ import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.*
 import org.eclipse.milo.opcua.stack.core.types.structured.Range
 import java.util.*
@@ -37,6 +39,7 @@ fun DemoNamespace.addCttNodes() {
     )
 
     addStaticNodes(cttFolder.nodeId)
+    addReferencesNodes(cttFolder.nodeId)
 }
 
 private fun DemoNamespace.addStaticNodes(parentNodeId: NodeId) {
@@ -181,6 +184,36 @@ private fun DemoNamespace.addAnalogTypeNodes(parentNodeId: NodeId) {
         node.inverseReferenceTo(analogTypeFolder.nodeId, Identifiers.Organizes)
     }
 
+}
+
+private fun DemoNamespace.addReferencesNodes(parentNodeId: NodeId) {
+    val referencesFolder = addFolderNode(parentNodeId, "References")
+
+    for (i in 1..5) {
+        val folderNode = addFolderNode(referencesFolder.nodeId, "Has3ForwardRefs_$i")
+
+        for (j in 1..3) {
+            val name = "%03d".format(j)
+
+            val node = UaVariableNode.UaVariableNodeBuilder(server).run {
+                setNodeId(folderNode.nodeId.resolve(name))
+                setAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
+                setUserAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
+                setBrowseName(QualifiedName(namespaceIndex, name))
+                setDisplayName(LocalizedText.english(name))
+                setDataType(Identifiers.Int32)
+                setTypeDefinition(Identifiers.BaseDataVariableType)
+                setMinimumSamplingInterval(0.0)
+
+                build()
+            }
+
+            node.value = DataValue(Variant(0))
+
+            nodeManager.addNode(node)
+            node.inverseReferenceTo(folderNode.nodeId, Identifiers.Organizes)
+        }
+    }
 }
 
 fun DemoNamespace.addFolderNode(parentNodeId: NodeId, name: String): UaFolderNode {
