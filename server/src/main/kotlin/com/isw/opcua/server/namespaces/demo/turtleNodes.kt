@@ -1,5 +1,7 @@
-package com.isw.opcua.server.namespaces
+package com.isw.opcua.server.namespaces.demo
 
+import com.isw.opcua.milo.extensions.inverseReferenceTo
+import com.isw.opcua.milo.extensions.referenceTo
 import com.isw.opcua.server.DemoServer
 import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode

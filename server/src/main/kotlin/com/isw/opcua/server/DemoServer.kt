@@ -1,12 +1,13 @@
 package com.isw.opcua.server
 
-import com.isw.opcua.server.namespaces.DemoNamespace
+import com.isw.opcua.server.namespaces.demo.DemoNamespace
 import com.isw.opcua.server.util.KeyStoreManager
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.json.toJson
 import kotlinx.coroutines.*
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig
+import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil
 import org.eclipse.milo.opcua.stack.core.application.CertificateManager
 import org.eclipse.milo.opcua.stack.core.application.DefaultCertificateManager
@@ -41,6 +42,17 @@ class DemoServer(dataDir: File) {
 
     private val supervisor = SupervisorJob()
     private val coroutineScope = CoroutineScope(supervisor + Dispatchers.Default)
+
+    private val identityValidator = UsernameIdentityValidator(true) { authChallenge ->
+        val username = authChallenge.username
+        val password = authChallenge.password
+
+        val adminValid = "admin" == username && "password" == password
+        val user1Valid = "user1" == username && "password" == password
+        val user2Valid = "user2" == username && "password" == password
+
+        adminValid || user1Valid || user2Valid
+    }
 
     private val config: Config
     private val server: OpcUaServer
@@ -117,6 +129,7 @@ class DemoServer(dataDir: File) {
             .setCertificateManager(certificateManager)
             .setCertificateValidator(certificateValidator)
             .setEndpoints(createEndpointConfigurations(config, certificateManager.certificates.first()))
+            .setIdentityValidator(identityValidator)
             .build()
 
         server = OpcUaServer(serverConfig)

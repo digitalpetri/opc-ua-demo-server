@@ -1,28 +1,26 @@
-package com.isw.opcua.server.namespaces
+package com.isw.opcua.server.namespaces.demo
 
 import com.google.common.collect.Maps
+import com.isw.opcua.milo.extensions.defaultValue
+import com.isw.opcua.milo.extensions.inverseReferenceTo
+import com.isw.opcua.milo.extensions.resolve
 import com.isw.opcua.server.sampling.SampledDataItem
 import com.isw.opcua.server.sampling.TickManager
 import com.isw.opcua.server.util.AbstractLifecycle
 import kotlinx.coroutines.CoroutineScope
+import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.server.NamespaceNodeManager
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.*
 import org.eclipse.milo.opcua.sdk.server.api.AttributeServices.ReadContext
 import org.eclipse.milo.opcua.sdk.server.api.AttributeServices.WriteContext
-import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
-import org.eclipse.milo.opcua.sdk.server.nodes.AttributeObserver
-import org.eclipse.milo.opcua.sdk.server.nodes.UaNode
-import org.eclipse.milo.opcua.stack.core.AttributeId
-import org.eclipse.milo.opcua.stack.core.StatusCodes
-import org.eclipse.milo.opcua.stack.core.UaException
-import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
-import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
-import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode
-import org.eclipse.milo.opcua.stack.core.types.builtin.Variant
+import org.eclipse.milo.opcua.sdk.server.nodes.*
+import org.eclipse.milo.opcua.stack.core.*
+import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId
 import org.eclipse.milo.opcua.stack.core.types.structured.WriteValue
@@ -232,4 +230,52 @@ class DemoNamespace(
 
     }
 
+}
+
+fun DemoNamespace.addFolderNode(parentNodeId: NodeId, name: String): UaFolderNode {
+    val folderNode = UaFolderNode(
+        server,
+        parentNodeId.resolve(name),
+        QualifiedName(namespaceIndex, name),
+        LocalizedText(name)
+    )
+
+    nodeManager.addNode(folderNode)
+
+    folderNode.inverseReferenceTo(
+        parentNodeId,
+        Identifiers.HasComponent
+    )
+
+    return folderNode
+}
+
+fun DemoNamespace.addVariableNode(
+    parentNodeId: NodeId,
+    name: String,
+    dataType: BuiltinDataType = BuiltinDataType.Int32
+): UaVariableNode {
+
+    val variableNode = UaVariableNode.UaVariableNodeBuilder(server).run {
+        setNodeId(parentNodeId.resolve(name))
+        setAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
+        setUserAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
+        setBrowseName(QualifiedName(namespaceIndex, name))
+        setDisplayName(LocalizedText.english(name))
+        setDataType(Identifiers.Int32)
+        setTypeDefinition(Identifiers.BaseDataVariableType)
+        setMinimumSamplingInterval(100.0)
+        setValue(DataValue(Variant(dataType.defaultValue())))
+
+        build()
+    }
+
+    nodeManager.addNode(variableNode)
+
+    variableNode.inverseReferenceTo(
+        parentNodeId,
+        Identifiers.HasComponent
+    )
+
+    return variableNode
 }
