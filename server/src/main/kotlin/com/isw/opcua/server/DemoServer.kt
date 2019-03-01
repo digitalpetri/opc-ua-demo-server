@@ -1,5 +1,6 @@
 package com.isw.opcua.server
 
+import com.isw.opcua.server.discovery.configureGdsPush
 import com.isw.opcua.server.namespaces.demo.DemoNamespace
 import com.isw.opcua.server.util.KeyStoreManager
 import com.uchuhimo.konf.Config
@@ -9,7 +10,6 @@ import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil
-import org.eclipse.milo.opcua.stack.core.application.CertificateManager
 import org.eclipse.milo.opcua.stack.core.application.DefaultCertificateManager
 import org.eclipse.milo.opcua.stack.core.application.DirectoryCertificateValidator
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
@@ -24,7 +24,6 @@ import org.eclipse.milo.opcua.stack.server.EndpointConfiguration
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
-import java.security.cert.X509Certificate
 import java.util.*
 
 class DemoServer(dataDir: File) {
@@ -55,8 +54,9 @@ class DemoServer(dataDir: File) {
         adminValid || user1Valid || user2Valid
     }
 
+    val server: OpcUaServer
+
     private val config: Config
-    private val server: OpcUaServer
     private val demoNamespace: DemoNamespace
 
     init {
@@ -115,7 +115,7 @@ class DemoServer(dataDir: File) {
             applicationUuid
         )
 
-        val certificateManager: CertificateManager = DefaultCertificateManager(
+        val certificateManager = DefaultCertificateManager(
             keyStore.getDefaultKeyPair(),
             keyStore.getDefaultCertificateChain()?.toTypedArray()
         )
@@ -124,7 +124,7 @@ class DemoServer(dataDir: File) {
 
         val createEndpointConfigurations = createEndpointConfigurations(
             config,
-            certificateManager.certificates.first()
+            certificateManager
         )
 
         val serverConfig = OpcUaServerConfig.builder()
@@ -143,6 +143,8 @@ class DemoServer(dataDir: File) {
         demoNamespace = server.namespaceManager.registerAndAdd(DemoNamespace.NAMESPACE_URI) { idx ->
             DemoNamespace(idx, coroutineScope, server)
         }
+
+        configureGdsPush(server)
     }
 
     fun startup() {
@@ -178,7 +180,7 @@ class DemoServer(dataDir: File) {
 
     private fun createEndpointConfigurations(
         config: Config,
-        certificate: X509Certificate
+        certificateManager: DefaultCertificateManager
     ): Set<EndpointConfiguration> {
 
         val endpointConfigurations = LinkedHashSet<EndpointConfiguration>()
@@ -212,7 +214,9 @@ class DemoServer(dataDir: File) {
                     .setBindPort(config[ServerConfig.bindPort])
                     .setHostname(hostname)
                     .setPath("milo")
-                    .setCertificate(certificate)
+                    .setCertificate {
+                        certificateManager.certificates.first()
+                    }
                     .addTokenPolicies(*userTokenPolicies.toTypedArray())
 
                 val securityPolicies = config[ServerConfig.securityPolicyList].mapNotNull {
