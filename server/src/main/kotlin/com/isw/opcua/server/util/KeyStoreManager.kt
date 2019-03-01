@@ -9,6 +9,7 @@ import java.security.KeyPair
 import java.security.KeyStore
 import java.security.PrivateKey
 import java.security.PublicKey
+import java.security.cert.Certificate
 import java.security.cert.X509Certificate
 
 abstract class KeyStoreManager(private val settings: Settings) {
@@ -59,12 +60,17 @@ abstract class KeyStoreManager(private val settings: Settings) {
     }
 
     fun getCertificateChain(alias: String): List<X509Certificate>? {
-        return keyStore.getCertificateChain(alias)
-            ?.map { it as X509Certificate }
+        val certificateChain: Array<Certificate>? = keyStore.getCertificateChain(alias)
+
+        return certificateChain?.mapNotNull { it as? X509Certificate }
     }
 
     fun getDefaultCertificateChain(): List<X509Certificate>? {
         return getCertificateChain(getDefaultAlias())
+    }
+
+    fun setCertificateChain(alias: String, key: PrivateKey, password: String, chain: List<X509Certificate>) {
+        keyStore.setKeyEntry(alias, key, password.toCharArray(), chain.toTypedArray())
     }
 
     protected abstract fun initializeKeystore(keyStore: KeyStore)

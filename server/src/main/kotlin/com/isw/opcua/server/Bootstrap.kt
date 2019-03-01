@@ -2,12 +2,16 @@
 
 package com.isw.opcua.server
 
-import org.apache.logging.log4j.core.config.Configurator
+import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.classic.joran.JoranConfigurator
+import ch.qos.logback.core.util.StatusPrinter
 import org.eclipse.milo.opcua.stack.core.Stack
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
 import kotlin.system.measureTimeMillis
+
 
 fun main() {
     val userDir = File(System.getProperty("user.dir"))
@@ -24,18 +28,18 @@ fun main() {
         }
     }
 
-    configDir.resolve("log4j2.xml").apply {
+    configDir.resolve("logback.xml").apply {
         if (!exists()) {
             Files.copy(
                 DemoServer::class.java
                     .classLoader
-                    .getResourceAsStream("default-log4j2.xml"),
+                    .getResourceAsStream("default-logback.xml"),
                 toPath()
             )
         }
         assert(exists())
 
-        Configurator.initialize(null, path)
+        configureLogback(this)
     }
 
     Stack.ConnectionLimits.RATE_LIMIT_ENABLED = false
@@ -54,4 +58,22 @@ fun main() {
     })
 
     future.get()
+}
+
+private fun configureLogback(logbackXml: File) {
+    val context = LoggerFactory.getILoggerFactory() as LoggerContext
+
+    try {
+        val configurator = JoranConfigurator()
+        configurator.context = context
+        context.reset()
+
+        println(System.getProperty("user.dir"))
+
+        configurator.doConfigure(logbackXml)
+    } catch (e: Exception) {
+        System.err.println("Error configuring logback: $e")
+    }
+
+    StatusPrinter.printInCaseOfErrorsOrWarnings(context)
 }

@@ -121,6 +121,11 @@ class DemoServer(dataDir: File) {
 
         val certificateValidator = DirectoryCertificateValidator(pkiDir)
 
+        val createEndpointConfigurations = createEndpointConfigurations(
+            config,
+            certificateManager.certificates.first()
+        )
+
         val serverConfig = OpcUaServerConfig.builder()
             .setProductUri(PRODUCT_URI)
             .setApplicationUri("$APPLICATION_URI:$applicationUuid")
@@ -128,8 +133,8 @@ class DemoServer(dataDir: File) {
             .setBuildInfo(buildInfo())
             .setCertificateManager(certificateManager)
             .setCertificateValidator(certificateValidator)
-            .setEndpoints(createEndpointConfigurations(config, certificateManager.certificates.first()))
             .setIdentityValidator(identityValidator)
+            .setEndpoints(createEndpointConfigurations)
             .build()
 
         server = OpcUaServer(serverConfig)

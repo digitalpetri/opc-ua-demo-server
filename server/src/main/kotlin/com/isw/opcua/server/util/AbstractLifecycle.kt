@@ -14,7 +14,7 @@ abstract class AbstractLifecycle {
      * @return true after [startup] is called and before [shutdown] is called.
      */
     val running: Boolean
-        get() = this.state.get() == LifecycleState.RUNNING
+        get() = state.get() == LifecycleState.RUNNING
 
     /**
      * Call to start this thing up. The first time this is called, [onStartup] will be called.
@@ -22,12 +22,17 @@ abstract class AbstractLifecycle {
      * Subsequent invocations will throw an [IllegalStateException].
      */
     fun startup() {
-        val previous = state.getAndUpdate { prev -> if (prev == LifecycleState.NEW) LifecycleState.RUNNING else prev }
+        val previous = state.getAndUpdate { prev ->
+            when (prev) {
+                LifecycleState.NEW -> LifecycleState.RUNNING
+                else -> prev
+            }
+        }
 
         if (previous == LifecycleState.NEW) {
             this.onStartup()
         } else {
-            throw IllegalStateException("Cannot call startup when state=$previous")
+            throw IllegalStateException("cannot call startup when state=$previous")
         }
     }
 
@@ -36,13 +41,16 @@ abstract class AbstractLifecycle {
      */
     fun shutdown() {
         val previous = state.getAndUpdate { prev ->
-            if (prev == LifecycleState.RUNNING) LifecycleState.STOPPED else prev
+            when (prev) {
+                LifecycleState.RUNNING -> LifecycleState.STOPPED
+                else -> prev
+            }
         }
 
         if (previous == LifecycleState.RUNNING) {
             this.onShutdown()
         } else if (previous == LifecycleState.NEW) {
-            throw IllegalStateException("Cannot call shutdown, never started.")
+            throw IllegalStateException("cannot call shutdown, never started")
         }
     }
 
