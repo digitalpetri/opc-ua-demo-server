@@ -30,8 +30,9 @@ import java.util.*
 class DemoServer(dataDir: File) {
 
     companion object {
+        const val APPLICATION_URI = "urn:eclipse:milo:opcua:server"
+
         private const val PRODUCT_URI = "urn:eclipse:milo:opcua:server"
-        private const val APPLICATION_URI = "urn:eclipse:milo:opcua:server"
 
         private const val PROPERTY_BUILD_DATE = "X-Server-Build-Date"
         private const val PROPERTY_BUILD_NUMBER = "X-Server-Build-Number"
