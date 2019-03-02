@@ -4,51 +4,71 @@ import com.isw.opcua.server.util.ExecutableByAdmin
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
+import org.bouncycastle.util.io.pem.PemReader
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.model.methods.CreateSigningRequestMethod
+import org.eclipse.milo.opcua.sdk.server.model.methods.GetRejectedListMethod
 import org.eclipse.milo.opcua.sdk.server.model.methods.UpdateCertificateMethod
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerConfigurationNode
 import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.TrustListNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
 import org.eclipse.milo.opcua.stack.core.application.DefaultCertificateManager
+import org.eclipse.milo.opcua.stack.core.application.DirectoryCertificateValidator
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode
 import org.eclipse.milo.opcua.stack.core.util.CertificateUtil
 import org.eclipse.milo.opcua.stack.core.util.DigestUtil.sha1
 import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateGenerator
 import java.io.ByteArrayInputStream
+import java.io.FileInputStream
+import java.io.InputStreamReader
 import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.KeyStore
 import java.security.PrivateKey
 import java.security.spec.PKCS8EncodedKeySpec
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 
 fun configureGdsPush(server: OpcUaServer) {
-    val createSigningRequestNode = server.nodeManager
-        .get(Identifiers.ServerConfiguration_CreateSigningRequest)
+    val serverConfiguration = server.nodeManager.get(
+        Identifiers.ServerConfiguration
+    ) as ServerConfigurationNode
 
-    if (createSigningRequestNode is UaMethodNode) {
-        val invocationHandler = CreateSigningRequest(createSigningRequestNode)
-        createSigningRequestNode.invocationHandler = invocationHandler
-        createSigningRequestNode.setAttributeDelegate(ExecutableByAdmin)
+    serverConfiguration.createSigningRequestMethodNode.apply {
+        invocationHandler = CreateSigningRequest(this)
+        setAttributeDelegate(ExecutableByAdmin)
     }
 
-    val updateCertificateNode = server.nodeManager
-        .get(Identifiers.ServerConfiguration_UpdateCertificate)
-
-    if (updateCertificateNode is UaMethodNode) {
-        val invocationHandler = UpdateCertificate(updateCertificateNode)
-        updateCertificateNode.invocationHandler = invocationHandler
-        updateCertificateNode.setAttributeDelegate(ExecutableByAdmin)
+    serverConfiguration.updateCertificateMethodNode.apply {
+        invocationHandler = UpdateCertificate(this)
+        setAttributeDelegate(ExecutableByAdmin)
     }
 
-    val trustListNode = server.nodeManager
-        .get(Identifiers.ServerConfiguration_CertificateGroups_DefaultApplicationGroup_TrustList) as TrustListNode
+    serverConfiguration.getRejectedListMethodNode.apply {
+        invocationHandler = GetRejectedListMethodImpl(this)
+        setAttributeDelegate(ExecutableByAdmin)
+    }
+
+    serverConfiguration.serverCapabilities = arrayOf("")
+    serverConfiguration.supportedPrivateKeyFormats = arrayOf("PEM", "PFX")
+    serverConfiguration.maxTrustListSize = uint(0)
+    serverConfiguration.multicastDnsEnabled = false
+
+    serverConfiguration.certificateGroupsNode.defaultApplicationGroupNode.certificateTypes = arrayOf(
+        Identifiers.RsaSha256ApplicationCertificateType
+    )
+
+    val trustListNode = serverConfiguration
+        .certificateGroupsNode
+        .defaultApplicationGroupNode
+        .trustListNode as TrustListNode
 
     configureTrustList(server, trustListNode)
 }
@@ -190,41 +210,45 @@ class UpdateCertificate(node: UaMethodNode) : UpdateCertificateMethod(node) {
             CertificateUtil.decodeCertificate(it.bytesOrEmpty())
         }
 
-        if (privateKey.isNull) {
+        val keyPair: KeyPair = if (privateKey.isNull) {
             // Use current PrivateKey + new certificates
-
             val oldKeyPair = certificateManager.getKeyPair(thumbprint).orElseThrow()
-            val newKeyPair = KeyPair(certificateChain[0].publicKey, oldKeyPair.private)
 
-            synchronized(certificateManager) {
-                certificateManager.remove(thumbprint)
-                certificateManager.add(newKeyPair, certificateChain.toTypedArray())
-            }
+            KeyPair(certificateChain[0].publicKey, oldKeyPair.private)
         } else {
             // Use new PrivateKey + new certificates
-
             val newPrivateKey: PrivateKey = when (privateKeyFormat) {
                 "PEM" -> readPemEncodedPrivateKey(privateKey)
                 "PFX" -> readPfxEncodedPrivateKey(privateKey)
                 else -> throw UaException(StatusCodes.Bad_InvalidArgument)
             }
 
-            val newKeyPair = KeyPair(certificateChain[0].publicKey, newPrivateKey)
-
-            synchronized(certificateManager) {
-                certificateManager.remove(thumbprint)
-                certificateManager.add(newKeyPair, certificateChain.toTypedArray())
-            }
+            KeyPair(certificateChain[0].publicKey, newPrivateKey)
         }
 
-        server.stackServer.connectedChannels.forEach { it.disconnect() }
+        synchronized(certificateManager) {
+            certificateManager.remove(thumbprint)
+            certificateManager.add(keyPair, certificateChain.toTypedArray())
+        }
+
+        // TODO write to actual keystore
+
+        server.scheduledExecutorService.schedule(
+            { server.stackServer.connectedChannels.forEach { it.disconnect() } },
+            5,
+            TimeUnit.SECONDS
+        )
 
         applyChangesRequired.set(false)
     }
 
     private fun readPemEncodedPrivateKey(encoded: ByteString): PrivateKey {
-        val spec = PKCS8EncodedKeySpec(encoded.bytesOrEmpty())
+        val reader = PemReader(InputStreamReader(ByteArrayInputStream(encoded.bytesOrEmpty())))
+        val encodedKey = reader.readPemObject().content
+
+        val spec = PKCS8EncodedKeySpec(encodedKey)
         val kf = KeyFactory.getInstance("RSA")
+
         return kf.generatePrivate(spec)
     }
 
@@ -244,3 +268,23 @@ class UpdateCertificate(node: UaMethodNode) : UpdateCertificateMethod(node) {
 
 }
 
+class GetRejectedListMethodImpl(node: UaMethodNode) : GetRejectedListMethod(node) {
+
+    private val server: OpcUaServer = node.nodeContext.server
+
+    override fun invoke(context: InvocationContext, certificates: AtomicReference<Array<ByteString>>) {
+        val validator = server.config.certificateValidator as DirectoryCertificateValidator
+
+        val bs = validator.rejectedDir.listFiles().mapNotNull { file ->
+            try {
+                val certificate = CertificateUtil.decodeCertificate(FileInputStream(file))
+                ByteString.of(certificate.encoded)
+            } catch (e: UaException) {
+                null
+            }
+        }
+
+        certificates.set(bs.toTypedArray())
+    }
+
+}

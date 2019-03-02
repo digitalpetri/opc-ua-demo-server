@@ -224,12 +224,16 @@ class DemoNamespace(
         }
     }
 
-    override fun getInvocationHandler(methodId: NodeId?): Optional<MethodInvocationHandler> {
-        val node = nodeManager.getNode(methodId)
+    override fun getInvocationHandler(objectId: NodeId, methodId: NodeId): Optional<MethodInvocationHandler> {
+        return nodeManager.getNode(objectId).flatMap { node ->
+            if (node is UaObjectNode) {
+                val methodNode = node.findMethodNode(methodId)
 
-        return node.flatMap { n ->
-            if (n is UaMethodNode) {
-                Optional.of(n.invocationHandler)
+                if (methodNode != null) {
+                    Optional.of(methodNode.invocationHandler)
+                } else {
+                    Optional.empty()
+                }
             } else {
                 Optional.empty()
             }
