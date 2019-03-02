@@ -6,6 +6,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.model.methods.CreateSigningRequestMethod
 import org.eclipse.milo.opcua.sdk.server.model.methods.UpdateCertificateMethod
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.TrustListNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.StatusCodes
@@ -33,6 +34,7 @@ fun configureGdsPush(server: OpcUaServer) {
     if (createSigningRequestNode is UaMethodNode) {
         val invocationHandler = CreateSigningRequest(createSigningRequestNode)
         createSigningRequestNode.invocationHandler = invocationHandler
+        createSigningRequestNode.setAttributeDelegate(ExecutableByAdmin)
     }
 
     val updateCertificateNode = server.nodeManager
@@ -41,9 +43,23 @@ fun configureGdsPush(server: OpcUaServer) {
     if (updateCertificateNode is UaMethodNode) {
         val invocationHandler = UpdateCertificate(updateCertificateNode)
         updateCertificateNode.invocationHandler = invocationHandler
+        updateCertificateNode.setAttributeDelegate(ExecutableByAdmin)
     }
+
+    val trustListNode = server.nodeManager
+        .get(Identifiers.CertificateGroupFolderType_DefaultApplicationGroup_TrustList) as TrustListNode
+
+    configureTrustList(server, trustListNode)
 }
 
+/**
+ * The CreateSigningRequest Method asks the Server to create a PKCS #10 DER encoded Certificate Request that is signed
+ * with the Server’s private key. This request can be then used to request a Certificate from a CA that expects requests
+ * in this format.
+ *
+ * This Method requires an encrypted channel and that the Client provide credentials with administrative rights on the
+ * Server.
+ */
 class CreateSigningRequest(node: UaMethodNode) : CreateSigningRequestMethod(node) {
 
     private val server: OpcUaServer = node.nodeContext.server
@@ -133,6 +149,9 @@ class CreateSigningRequest(node: UaMethodNode) : CreateSigningRequestMethod(node
  *
  * 3. A new Certificate was created and signed with the information from the old Certificate. In this case there is no
  * privateKey provided.
+ *
+ * This Method requires an encrypted channel and that the Client provide credentials with administrative rights on the
+ * Server.
  */
 class UpdateCertificate(node: UaMethodNode) : UpdateCertificateMethod(node) {
 

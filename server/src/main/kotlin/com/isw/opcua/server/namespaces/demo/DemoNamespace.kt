@@ -7,6 +7,8 @@ import com.isw.opcua.milo.extensions.resolve
 import com.isw.opcua.server.sampling.SampledDataItem
 import com.isw.opcua.server.sampling.TickManager
 import com.isw.opcua.server.util.AbstractLifecycle
+import com.isw.opcua.server.util.FileObject
+import com.isw.opcua.server.util.FileStreams
 import kotlinx.coroutines.CoroutineScope
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.Reference
@@ -15,6 +17,7 @@ import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.*
 import org.eclipse.milo.opcua.sdk.server.api.AttributeServices.ReadContext
 import org.eclipse.milo.opcua.sdk.server.api.AttributeServices.WriteContext
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileNode
 import org.eclipse.milo.opcua.sdk.server.nodes.*
 import org.eclipse.milo.opcua.stack.core.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
@@ -25,6 +28,8 @@ import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId
 import org.eclipse.milo.opcua.stack.core.types.structured.WriteValue
 import org.eclipse.milo.opcua.stack.core.util.FutureUtils.failedUaFuture
+import java.io.File
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 import java.util.concurrent.ConcurrentMap
@@ -51,6 +56,40 @@ class DemoNamespace(
         addCttNodes()
         addMassNodes()
         addTurtlesFolder()
+        addFileNodes()
+    }
+
+    private fun addFileNodes() {
+        val fileFolder = UaFolderNode(
+            server,
+            NodeId(namespaceIndex, "Files"),
+            QualifiedName(namespaceIndex, "Files"),
+            LocalizedText("Files")
+        )
+
+        nodeManager.addNode(fileFolder)
+
+        fileFolder.inverseReferenceTo(
+            Identifiers.ObjectsFolder,
+            Identifiers.HasComponent
+        )
+
+        val fileNode = server.nodeFactory.createNode(
+            NodeId(namespaceIndex, "TestFile"),
+            Identifiers.FileType,
+            true
+        )
+
+        val file = File("/Users/kevin/Desktop/GetMonitoredItemsNode.java")
+
+        val fileObject = (fileNode as? FileNode)?.let {
+            FileObject(it) { FileStreams(file) }
+        }
+
+        fileObject?.startup()
+
+        nodeManager.addNode(fileNode)
+        fileNode.inverseReferenceTo(fileFolder.nodeId, Identifiers.HasComponent)
     }
 
     override fun onShutdown() {
@@ -181,6 +220,18 @@ class DemoNamespace(
         items.forEach {
             sampledNodes[it]?.samplingEnabled = it.isSamplingEnabled
             subscribedNodes[it]?.samplingEnabled = it.isSamplingEnabled
+        }
+    }
+
+    override fun getInvocationHandler(methodId: NodeId?): Optional<MethodInvocationHandler> {
+        val node = nodeManager.getNode(methodId)
+
+        return node.flatMap { n ->
+            if (n is UaMethodNode) {
+                Optional.of(n.invocationHandler)
+            } else {
+                Optional.empty()
+            }
         }
     }
 
