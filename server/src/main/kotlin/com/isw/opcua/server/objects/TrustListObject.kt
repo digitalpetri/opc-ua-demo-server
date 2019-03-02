@@ -100,8 +100,8 @@ class TrustListObject(
 
 }
 
-private fun UInteger.isSet(bit: TrustListMasks): Boolean {
-    return true // TODO
+private fun UInteger.isSet(masks: TrustListMasks): Boolean {
+    return (this.toInt() and masks.value) == masks.value
 }
 
 fun DirectoryCertificateValidator.getTrustListDataType(): TrustListDataType {

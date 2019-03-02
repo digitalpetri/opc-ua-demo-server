@@ -235,7 +235,7 @@ class UpdateCertificate(node: UaMethodNode) : UpdateCertificateMethod(node) {
 
         server.scheduledExecutorService.schedule(
             { server.stackServer.connectedChannels.forEach { it.disconnect() } },
-            5,
+            3,
             TimeUnit.SECONDS
         )
 
