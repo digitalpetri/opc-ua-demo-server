@@ -4,11 +4,10 @@ import com.google.common.collect.Maps
 import com.isw.opcua.milo.extensions.defaultValue
 import com.isw.opcua.milo.extensions.inverseReferenceTo
 import com.isw.opcua.milo.extensions.resolve
+import com.isw.opcua.server.objects.FileObject
 import com.isw.opcua.server.sampling.SampledDataItem
 import com.isw.opcua.server.sampling.TickManager
 import com.isw.opcua.server.util.AbstractLifecycle
-import com.isw.opcua.server.util.FileObject
-import com.isw.opcua.server.util.FileStreams
 import kotlinx.coroutines.CoroutineScope
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.Reference
@@ -83,7 +82,7 @@ class DemoNamespace(
         val file = File("/Users/kevin/Desktop/GetMonitoredItemsNode.java")
 
         val fileObject = (fileNode as? FileNode)?.let {
-            FileObject(it) { FileStreams(file) }
+            FileObject(it) { file }
         }
 
         fileObject?.startup()
