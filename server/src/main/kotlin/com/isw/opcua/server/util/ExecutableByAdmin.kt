@@ -1,4 +1,4 @@
-package com.isw.opcua.server.discovery
+package com.isw.opcua.server.util
 
 import org.eclipse.milo.opcua.sdk.server.api.nodes.MethodNode
 import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext

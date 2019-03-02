@@ -78,6 +78,8 @@ class DemoNamespace(
             Identifiers.FileType,
             true
         )
+        fileNode.browseName = QualifiedName(namespaceIndex, "TestFile")
+        fileNode.displayName = LocalizedText("TestFile")
 
         val file = File("/Users/kevin/Desktop/GetMonitoredItemsNode.java")
 

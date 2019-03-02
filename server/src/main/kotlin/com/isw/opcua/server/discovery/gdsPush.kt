@@ -1,5 +1,6 @@
 package com.isw.opcua.server.discovery
 
+import com.isw.opcua.server.util.ExecutableByAdmin
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
@@ -47,7 +48,7 @@ fun configureGdsPush(server: OpcUaServer) {
     }
 
     val trustListNode = server.nodeManager
-        .get(Identifiers.CertificateGroupFolderType_DefaultApplicationGroup_TrustList) as TrustListNode
+        .get(Identifiers.ServerConfiguration_CertificateGroups_DefaultApplicationGroup_TrustList) as TrustListNode
 
     configureTrustList(server, trustListNode)
 }

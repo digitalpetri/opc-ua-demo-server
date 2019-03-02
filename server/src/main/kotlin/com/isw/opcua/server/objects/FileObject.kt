@@ -28,9 +28,9 @@ open class FileObject(
     private val openFile: () -> File
 ) : AbstractLifecycle() {
 
-    private val fileHandleSequence = AtomicLong(0)
+    protected val fileHandleSequence = AtomicLong(0)
 
-    private val handles: Table<NodeId, UInteger, Pair<RandomAccessFile, UByte>> = HashBasedTable.create()
+    protected val handles: Table<NodeId, UInteger, Pair<RandomAccessFile, UByte>> = HashBasedTable.create()
 
     override fun onStartup() {
         fileNode.openMethodNode.apply {
@@ -94,7 +94,7 @@ open class FileObject(
     open fun getGetPositionMethod(methodNode: UaMethodNode): GetPositionMethod = GetPositionImpl(methodNode)
     open fun getSetPositionMethod(methodNode: UaMethodNode): SetPositionMethod = SetPositionImpl(methodNode)
 
-    private enum class FileModeBit(val value: Int) {
+    protected enum class FileModeBit(val value: Int) {
         Read(1),
         Write(2),
         EraseExisting(4),
