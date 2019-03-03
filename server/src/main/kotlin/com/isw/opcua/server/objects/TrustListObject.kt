@@ -25,8 +25,11 @@ import org.eclipse.milo.opcua.stack.core.types.structured.TrustListDataType
 import org.eclipse.milo.opcua.stack.core.util.CertificateUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.RandomAccessFile
+import java.security.cert.CertificateFactory
+import java.security.cert.X509CRL
 import java.util.concurrent.atomic.AtomicReference
 
 
@@ -127,30 +130,49 @@ class TrustListObject(
                         OpcUaDataTypeManager.getInstance()
                     ) as? TrustListDataType
 
-                    newTrustList?.let {
-                        val masks = it.specifiedLists
+                    newTrustList?.let { trustList ->
+                        val masks = trustList.specifiedLists
+
+                        val factory = CertificateFactory.getInstance("X.509")
+
+                        if (masks.isSet(TrustListMasks.TrustedCertificates)) {
+                            val trustedCertificates = trustList.trustedCertificates?.mapNotNull { bs ->
+                                CertificateUtil.decodeCertificate(bs.bytesOrEmpty())
+                            } ?: emptyList()
+
+                            trustListManager.setTrustedCertificates(trustedCertificates)
+                        }
+
+                        if (masks.isSet(TrustListMasks.TrustedCrls)) {
+                            val trustedCrls = trustList.trustedCrls?.flatMap { bs ->
+                                factory.generateCRLs(
+                                    ByteArrayInputStream(bs.bytesOrEmpty())
+                                ).mapNotNull { it as? X509CRL }
+                            } ?: emptyList()
+
+                            trustListManager.setTrustedCrls(trustedCrls)
+                        }
 
                         if (masks.isSet(TrustListMasks.IssuerCertificates)) {
-                            val issuerCertificates = it.issuerCertificates?.mapNotNull { bs ->
+                            val issuerCertificates = trustList.issuerCertificates?.mapNotNull { bs ->
                                 CertificateUtil.decodeCertificate(bs.bytesOrEmpty())
                             } ?: emptyList()
 
                             trustListManager.setIssuerCertificates(issuerCertificates)
                         }
 
-                        if (masks.isSet(TrustListMasks.TrustedCertificates)) {
-                            val trustedCertificates = it.trustedCertificates?.mapNotNull { bs ->
-                                CertificateUtil.decodeCertificate(bs.bytesOrEmpty())
+                        if (masks.isSet(TrustListMasks.IssuerCrls)) {
+                            val issuerCrls = trustList.issuerCrls?.flatMap { bs ->
+                                factory.generateCRLs(
+                                    ByteArrayInputStream(bs.bytesOrEmpty())
+                                ).mapNotNull { it as? X509CRL }
                             } ?: emptyList()
 
-                            trustListManager.setIssuerCertificates(trustedCertificates)
+                            trustListManager.setIssuerCrls(issuerCrls)
                         }
-
-                        // TODO CRLs
-
                     }
 
-                    println("new TrustList: $newTrustList")
+                    logger.debug("new TrustList: $newTrustList")
                 }
 
                 file.close()
@@ -230,11 +252,11 @@ private fun TrustListManager.openTrustListFile(masks: UInteger = UInteger.MAX): 
 
         deleteOnExit()
 
-        writeBytes(trustList.encoded().bytesOrEmpty())
+        writeBytes(trustList.encode().bytesOrEmpty())
     }
 }
 
-private fun TrustListDataType.encoded(): ByteString {
+private fun TrustListDataType.encode(): ByteString {
     return OpcUaDefaultBinaryEncoding.getInstance().encode(
         this,
         TrustListDataType.BinaryEncodingId,
