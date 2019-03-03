@@ -125,9 +125,31 @@ class TrustListObject(
                         TrustListDataType.BinaryEncodingId,
                         EncodingLimits.DEFAULT,
                         OpcUaDataTypeManager.getInstance()
-                    )
+                    ) as? TrustListDataType
 
-                    // TODO sync this with TrustManager somehow
+                    newTrustList?.let {
+                        val masks = it.specifiedLists
+
+                        if (masks.isSet(TrustListMasks.IssuerCertificates)) {
+                            val issuerCertificates = it.issuerCertificates?.mapNotNull { bs ->
+                                CertificateUtil.decodeCertificate(bs.bytesOrEmpty())
+                            } ?: emptyList()
+
+                            trustListManager.setIssuerCertificates(issuerCertificates)
+                        }
+
+                        if (masks.isSet(TrustListMasks.TrustedCertificates)) {
+                            val trustedCertificates = it.trustedCertificates?.mapNotNull { bs ->
+                                CertificateUtil.decodeCertificate(bs.bytesOrEmpty())
+                            } ?: emptyList()
+
+                            trustListManager.setIssuerCertificates(trustedCertificates)
+                        }
+
+                        // TODO CRLs
+
+                    }
+
                     println("new TrustList: $newTrustList")
                 }
 
