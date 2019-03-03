@@ -4,16 +4,19 @@ import com.google.common.collect.HashBasedTable
 import com.google.common.collect.Table
 import com.isw.opcua.server.util.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.api.MethodInvocationHandler
+import org.eclipse.milo.opcua.sdk.server.api.nodes.VariableNode
 import org.eclipse.milo.opcua.sdk.server.model.methods.*
 import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileNode
+import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
+import org.eclipse.milo.opcua.sdk.server.nodes.delegates.AttributeDelegate
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ulong
 import java.io.File
@@ -56,6 +59,26 @@ open class FileObject(
         fileNode.setPositionMethodNode.apply {
             invocationHandler = getSetPositionMethod(this)
         }
+
+        fileNode.openCountNode.setAttributeDelegate(object : AttributeDelegate {
+            override fun getValue(context: AttributeContext, node: VariableNode): DataValue {
+                val count: UShort = Unsigned.ushort(handles.size())
+
+                return DataValue(Variant(count))
+            }
+        })
+
+        fileNode.sizeNode.setAttributeDelegate(object : AttributeDelegate {
+            override fun getValue(context: AttributeContext, node: VariableNode): DataValue {
+                val file = openFile()
+                val size: ULong = ulong(file.length())
+
+                return DataValue(Variant(size))
+            }
+        })
+
+        fileNode.writable = false
+        fileNode.userWritable = false
     }
 
     override fun onShutdown() {

@@ -16,16 +16,21 @@ import org.eclipse.milo.opcua.stack.core.serialization.EncodingLimits
 import org.eclipse.milo.opcua.stack.core.types.OpcUaDataTypeManager
 import org.eclipse.milo.opcua.stack.core.types.OpcUaDefaultBinaryEncoding
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TrustListMasks
 import org.eclipse.milo.opcua.stack.core.types.structured.TrustListDataType
 import org.eclipse.milo.opcua.stack.core.util.CertificateUtil
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.RandomAccessFile
 import java.util.concurrent.atomic.AtomicReference
 
+
+private val logger: Logger = LoggerFactory.getLogger(TrustListObject::class.java)
 
 class TrustListObject(
     private val trustListNode: TrustListNode,
@@ -122,10 +127,15 @@ class TrustListObject(
                         OpcUaDataTypeManager.getInstance()
                     )
 
+                    // TODO sync this with TrustManager somehow
                     println("new TrustList: $newTrustList")
                 }
 
                 file.close()
+
+                trustListNode.lastUpdateTime = DateTime.now()
+
+                applyChangesRequired.set(false)
             } else {
                 throw UaException(StatusCodes.Bad_NotFound)
             }
@@ -151,6 +161,8 @@ class TrustListObject(
                     trustListManager.addIssuerCertificate(it)
                 }
             }
+
+            trustListNode.lastUpdateTime = DateTime.now()
         }
 
     }
@@ -174,6 +186,8 @@ class TrustListObject(
             if (!found) {
                 throw UaException(StatusCodes.Bad_InvalidArgument)
             }
+
+            trustListNode.lastUpdateTime = DateTime.now()
         }
 
     }
@@ -190,17 +204,21 @@ private fun TrustListManager.openTrustListFile(masks: UInteger = UInteger.MAX): 
     val trustList = this.getTrustListDataType()
 
     return File.createTempFile("TrustListDataType", null).apply {
+        logger.debug("TrustList file created: {}", path)
+
         deleteOnExit()
 
-        val encoded = OpcUaDefaultBinaryEncoding.getInstance().encode(
-            trustList,
-            TrustListDataType.BinaryEncodingId,
-            EncodingLimits.DEFAULT,
-            OpcUaDataTypeManager.getInstance()
-        ) as ByteString
-
-        writeBytes(encoded.bytesOrEmpty())
+        writeBytes(trustList.encoded().bytesOrEmpty())
     }
+}
+
+private fun TrustListDataType.encoded(): ByteString {
+    return OpcUaDefaultBinaryEncoding.getInstance().encode(
+        this,
+        TrustListDataType.BinaryEncodingId,
+        EncodingLimits.DEFAULT,
+        OpcUaDataTypeManager.getInstance()
+    ) as ByteString
 }
 
 private fun TrustListManager.getTrustListDataType(masks: UInteger = UInteger.MAX): TrustListDataType {
