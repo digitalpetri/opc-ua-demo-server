@@ -1,6 +1,7 @@
 package com.isw.opcua.server.objects
 
 import com.isw.opcua.server.util.ExecutableByAdmin
+import org.bouncycastle.util.encoders.Hex
 import org.eclipse.milo.opcua.sdk.server.api.MethodInvocationHandler
 import org.eclipse.milo.opcua.sdk.server.model.methods.AddCertificateMethod
 import org.eclipse.milo.opcua.sdk.server.model.methods.CloseAndUpdateMethod
@@ -10,25 +11,26 @@ import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.TrustListNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
-import org.eclipse.milo.opcua.stack.core.application.DirectoryCertificateValidator
+import org.eclipse.milo.opcua.stack.core.application.TrustListManager
+import org.eclipse.milo.opcua.stack.core.serialization.EncodingLimits
+import org.eclipse.milo.opcua.stack.core.types.OpcUaDataTypeManager
+import org.eclipse.milo.opcua.stack.core.types.OpcUaDefaultBinaryEncoding
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TrustListMasks
 import org.eclipse.milo.opcua.stack.core.types.structured.TrustListDataType
+import org.eclipse.milo.opcua.stack.core.util.CertificateUtil
 import java.io.File
 import java.io.RandomAccessFile
-import java.security.cert.X509CRL
-import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
 
 class TrustListObject(
     private val trustListNode: TrustListNode,
-    private val openTrustListFile: (EnumSet<TrustListMasks>) -> File,
-    private val certificateValidator: DirectoryCertificateValidator
-) : FileObject(trustListNode, { openTrustListFile(EnumSet.allOf(TrustListMasks::class.java)) }) {
+    private val trustListManager: TrustListManager
+) : FileObject(trustListNode, { trustListManager.openTrustListFile() }) {
 
     override fun onStartup() {
         super.onStartup()
@@ -37,10 +39,37 @@ class TrustListObject(
             invocationHandler = OpenWithMasksImpl(this)
             setAttributeDelegate(ExecutableByAdmin)
         }
+
+        trustListNode.closeAndUpdateMethodNode.apply {
+            invocationHandler = CloseAndUpdateImpl(this)
+            setAttributeDelegate(ExecutableByAdmin)
+        }
+
+        trustListNode.addCertificateMethodNode.apply {
+            invocationHandler = AddCertificateImpl(this)
+            setAttributeDelegate(ExecutableByAdmin)
+        }
+
+        trustListNode.removeCertificateMethodNode.apply {
+            invocationHandler = RemoveCertificateImpl(this)
+            setAttributeDelegate(ExecutableByAdmin)
+        }
     }
 
     override fun onShutdown() {
         trustListNode.openWithMasksMethodNode.apply {
+            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
+        }
+
+        trustListNode.closeAndUpdateMethodNode.apply {
+            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
+        }
+
+        trustListNode.addCertificateMethodNode.apply {
+            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
+        }
+
+        trustListNode.removeCertificateMethodNode.apply {
             invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
         }
 
@@ -56,15 +85,7 @@ class TrustListObject(
 
             val session = context.session.orElseThrow()
 
-            val maskSet = EnumSet.noneOf(TrustListMasks::class.java)
-
-            TrustListMasks.values().forEach { mask ->
-                if (masks.isSet(mask)) {
-                    maskSet.add(mask)
-                }
-            }
-
-            val file = openTrustListFile(maskSet)
+            val file = trustListManager.openTrustListFile(masks)
             val raf = RandomAccessFile(file, "r")
 
             val handle = uint(fileHandleSequence.incrementAndGet())
@@ -77,26 +98,87 @@ class TrustListObject(
 
     inner class CloseAndUpdateImpl(node: UaMethodNode) : CloseAndUpdateMethod(node) {
         override fun invoke(
-            context: InvocationContext?,
-            fileHandle: UInteger?,
-            applyChangesRequired: AtomicReference<Boolean>?
+            context: InvocationContext,
+            fileHandle: UInteger,
+            applyChangesRequired: AtomicReference<Boolean>
         ) {
+
+            val session = context.session.orElseThrow()
+
+            val filePair = handles.remove(session.sessionId, fileHandle)
+
+            if (filePair != null) {
+                val (file, mode) = filePair
+
+                if (mode.isSet(FileObject.FileModeBit.Write)) {
+                    file.channel.position(0L)
+                    val bs = ByteArray(file.length().toInt())
+                    file.readFully(bs)
+
+                    val newTrustList = OpcUaDefaultBinaryEncoding.getInstance().decode(
+                        ByteString.of(bs),
+                        TrustListDataType.BinaryEncodingId,
+                        EncodingLimits.DEFAULT,
+                        OpcUaDataTypeManager.getInstance()
+                    )
+
+                    println("new TrustList: $newTrustList")
+                }
+
+                file.close()
+            } else {
+                throw UaException(StatusCodes.Bad_NotFound)
+            }
 
             throw UaException(StatusCodes.Bad_NotImplemented)
         }
     }
 
     inner class AddCertificateImpl(node: UaMethodNode) : AddCertificateMethod(node) {
-        override fun invoke(context: InvocationContext?, certificate: ByteString?, isTrustedCertificate: Boolean?) {
-            throw UaException(StatusCodes.Bad_NotImplemented)
+
+        override fun invoke(
+            context: InvocationContext,
+            certificate: ByteString,
+            isTrustedCertificate: Boolean
+        ) {
+
+            CertificateUtil.decodeCertificate(certificate.bytesOrEmpty()).let {
+                if (isTrustedCertificate) {
+                    trustListManager.addTrustedCertificate(it)
+
+                    trustListManager.removeRejectedCertificate(CertificateUtil.thumbprint(it))
+                } else {
+                    trustListManager.addIssuerCertificate(it)
+                }
+            }
         }
+
     }
 
     inner class RemoveCertificateImpl(node: UaMethodNode) : RemoveCertificateMethod(node) {
-        override fun invoke(context: InvocationContext?, thumbprint: String?, isTrustedCertificate: Boolean?) {
-            throw UaException(StatusCodes.Bad_NotImplemented)
+
+        override fun invoke(
+            context: InvocationContext,
+            thumbprint: String,
+            isTrustedCertificate: Boolean
+        ) {
+
+            val thumbprintBytes = ByteString.of(Hex.decode(thumbprint))
+
+            val found = if (isTrustedCertificate) {
+                trustListManager.removeTrustedCertificate(thumbprintBytes)
+            } else {
+                trustListManager.removeIssuerCertificate(thumbprintBytes)
+            }
+
+            if (!found) {
+                throw UaException(StatusCodes.Bad_InvalidArgument)
+            }
         }
+
     }
+
+    // TODO override OpenMethodImpl to ensure only Read or Write+EraseExisting are allowed
 
 }
 
@@ -104,18 +186,52 @@ private fun UInteger.isSet(masks: TrustListMasks): Boolean {
     return (this.toInt() and masks.value) == masks.value
 }
 
-fun DirectoryCertificateValidator.getTrustListDataType(): TrustListDataType {
-    val trustedCertificates = this.trustedCertificates.map { ByteString.of(it.encoded) }
-    val issuerCertificates = this.issuerCertificates.map { ByteString.of(it.encoded) }
-    val issuerCrls = this.issuerCrls.map {
-        val crl = it as X509CRL
-        ByteString.of(crl.encoded)
+private fun TrustListManager.openTrustListFile(masks: UInteger = UInteger.MAX): File {
+    val trustList = this.getTrustListDataType()
+
+    return File.createTempFile("TrustListDataType", null).apply {
+        deleteOnExit()
+
+        val encoded = OpcUaDefaultBinaryEncoding.getInstance().encode(
+            trustList,
+            TrustListDataType.BinaryEncodingId,
+            EncodingLimits.DEFAULT,
+            OpcUaDataTypeManager.getInstance()
+        ) as ByteString
+
+        writeBytes(encoded.bytesOrEmpty())
+    }
+}
+
+private fun TrustListManager.getTrustListDataType(masks: UInteger = UInteger.MAX): TrustListDataType {
+    val trustedCertificates = if (masks.isSet(TrustListMasks.TrustedCertificates)) {
+        this.trustedCertificates.map { ByteString.of(it.encoded) }
+    } else {
+        emptyList()
+    }
+
+    val trustedCrls = if (masks.isSet(TrustListMasks.TrustedCrls)) {
+        this.trustedCrls.map { ByteString.of(it.encoded) }
+    } else {
+        emptyList()
+    }
+
+    val issuerCertificates = if (masks.isSet(TrustListMasks.IssuerCertificates)) {
+        this.issuerCertificates.map { ByteString.of(it.encoded) }
+    } else {
+        emptyList()
+    }
+
+    val issuerCrls = if (masks.isSet(TrustListMasks.IssuerCrls)) {
+        this.issuerCrls.map { ByteString.of(it.encoded) }
+    } else {
+        emptyList()
     }
 
     return TrustListDataType(
-        uint(0b1111),
+        masks,
         trustedCertificates.toTypedArray(),
-        emptyArray(),
+        trustedCrls.toTypedArray(),
         issuerCertificates.toTypedArray(),
         issuerCrls.toTypedArray()
     )

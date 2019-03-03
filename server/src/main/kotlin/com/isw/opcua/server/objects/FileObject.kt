@@ -94,24 +94,24 @@ open class FileObject(
     open fun getGetPositionMethod(methodNode: UaMethodNode): GetPositionMethod = GetPositionImpl(methodNode)
     open fun getSetPositionMethod(methodNode: UaMethodNode): SetPositionMethod = SetPositionImpl(methodNode)
 
-    protected enum class FileModeBit(val value: Int) {
+    enum class FileModeBit(val value: Int) {
         Read(1),
         Write(2),
         EraseExisting(4),
         Append(8)
     }
 
-    private fun isOpen(): Boolean {
+    fun isOpen(): Boolean {
         return handles.size() > 0
     }
 
-    private fun isOpenForWriting(): Boolean {
+    fun isOpenForWriting(): Boolean {
         return handles.values().any { (_, mode) ->
             (mode.toInt() and 0b0010) == 1
         }
     }
 
-    private fun UByte.isSet(mask: FileModeBit): Boolean {
+    fun UByte.isSet(mask: FileModeBit): Boolean {
         return (this.toInt() and mask.value) == mask.value
     }
 
@@ -182,7 +182,7 @@ open class FileObject(
 
     }
 
-    inner class CloseImpl(node: UaMethodNode) : CloseMethod(node) {
+    open inner class CloseImpl(node: UaMethodNode) : CloseMethod(node) {
 
         override fun invoke(context: InvocationContext, fileHandle: UInteger) {
             val session = context.session.orElseThrow()

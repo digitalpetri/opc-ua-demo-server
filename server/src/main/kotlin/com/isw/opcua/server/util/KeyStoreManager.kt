@@ -70,7 +70,21 @@ abstract class KeyStoreManager(private val settings: Settings) {
     }
 
     fun setCertificateChain(alias: String, key: PrivateKey, password: String, chain: List<X509Certificate>) {
-        keyStore.setKeyEntry(alias, key, password.toCharArray(), chain.toTypedArray())
+        keyStore.setKeyEntry(
+            alias,
+            key,
+            password.toCharArray(),
+            chain.toTypedArray()
+        )
+
+        keyStore.store(
+            FileOutputStream(settings.keyStoreFile),
+            settings.keyStorePassword.toCharArray()
+        )
+    }
+
+    fun setDefaultCertificateChain(key: PrivateKey, password: String, chain: List<X509Certificate>) {
+        setCertificateChain(getDefaultAlias(), key, password, chain)
     }
 
     protected abstract fun initializeKeystore(keyStore: KeyStore)

@@ -1,5 +1,7 @@
 package com.isw.opcua.server.discovery
 
+import com.isw.opcua.server.ServerKeyStore
+import com.isw.opcua.server.objects.TrustListObject
 import com.isw.opcua.server.util.ExecutableByAdmin
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
@@ -16,7 +18,7 @@ import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
 import org.eclipse.milo.opcua.stack.core.application.DefaultCertificateManager
-import org.eclipse.milo.opcua.stack.core.application.DirectoryCertificateValidator
+import org.eclipse.milo.opcua.stack.core.application.TrustListManager
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
@@ -25,7 +27,6 @@ import org.eclipse.milo.opcua.stack.core.util.CertificateUtil
 import org.eclipse.milo.opcua.stack.core.util.DigestUtil.sha1
 import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateGenerator
 import java.io.ByteArrayInputStream
-import java.io.FileInputStream
 import java.io.InputStreamReader
 import java.security.KeyFactory
 import java.security.KeyPair
@@ -36,7 +37,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 
-fun configureGdsPush(server: OpcUaServer) {
+fun configureGdsPush(server: OpcUaServer, keyStore: ServerKeyStore, trustListManager: TrustListManager) {
     val serverConfiguration = server.nodeManager.get(
         Identifiers.ServerConfiguration
     ) as ServerConfigurationNode
@@ -47,7 +48,7 @@ fun configureGdsPush(server: OpcUaServer) {
     }
 
     serverConfiguration.updateCertificateMethodNode.apply {
-        invocationHandler = UpdateCertificate(this)
+        invocationHandler = UpdateCertificate(this, keyStore)
         setAttributeDelegate(ExecutableByAdmin)
     }
 
@@ -70,7 +71,9 @@ fun configureGdsPush(server: OpcUaServer) {
         .defaultApplicationGroupNode
         .trustListNode as TrustListNode
 
-    configureTrustList(server, trustListNode)
+    val trustListObject = TrustListObject(trustListNode, trustListManager)
+
+    trustListObject.startup()
 }
 
 /**
@@ -174,7 +177,10 @@ class CreateSigningRequest(node: UaMethodNode) : CreateSigningRequestMethod(node
  * This Method requires an encrypted channel and that the Client provide credentials with administrative rights on the
  * Server.
  */
-class UpdateCertificate(node: UaMethodNode) : UpdateCertificateMethod(node) {
+class UpdateCertificate(
+    node: UaMethodNode,
+    private val keyStore: ServerKeyStore
+) : UpdateCertificateMethod(node) {
 
     private val server: OpcUaServer = node.nodeContext.server
 
@@ -231,7 +237,11 @@ class UpdateCertificate(node: UaMethodNode) : UpdateCertificateMethod(node) {
             certificateManager.add(keyPair, certificateChain.toTypedArray())
         }
 
-        // TODO write to actual keystore
+        keyStore.setDefaultCertificateChain(
+            keyPair.private,
+            ServerKeyStore.DEFAULT_SERVER_PASSWORD,
+            certificateChain
+        )
 
         server.scheduledExecutorService.schedule(
             { server.stackServer.connectedChannels.forEach { it.disconnect() } },
@@ -273,12 +283,11 @@ class GetRejectedListMethodImpl(node: UaMethodNode) : GetRejectedListMethod(node
     private val server: OpcUaServer = node.nodeContext.server
 
     override fun invoke(context: InvocationContext, certificates: AtomicReference<Array<ByteString>>) {
-        val validator = server.config.certificateValidator as DirectoryCertificateValidator
+        val trustListManager = server.config.trustListManager
 
-        val bs = validator.rejectedDir.listFiles().mapNotNull { file ->
+        val bs = trustListManager.rejectedCertificates.mapNotNull {
             try {
-                val certificate = CertificateUtil.decodeCertificate(FileInputStream(file))
-                ByteString.of(certificate.encoded)
+                ByteString.of(it.encoded)
             } catch (e: UaException) {
                 null
             }

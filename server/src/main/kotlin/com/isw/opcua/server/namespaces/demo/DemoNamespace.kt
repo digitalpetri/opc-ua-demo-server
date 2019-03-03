@@ -28,7 +28,6 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId
 import org.eclipse.milo.opcua.stack.core.types.structured.WriteValue
 import org.eclipse.milo.opcua.stack.core.util.FutureUtils.failedUaFuture
 import java.io.File
-import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 import java.util.concurrent.ConcurrentMap
@@ -221,22 +220,6 @@ class DemoNamespace(
         items.forEach {
             sampledNodes[it]?.samplingEnabled = it.isSamplingEnabled
             subscribedNodes[it]?.samplingEnabled = it.isSamplingEnabled
-        }
-    }
-
-    override fun getInvocationHandler(objectId: NodeId, methodId: NodeId): Optional<MethodInvocationHandler> {
-        return nodeManager.getNode(objectId).flatMap { node ->
-            if (node is UaObjectNode) {
-                val methodNode = node.findMethodNode(methodId)
-
-                if (methodNode != null) {
-                    Optional.of(methodNode.invocationHandler)
-                } else {
-                    Optional.empty()
-                }
-            } else {
-                Optional.empty()
-            }
         }
     }
 
