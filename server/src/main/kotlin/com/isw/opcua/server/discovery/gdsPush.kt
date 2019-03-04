@@ -17,8 +17,8 @@ import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
-import org.eclipse.milo.opcua.stack.core.application.DefaultCertificateManager
-import org.eclipse.milo.opcua.stack.core.application.TrustListManager
+import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager
+import org.eclipse.milo.opcua.stack.core.security.TrustListManager
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint

@@ -5,10 +5,12 @@ package com.isw.opcua.server
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
 import ch.qos.logback.core.util.StatusPrinter
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.eclipse.milo.opcua.stack.core.Stack
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
+import java.security.Security
 import java.util.concurrent.CompletableFuture
 import kotlin.system.measureTimeMillis
 
@@ -41,6 +43,9 @@ fun main() {
 
         configureLogback(this)
     }
+
+    // Required for Aes256_Sha256_RsaPss
+    Security.addProvider(BouncyCastleProvider())
 
     Stack.ConnectionLimits.RATE_LIMIT_ENABLED = false
 

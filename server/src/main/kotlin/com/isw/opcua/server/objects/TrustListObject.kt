@@ -11,7 +11,7 @@ import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.TrustListNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
-import org.eclipse.milo.opcua.stack.core.application.TrustListManager
+import org.eclipse.milo.opcua.stack.core.security.TrustListManager
 import org.eclipse.milo.opcua.stack.core.serialization.EncodingLimits
 import org.eclipse.milo.opcua.stack.core.types.OpcUaDataTypeManager
 import org.eclipse.milo.opcua.stack.core.types.OpcUaDefaultBinaryEncoding
