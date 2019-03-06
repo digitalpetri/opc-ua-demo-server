@@ -16,7 +16,7 @@
     "registration": {
       "enabled": false,
       "frequency": 60000,
-      "endpointUrl": "opc.tcp://localhost:4840/UADiscovery",
+      "endpointUrl": "opc.tcp://localhost:4840/UADiscovery"
     }
   }
 }
