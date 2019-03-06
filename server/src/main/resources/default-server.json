@@ -14,9 +14,9 @@
       "Aes256_Sha256_RsaPss"
     ],
     "registration": {
+      "enabled": false,
+      "frequency": 60000,
       "endpointUrl": "opc.tcp://localhost:4840/UADiscovery",
-      "securityPolicy": "Basic256Sha256",
-      "securityMode": "SignAndEncrypt"
     }
   }
 }

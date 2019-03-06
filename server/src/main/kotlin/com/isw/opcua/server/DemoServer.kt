@@ -6,10 +6,13 @@ import com.isw.opcua.server.util.KeyStoreManager
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.json.toJson
 import kotlinx.coroutines.*
+import kotlinx.coroutines.future.await
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil
+import org.eclipse.milo.opcua.stack.client.UaStackClient
+import org.eclipse.milo.opcua.stack.client.UaStackClientConfig
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateValidator
 import org.eclipse.milo.opcua.stack.core.security.DefaultTrustListManager
@@ -17,9 +20,10 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
+import org.eclipse.milo.opcua.stack.core.types.enumerated.ApplicationType
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode
-import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo
-import org.eclipse.milo.opcua.stack.core.types.structured.UserTokenPolicy
+import org.eclipse.milo.opcua.stack.core.types.structured.*
 import org.eclipse.milo.opcua.stack.core.util.ManifestUtil
 import org.eclipse.milo.opcua.stack.server.EndpointConfiguration
 import org.slf4j.LoggerFactory
@@ -154,12 +158,72 @@ class DemoServer(dataDir: File) {
     fun startup() {
         demoNamespace.startup()
         server.startup().get()
+
+        if (config[ServerConfig.Registration.enabled]) {
+            val frequency = config[ServerConfig.Registration.frequency]
+
+            coroutineScope.launch {
+                while (true) {
+                    registerWithLds()
+
+                    delay(frequency)
+                }
+            }
+        }
     }
 
     fun shutdown() {
         demoNamespace.shutdown()
         runBlocking { supervisor.cancelAndJoin() }
         server.shutdown().get()
+    }
+
+    private suspend fun registerWithLds() {
+        try {
+            val endpointUrl = config[ServerConfig.Registration.endpointUrl]
+
+            val stackClient = UaStackClient.create(
+                UaStackClientConfig.builder()
+                    .setEndpoint(
+                        EndpointDescription(
+                            endpointUrl,
+                            null,
+                            null,
+                            MessageSecurityMode.None,
+                            SecurityPolicy.None.uri,
+                            null,
+                            TransportProfile.TCP_UASC_UABINARY.uri,
+                            ubyte(0)
+                        )
+                    )
+                    .build()
+            )
+
+            stackClient.connect().await()
+
+            val discoveryUrls = server.stackServer
+                .endpointDescriptions
+                .map { endpoint -> endpoint.endpointUrl }
+                .filter { url -> url.endsWith("/discovery") }
+
+            stackClient.sendRequest(
+                RegisterServerRequest(
+                    stackClient.newRequestHeader(),
+                    RegisteredServer(
+                        server.config.applicationUri,
+                        server.config.productUri,
+                        arrayOf(server.config.applicationName),
+                        ApplicationType.Server,
+                        null,
+                        discoveryUrls.toTypedArray(),
+                        null,
+                        true
+                    )
+                )
+            ).await()
+        } catch (e: Exception) {
+            logger.error("Error registering with LDS: ${e.message}")
+        }
     }
 
     private fun buildInfo(): BuildInfo {
