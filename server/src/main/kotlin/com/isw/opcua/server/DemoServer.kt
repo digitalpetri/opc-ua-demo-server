@@ -144,6 +144,7 @@ class DemoServer(dataDir: File) {
             .setCertificateValidator(certificateValidator)
             .setIdentityValidator(identityValidator)
             .setEndpoints(createEndpointConfigurations)
+            .setLimits(ServerLimits)
             .build()
 
         server = OpcUaServer(serverConfig)
@@ -308,6 +309,12 @@ class DemoServer(dataDir: File) {
                                 .build()
                         )
                     } else {
+                        endpointConfigurations.add(
+                            builder.copy()
+                                .setSecurityPolicy(securityPolicy)
+                                .setSecurityMode(MessageSecurityMode.Sign)
+                                .build()
+                        )
                         endpointConfigurations.add(
                             builder.copy()
                                 .setSecurityPolicy(securityPolicy)

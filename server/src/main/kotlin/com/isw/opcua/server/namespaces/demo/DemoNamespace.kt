@@ -53,6 +53,8 @@ class DemoNamespace(
         addTurtlesFolder()
         addFileNodes()
         addMethodNodes()
+        addDynamicNodes()
+        addNullValueNodes()
     }
 
     override fun onShutdown() {
