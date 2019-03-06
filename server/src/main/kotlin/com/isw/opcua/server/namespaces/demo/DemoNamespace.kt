@@ -4,7 +4,6 @@ import com.google.common.collect.Maps
 import com.isw.opcua.milo.extensions.defaultValue
 import com.isw.opcua.milo.extensions.inverseReferenceTo
 import com.isw.opcua.milo.extensions.resolve
-import com.isw.opcua.server.objects.FileObject
 import com.isw.opcua.server.sampling.SampledDataItem
 import com.isw.opcua.server.sampling.TickManager
 import com.isw.opcua.server.util.AbstractLifecycle
@@ -16,7 +15,6 @@ import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.*
 import org.eclipse.milo.opcua.sdk.server.api.AttributeServices.ReadContext
 import org.eclipse.milo.opcua.sdk.server.api.AttributeServices.WriteContext
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileNode
 import org.eclipse.milo.opcua.sdk.server.nodes.*
 import org.eclipse.milo.opcua.stack.core.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
@@ -27,7 +25,6 @@ import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId
 import org.eclipse.milo.opcua.stack.core.types.structured.WriteValue
 import org.eclipse.milo.opcua.stack.core.util.FutureUtils.failedUaFuture
-import java.io.File
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 import java.util.concurrent.ConcurrentMap
@@ -55,41 +52,7 @@ class DemoNamespace(
         addMassNodes()
         addTurtlesFolder()
         addFileNodes()
-    }
-
-    private fun addFileNodes() {
-        val fileFolder = UaFolderNode(
-            server,
-            NodeId(namespaceIndex, "Files"),
-            QualifiedName(namespaceIndex, "Files"),
-            LocalizedText("Files")
-        )
-
-        nodeManager.addNode(fileFolder)
-
-        fileFolder.inverseReferenceTo(
-            Identifiers.ObjectsFolder,
-            Identifiers.HasComponent
-        )
-
-        val fileNode = server.nodeFactory.createNode(
-            NodeId(namespaceIndex, "TestFile"),
-            Identifiers.FileType,
-            true
-        )
-        fileNode.browseName = QualifiedName(namespaceIndex, "TestFile")
-        fileNode.displayName = LocalizedText("TestFile")
-
-        val file = File("/Users/kevin/Desktop/GetMonitoredItemsNode.java")
-
-        val fileObject = (fileNode as? FileNode)?.let {
-            FileObject(it) { file }
-        }
-
-        fileObject?.startup()
-
-        nodeManager.addNode(fileNode)
-        fileNode.inverseReferenceTo(fileFolder.nodeId, Identifiers.HasComponent)
+        addMethodNodes()
     }
 
     override fun onShutdown() {
@@ -301,7 +264,7 @@ fun DemoNamespace.addVariableNode(
         setUserAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
         setBrowseName(QualifiedName(namespaceIndex, name))
         setDisplayName(LocalizedText.english(name))
-        setDataType(Identifiers.Int32)
+        setDataType(dataType.nodeId)
         setTypeDefinition(Identifiers.BaseDataVariableType)
         setMinimumSamplingInterval(100.0)
         setValue(DataValue(Variant(dataType.defaultValue())))
