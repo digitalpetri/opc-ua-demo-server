@@ -61,8 +61,8 @@ class DemoServer(dataDir: File) {
         adminValid || user1Valid || user2Valid
     }
 
-    val server: OpcUaServer
-    val serverConfigurationObject: ServerConfigurationObject
+    private val server: OpcUaServer
+    private val serverConfigurationObject: ServerConfigurationObject
 
     private val config: Config
     private val demoNamespace: DemoNamespace
@@ -156,6 +156,7 @@ class DemoServer(dataDir: File) {
             DemoNamespace(idx, coroutineScope, server)
         }
 
+        // GDS Push Support via ServerConfiguration
         val serverConfigurationNode = server.nodeManager.get(
             Identifiers.ServerConfiguration
         ) as ServerConfigurationNode
