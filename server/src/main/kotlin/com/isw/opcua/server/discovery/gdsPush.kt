@@ -90,11 +90,11 @@ class CreateSigningRequest(node: UaMethodNode) : CreateSigningRequestMethod(node
 
     override fun invoke(
         context: InvocationContext,
-        certificateGroupId: NodeId,
-        certificateTypeId: NodeId,
+        certificateGroupId: NodeId?,
+        certificateTypeId: NodeId?,
         subjectName: String?,
         regeneratePrivateKey: Boolean,
-        nonce: ByteString,
+        nonce: ByteString?,
         certificateRequest: AtomicReference<ByteString>
     ) {
 
@@ -104,7 +104,8 @@ class CreateSigningRequest(node: UaMethodNode) : CreateSigningRequestMethod(node
             throw UaException(StatusCodes.Bad_SecurityModeInsufficient)
         }
 
-        if (certificateGroupId.isNotNull &&
+        if (certificateGroupId != null &&
+            certificateGroupId.isNotNull &&
             certificateGroupId != Identifiers.ServerConfiguration_CertificateGroups_DefaultApplicationGroup
         ) {
 
@@ -186,12 +187,12 @@ class UpdateCertificate(
 
     override fun invoke(
         context: InvocationContext,
-        certificateGroupId: NodeId,
-        certificateTypeId: NodeId,
+        certificateGroupId: NodeId?,
+        certificateTypeId: NodeId?,
         certificate: ByteString,
-        issuerCertificates: Array<out ByteString>,
-        privateKeyFormat: String,
-        privateKey: ByteString,
+        issuerCertificates: Array<out ByteString>?,
+        privateKeyFormat: String?,
+        privateKey: ByteString?,
         applyChangesRequired: AtomicReference<Boolean>
     ) {
 
@@ -201,7 +202,8 @@ class UpdateCertificate(
             throw UaException(StatusCodes.Bad_SecurityModeInsufficient)
         }
 
-        if (certificateGroupId.isNotNull &&
+        if (certificateGroupId != null &&
+            certificateGroupId.isNotNull &&
             certificateGroupId != Identifiers.ServerConfiguration_CertificateGroups_DefaultApplicationGroup
         ) {
 
@@ -212,11 +214,11 @@ class UpdateCertificate(
         val certificateBytes = session.endpoint.serverCertificate.bytesOrEmpty()
         val thumbprint = ByteString.of(sha1(certificateBytes))
 
-        val certificateChain = (listOf(certificate) + issuerCertificates).map {
+        val certificateChain = (listOf(certificate) + (issuerCertificates ?: emptyArray())).map {
             CertificateUtil.decodeCertificate(it.bytesOrEmpty())
         }
 
-        val keyPair: KeyPair = if (privateKey.isNull) {
+        val keyPair: KeyPair = if (privateKey == null || privateKey.isNull) {
             // Use current PrivateKey + new certificates
             val oldKeyPair = certificateManager.getKeyPair(thumbprint).orElseThrow()
 

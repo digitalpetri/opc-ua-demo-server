@@ -175,7 +175,7 @@ open class FileObject(
                 if (isOpen()) {
                     throw UaException(StatusCodes.Bad_NotWritable)
                 }
-                modeString += "ws"
+                modeString += "rws"
             }
 
             if (mode.isSet(FileModeBit.EraseExisting)) {

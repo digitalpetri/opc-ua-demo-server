@@ -30,6 +30,7 @@ import java.io.File
 import java.io.RandomAccessFile
 import java.security.cert.CertificateFactory
 import java.security.cert.X509CRL
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 
@@ -172,19 +173,25 @@ class TrustListObject(
                         }
                     }
 
-                    logger.debug("new TrustList: $newTrustList")
+                    logger.info("new TrustList: $newTrustList")
                 }
 
                 file.close()
 
                 trustListNode.lastUpdateTime = DateTime.now()
 
+                trustListNode.nodeContext.server.apply {
+                    scheduledExecutorService.schedule(
+                        { stackServer.connectedChannels.forEach { it.disconnect() } },
+                        3,
+                        TimeUnit.SECONDS
+                    )
+                }
+
                 applyChangesRequired.set(false)
             } else {
                 throw UaException(StatusCodes.Bad_NotFound)
             }
-
-            throw UaException(StatusCodes.Bad_NotImplemented)
         }
     }
 

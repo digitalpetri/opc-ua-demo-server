@@ -15,7 +15,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 
 
-internal fun DemoNamespace.addTurtlesFolder() {
+internal fun DemoNamespace.addTurtleNodes() {
     val turtlesFolder = UaFolderNode(
         server,
         NodeId(namespaceIndex, "[turtles]"),
