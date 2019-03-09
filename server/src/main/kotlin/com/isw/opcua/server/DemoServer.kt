@@ -1,7 +1,7 @@
 package com.isw.opcua.server
 
-import com.isw.opcua.server.discovery.configureGdsPush
 import com.isw.opcua.server.namespaces.demo.DemoNamespace
+import com.isw.opcua.server.objects.ServerConfigurationObject
 import com.isw.opcua.server.util.KeyStoreManager
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.json.toJson
@@ -10,9 +10,11 @@ import kotlinx.coroutines.future.await
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerConfigurationNode
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil
 import org.eclipse.milo.opcua.stack.client.UaStackClient
 import org.eclipse.milo.opcua.stack.client.UaStackClientConfig
+import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateValidator
 import org.eclipse.milo.opcua.stack.core.security.DefaultTrustListManager
@@ -60,6 +62,7 @@ class DemoServer(dataDir: File) {
     }
 
     val server: OpcUaServer
+    val serverConfigurationObject: ServerConfigurationObject
 
     private val config: Config
     private val demoNamespace: DemoNamespace
@@ -153,10 +156,19 @@ class DemoServer(dataDir: File) {
             DemoNamespace(idx, coroutineScope, server)
         }
 
-        configureGdsPush(server, keyStore, trustListManager)
+        val serverConfigurationNode = server.nodeManager.get(
+            Identifiers.ServerConfiguration
+        ) as ServerConfigurationNode
+
+        serverConfigurationObject = ServerConfigurationObject(
+            serverConfigurationNode,
+            keyStore,
+            trustListManager
+        )
     }
 
     fun startup() {
+        serverConfigurationObject.startup()
         demoNamespace.startup()
         server.startup().get()
 
@@ -174,6 +186,7 @@ class DemoServer(dataDir: File) {
     }
 
     fun shutdown() {
+        serverConfigurationObject.shutdown()
         demoNamespace.shutdown()
         runBlocking { supervisor.cancelAndJoin() }
         server.shutdown().get()

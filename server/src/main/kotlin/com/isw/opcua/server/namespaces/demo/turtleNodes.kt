@@ -15,6 +15,8 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 
 
+private const val MAX_TURTLES: Long = Long.MAX_VALUE
+
 internal fun DemoNamespace.addTurtleNodes() {
     val turtlesFolder = UaFolderNode(
         server,
@@ -93,32 +95,35 @@ internal fun DemoNamespace.maybeTurtleReferences(nodeId: NodeId): List<Reference
         val prevTurtle = turtleNumber - 1
         val nextTurtle = turtleNumber + 1
 
-        val inverseReference = if (prevTurtle >= 0) {
-            Reference(
+        val references = mutableListOf<Reference>()
+
+        if (prevTurtle >= 0) {
+            references += Reference(
                 nodeId,
                 Identifiers.Organizes,
                 NodeId(namespaceIndex, "[turtles]$prevTurtle").expanded(),
                 Reference.Direction.INVERSE
             )
-        } else {
-            null
         }
 
-        listOfNotNull(
-            inverseReference,
-            Reference(
-                nodeId,
-                Identifiers.Organizes,
-                NodeId(namespaceIndex, "[turtles]$nextTurtle").expanded(),
-                Reference.Direction.FORWARD
-            ),
-            Reference(
-                nodeId,
-                Identifiers.HasTypeDefinition,
-                NodeId(namespaceIndex, "TurtleType").expanded(),
-                Reference.Direction.FORWARD
+        if (nextTurtle < MAX_TURTLES) {
+            references += listOf(
+                Reference(
+                    nodeId,
+                    Identifiers.Organizes,
+                    NodeId(namespaceIndex, "[turtles]$nextTurtle").expanded(),
+                    Reference.Direction.FORWARD
+                ),
+                Reference(
+                    nodeId,
+                    Identifiers.HasTypeDefinition,
+                    NodeId(namespaceIndex, "TurtleType").expanded(),
+                    Reference.Direction.FORWARD
+                )
             )
-        )
+        }
+
+        references
     }
 }
 

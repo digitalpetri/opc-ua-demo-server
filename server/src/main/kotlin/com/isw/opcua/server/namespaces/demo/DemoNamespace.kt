@@ -50,7 +50,7 @@ class DemoNamespace(
     override fun onStartup() {
         addCttNodes()
         addMassNodes()
-        //addTurtleNodes()
+        addTurtleNodes()
         addFileNodes()
         addMethodNodes()
         addDynamicNodes()

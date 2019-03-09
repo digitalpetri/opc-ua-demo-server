@@ -86,6 +86,7 @@ class TrustListObject(
     }
 
     inner class OpenWithMasksImpl(node: UaMethodNode) : OpenWithMasksMethod(node) {
+
         override fun invoke(
             context: InvocationContext,
             masks: UInteger,
@@ -103,9 +104,11 @@ class TrustListObject(
 
             fileHandle.set(handle)
         }
+
     }
 
     inner class CloseAndUpdateImpl(node: UaMethodNode) : CloseAndUpdateMethod(node) {
+
         override fun invoke(
             context: InvocationContext,
             fileHandle: UInteger,
@@ -193,6 +196,7 @@ class TrustListObject(
                 throw UaException(StatusCodes.Bad_NotFound)
             }
         }
+
     }
 
     inner class AddCertificateImpl(node: UaMethodNode) : AddCertificateMethod(node) {
@@ -252,24 +256,22 @@ private fun UInteger.isSet(masks: TrustListMasks): Boolean {
 }
 
 private fun TrustListManager.openTrustListFile(masks: UInteger = UInteger.MAX): File {
-    val trustList = this.getTrustListDataType()
+    val trustList = this.getTrustListDataType(masks)
 
     return File.createTempFile("TrustListDataType", null).apply {
         logger.debug("TrustList file created: {}", path)
 
         deleteOnExit()
 
-        writeBytes(trustList.encode().bytesOrEmpty())
-    }
-}
+        val encoded = OpcUaDefaultBinaryEncoding.getInstance().encode(
+            trustList,
+            TrustListDataType.BinaryEncodingId,
+            EncodingLimits.DEFAULT,
+            OpcUaDataTypeManager.getInstance()
+        ) as ByteString
 
-private fun TrustListDataType.encode(): ByteString {
-    return OpcUaDefaultBinaryEncoding.getInstance().encode(
-        this,
-        TrustListDataType.BinaryEncodingId,
-        EncodingLimits.DEFAULT,
-        OpcUaDataTypeManager.getInstance()
-    ) as ByteString
+        writeBytes(encoded.bytesOrEmpty())
+    }
 }
 
 private fun TrustListManager.getTrustListDataType(masks: UInteger = UInteger.MAX): TrustListDataType {
