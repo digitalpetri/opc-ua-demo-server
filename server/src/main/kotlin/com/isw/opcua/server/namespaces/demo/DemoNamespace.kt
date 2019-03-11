@@ -257,11 +257,12 @@ fun DemoNamespace.addFolderNode(parentNodeId: NodeId, name: String): UaFolderNod
 fun DemoNamespace.addVariableNode(
     parentNodeId: NodeId,
     name: String,
+    nodeId: NodeId = parentNodeId.resolve(name),
     dataType: BuiltinDataType = BuiltinDataType.Int32
 ): UaVariableNode {
 
     val variableNode = UaVariableNode.UaVariableNodeBuilder(server).run {
-        setNodeId(parentNodeId.resolve(name))
+        setNodeId(nodeId)
         setAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
         setUserAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
         setBrowseName(QualifiedName(namespaceIndex, name))

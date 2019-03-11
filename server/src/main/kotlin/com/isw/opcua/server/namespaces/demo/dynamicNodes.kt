@@ -32,7 +32,7 @@ fun DemoNamespace.addDynamicNodes() {
 }
 
 private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
-    addVariableNode(parentNodeId, "RandomInt32", BuiltinDataType.Int32).apply {
+    addVariableNode(parentNodeId, "RandomInt32", dataType = BuiltinDataType.Int32).apply {
         accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
         userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 
@@ -45,7 +45,7 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
         })
     }
 
-    addVariableNode(parentNodeId, "RandomInt64", BuiltinDataType.Int64).apply {
+    addVariableNode(parentNodeId, "RandomInt64", dataType = BuiltinDataType.Int64).apply {
         accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
         userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 
@@ -58,7 +58,7 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
         })
     }
 
-    addVariableNode(parentNodeId, "RandomFloat", BuiltinDataType.Float).apply {
+    addVariableNode(parentNodeId, "RandomFloat", dataType = BuiltinDataType.Float).apply {
         accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
         userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 
@@ -71,7 +71,7 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
         })
     }
 
-    addVariableNode(parentNodeId, "RandomDouble", BuiltinDataType.Double).apply {
+    addVariableNode(parentNodeId, "RandomDouble", dataType = BuiltinDataType.Double).apply {
         accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
         userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 

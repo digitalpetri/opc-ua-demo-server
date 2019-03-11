@@ -68,7 +68,7 @@ private fun DemoNamespace.addScalarNodes(parentNodeId: NodeId) {
     scalarDataTypes.forEach { dataType ->
         val name = dataType.name
 
-        val node = addVariableNode(scalarFolder.nodeId, name, dataType)
+        val node = addVariableNode(scalarFolder.nodeId, name, dataType = dataType)
         node.value = DataValue(Variant(dataType.defaultValue()))
     }
 }
@@ -85,7 +85,7 @@ private fun DemoNamespace.addArrayNodes(parentNodeId: NodeId) {
     arrayDataTypes.forEach { dataType ->
         val name = "${dataType.name}Array"
 
-        val node = addVariableNode(arrayFolder.nodeId, name, dataType)
+        val node = addVariableNode(arrayFolder.nodeId, name, dataType = dataType)
         node.valueRank = ValueRank.OneDimension.value
         node.arrayDimensions = arrayOf(uint(0))
         node.value = DataValue(Variant(dataType.defaultValueArray()))

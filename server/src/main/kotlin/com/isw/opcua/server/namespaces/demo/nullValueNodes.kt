@@ -24,14 +24,14 @@ fun DemoNamespace.addNullValueNodes() {
         Identifiers.HasComponent
     )
 
-    val nullableTypes = BuiltinDataType.values().filter {
+    val dataTypes = BuiltinDataType.values().filter {
         it != BuiltinDataType.DataValue && it != BuiltinDataType.Variant && it != BuiltinDataType.DiagnosticInfo
     }
 
-    nullableTypes.forEach { dataType ->
+    dataTypes.forEach { dataType ->
         val name = dataType.name
 
-        addVariableNode(dynamicFolder.nodeId, name, dataType).apply {
+        addVariableNode(dynamicFolder.nodeId, name, dataType = dataType).apply {
             accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
             userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 
