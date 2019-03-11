@@ -17,6 +17,7 @@ import org.eclipse.milo.opcua.stack.core.types.OpcUaDataTypeManager
 import org.eclipse.milo.opcua.stack.core.types.OpcUaDefaultBinaryEncoding
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
@@ -63,6 +64,11 @@ class TrustListObject(
             invocationHandler = RemoveCertificateImpl(this)
             setAttributeDelegate(ExecutableByAdmin)
         }
+
+        trustListNode.openMethodNode.apply {
+            invocationHandler = OpenImpl(this)
+            setAttributeDelegate(ExecutableByAdmin)
+        }
     }
 
     override fun onShutdown() {
@@ -82,7 +88,34 @@ class TrustListObject(
             invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
         }
 
+        trustListNode.openMethodNode.apply {
+            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
+        }
+
         super.onShutdown()
+    }
+
+
+    inner class OpenImpl(node: UaMethodNode) : FileObject.OpenImpl(node) {
+
+        override fun invoke(
+            context: InvocationContext,
+            mode: UByte,
+            fileHandle: AtomicReference<UInteger>
+        ) {
+
+            val modeInt = mode.toInt()
+
+            if (modeInt != 0b0001 && modeInt != 0b0110) {
+                throw UaException(
+                    StatusCodes.Bad_InvalidArgument,
+                    "mode must be Read or Write+EraseExisting"
+                )
+            }
+
+            super.invoke(context, mode, fileHandle)
+        }
+
     }
 
     inner class OpenWithMasksImpl(node: UaMethodNode) : OpenWithMasksMethod(node) {
@@ -246,8 +279,6 @@ class TrustListObject(
         }
 
     }
-
-    // TODO override OpenMethodImpl to ensure only Read or Write+EraseExisting are allowed
 
 }
 

@@ -130,7 +130,7 @@ open class FileObject(
 
     fun isOpenForWriting(): Boolean {
         return handles.values().any { (_, mode) ->
-            (mode.toInt() and 0b0010) == 1
+            (mode.toInt() and 0b0010) == 0b0010
         }
     }
 
@@ -149,7 +149,7 @@ open class FileObject(
      *
      * A request to open for reading shall return Bad_NotReadable when the file is already opened for writing.
      */
-    inner class OpenImpl(node: UaMethodNode) : OpenMethod(node) {
+    open inner class OpenImpl(node: UaMethodNode) : OpenMethod(node) {
 
         override fun invoke(
             context: InvocationContext,
