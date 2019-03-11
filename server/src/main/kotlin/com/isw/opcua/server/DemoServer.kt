@@ -326,12 +326,6 @@ class DemoServer(dataDir: File) {
                         endpointConfigurations.add(
                             builder.copy()
                                 .setSecurityPolicy(securityPolicy)
-                                .setSecurityMode(MessageSecurityMode.Sign)
-                                .build()
-                        )
-                        endpointConfigurations.add(
-                            builder.copy()
-                                .setSecurityPolicy(securityPolicy)
                                 .setSecurityMode(MessageSecurityMode.SignAndEncrypt)
                                 .build()
                         )
