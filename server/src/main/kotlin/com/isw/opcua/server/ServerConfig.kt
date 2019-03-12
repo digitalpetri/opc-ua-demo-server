@@ -8,6 +8,7 @@ object ServerConfig : ConfigSpec() {
     val bindPort by optional(62541)
     val endpointAddressList by optional(listOf("<hostname>", "<localhost>"))
     val securityPolicyList by optional(listOf("Basic256Sha256"))
+    val gdsPushEnabled by optional(false)
 
     object Registration : ConfigSpec() {
         val enabled by optional(false)

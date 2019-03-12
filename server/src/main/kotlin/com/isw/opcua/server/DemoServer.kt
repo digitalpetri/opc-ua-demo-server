@@ -169,7 +169,10 @@ class DemoServer(dataDir: File) {
     }
 
     fun startup() {
-        serverConfigurationObject.startup()
+        if (config[ServerConfig.gdsPushEnabled]) {
+            serverConfigurationObject.startup()
+        }
+
         demoNamespace.startup()
         server.startup().get()
 
@@ -187,7 +190,10 @@ class DemoServer(dataDir: File) {
     }
 
     fun shutdown() {
-        serverConfigurationObject.shutdown()
+        if (config[ServerConfig.gdsPushEnabled]) {
+            serverConfigurationObject.shutdown()
+        }
+
         demoNamespace.shutdown()
         runBlocking { supervisor.cancelAndJoin() }
         server.shutdown().get()
