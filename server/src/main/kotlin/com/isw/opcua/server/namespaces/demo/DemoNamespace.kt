@@ -10,24 +10,33 @@ import com.isw.opcua.server.util.AbstractLifecycle
 import kotlinx.coroutines.CoroutineScope
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.Reference
-import org.eclipse.milo.opcua.sdk.server.NamespaceNodeManager
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
-import org.eclipse.milo.opcua.sdk.server.api.*
+import org.eclipse.milo.opcua.sdk.server.UaNodeManager
 import org.eclipse.milo.opcua.sdk.server.api.AttributeServices.ReadContext
 import org.eclipse.milo.opcua.sdk.server.api.AttributeServices.WriteContext
+import org.eclipse.milo.opcua.sdk.server.api.DataItem
+import org.eclipse.milo.opcua.sdk.server.api.MonitoredItem
+import org.eclipse.milo.opcua.sdk.server.api.Namespace
+import org.eclipse.milo.opcua.sdk.server.api.NodeManager
+import org.eclipse.milo.opcua.sdk.server.api.ViewServices.BrowseContext
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerNode
 import org.eclipse.milo.opcua.sdk.server.nodes.*
 import org.eclipse.milo.opcua.stack.core.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId
+import org.eclipse.milo.opcua.stack.core.types.structured.ViewDescription
 import org.eclipse.milo.opcua.stack.core.types.structured.WriteValue
-import org.eclipse.milo.opcua.stack.core.util.FutureUtils.failedUaFuture
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletableFuture.completedFuture
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.util.*
 import java.util.concurrent.ConcurrentMap
+import java.util.concurrent.TimeUnit
 import java.util.function.BiConsumer
 
 class DemoNamespace(
@@ -40,9 +49,11 @@ class DemoNamespace(
         const val NAMESPACE_URI = "urn:industrialsoftworks:opcua:server:demo"
     }
 
+    private val logger: Logger = LoggerFactory.getLogger(DemoNamespace::class.java)
+
     private val tickManager = TickManager(coroutineScope)
 
-    private val nodeManager = NamespaceNodeManager(server)
+    private val nodeManager = UaNodeManager()
 
     private val sampledNodes: ConcurrentMap<DataItem, SampledNode> = Maps.newConcurrentMap()
     private val subscribedNodes: ConcurrentMap<DataItem, SubscribedNode> = Maps.newConcurrentMap()
@@ -55,6 +66,39 @@ class DemoNamespace(
         addMethodNodes()
         addDynamicNodes()
         addNullValueNodes()
+
+        // Set the EventNotifier bit on Server Node for Events.
+        val serverNode = server.addressSpaceManager.getManagedNode(Identifiers.Server).orElse(null)
+
+        if (serverNode is ServerNode) {
+            serverNode.eventNotifier = ubyte(1)
+
+            // Post a bogus Event every couple seconds
+            server.scheduledExecutorService.scheduleAtFixedRate({
+                try {
+                    val eventNode = server.eventFactory.createEvent(
+                        NodeId(1, UUID.randomUUID()),
+                        Identifiers.BaseEventType
+                    )
+
+                    eventNode.browseName = QualifiedName(1, "foo")
+                    eventNode.displayName = LocalizedText.english("foo")
+
+                    eventNode.eventId = ByteString.of(byteArrayOf(0, 1, 2, 3))
+                    eventNode.eventType = Identifiers.BaseEventType
+                    eventNode.sourceNode = serverNode.getNodeId()
+                    eventNode.sourceName = serverNode.getDisplayName().text
+                    eventNode.time = DateTime.now()
+                    eventNode.receiveTime = DateTime.NULL_VALUE
+                    eventNode.message = LocalizedText.english("event message!")
+                    eventNode.severity = ushort(2)
+
+                    server.eventBus.post(eventNode)
+                } catch (e: Throwable) {
+                    logger.error("Error creating EventNode: {}", e.message, e)
+                }
+            }, 0, 2, TimeUnit.SECONDS)
+        }
     }
 
     override fun onShutdown() {
@@ -65,14 +109,33 @@ class DemoNamespace(
 
     override fun getNamespaceIndex(): UShort = this@DemoNamespace.namespaceIndex
 
-    override fun getNodeManager(): NodeManager<UaNode> = nodeManager
+    override fun getNodeManager(): Optional<NodeManager<UaNode>> {
+        return Optional.of(nodeManager)
+    }
 
-    override fun browse(context: AccessContext, nodeId: NodeId): CompletableFuture<List<Reference>> {
+    override fun browse(context: BrowseContext, viewDescription: ViewDescription, nodeId: NodeId) {
         val node: UaNode? = nodeManager[nodeId]
 
         val references: List<Reference>? = node?.references ?: maybeTurtleReferences(nodeId)
 
-        return references?.let { completedFuture(it) } ?: failedUaFuture(StatusCodes.Bad_NodeIdUnknown)
+        if (references != null) {
+            context.success(references)
+        } else {
+            context.failure(StatusCodes.Bad_NodeIdUnknown)
+        }
+    }
+
+    override fun getReferences(
+        context: BrowseContext,
+        viewDescription: ViewDescription,
+        sourceNodeId: NodeId
+    ) {
+
+        val references: List<Reference> =
+            nodeManager.getReferences(sourceNodeId) +
+                (maybeTurtleReferences(sourceNodeId) ?: emptyList())
+
+        context.success(references)
     }
 
     override fun read(
@@ -234,6 +297,10 @@ class DemoNamespace(
 
     }
 
+}
+
+fun Optional<NodeManager<UaNode>>.addNode(node: UaNode) {
+    this.ifPresent { it.addNode(node) }
 }
 
 fun DemoNamespace.addFolderNode(parentNodeId: NodeId, name: String): UaFolderNode {

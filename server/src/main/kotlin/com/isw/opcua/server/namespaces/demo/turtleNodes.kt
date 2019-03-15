@@ -15,7 +15,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 
 
-private const val MAX_TURTLES: Long = Long.MAX_VALUE
+private const val MAX_TURTLES: Long = 10000L
 
 internal fun DemoNamespace.addTurtleNodes() {
     val turtlesFolder = UaFolderNode(
