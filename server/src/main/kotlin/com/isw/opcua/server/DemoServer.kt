@@ -155,7 +155,7 @@ class DemoServer(dataDir: File) {
         demoNamespace = server.namespaceManager.registerAndAdd(DemoNamespace.NAMESPACE_URI) { idx ->
             DemoNamespace(idx, coroutineScope, server)
         }
-        server.addressSpaceManager.register(demoNamespace)
+        demoNamespace.startup()
 
         // GDS Push Support via ServerConfiguration
         val serverConfigurationNode = server.addressSpaceManager
@@ -174,7 +174,6 @@ class DemoServer(dataDir: File) {
             serverConfigurationObject.startup()
         }
 
-        demoNamespace.startup()
         server.startup().get()
 
         if (config[ServerConfig.Registration.enabled]) {

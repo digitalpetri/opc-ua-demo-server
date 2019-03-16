@@ -21,6 +21,7 @@ import org.eclipse.milo.opcua.sdk.server.api.NodeManager
 import org.eclipse.milo.opcua.sdk.server.api.ViewServices.BrowseContext
 import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerNode
 import org.eclipse.milo.opcua.sdk.server.nodes.*
+import org.eclipse.milo.opcua.sdk.server.nodes.factories.NodeFactory
 import org.eclipse.milo.opcua.stack.core.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
@@ -53,12 +54,25 @@ class DemoNamespace(
 
     private val tickManager = TickManager(coroutineScope)
 
-    private val nodeManager = UaNodeManager()
+    internal val nodeManager = UaNodeManager()
+
+    internal val nodeContext = object : UaNodeContext {
+        override fun getServer() =
+            this@DemoNamespace.server
+
+        override fun getNodeManager() =
+            this@DemoNamespace.nodeManager
+    }
+
+    internal val nodeFactory = NodeFactory(nodeContext)
 
     private val sampledNodes: ConcurrentMap<DataItem, SampledNode> = Maps.newConcurrentMap()
     private val subscribedNodes: ConcurrentMap<DataItem, SubscribedNode> = Maps.newConcurrentMap()
 
     override fun onStartup() {
+        server.addressSpaceManager.register(this)
+        server.addressSpaceManager.register(nodeManager)
+
         addCttNodes()
         addMassNodes()
         addTurtleNodes()
@@ -94,6 +108,8 @@ class DemoNamespace(
                     eventNode.severity = ushort(2)
 
                     server.eventBus.post(eventNode)
+
+                    eventNode.delete()
                 } catch (e: Throwable) {
                     logger.error("Error creating EventNode: {}", e.message, e)
                 }
@@ -103,15 +119,14 @@ class DemoNamespace(
 
     override fun onShutdown() {
         sampledNodes.values.forEach { it.shutdown() }
+
+        server.addressSpaceManager.unregister(this)
+        server.addressSpaceManager.unregister(nodeManager)
     }
 
     override fun getNamespaceUri(): String = NAMESPACE_URI
 
     override fun getNamespaceIndex(): UShort = this@DemoNamespace.namespaceIndex
-
-    override fun getNodeManager(): Optional<NodeManager<UaNode>> {
-        return Optional.of(nodeManager)
-    }
 
     override fun browse(context: BrowseContext, viewDescription: ViewDescription, nodeId: NodeId) {
         val node: UaNode? = nodeManager[nodeId]
@@ -305,7 +320,7 @@ fun Optional<NodeManager<UaNode>>.addNode(node: UaNode) {
 
 fun DemoNamespace.addFolderNode(parentNodeId: NodeId, name: String): UaFolderNode {
     val folderNode = UaFolderNode(
-        server,
+        nodeContext,
         parentNodeId.resolve(name),
         QualifiedName(namespaceIndex, name),
         LocalizedText(name)
@@ -328,7 +343,7 @@ fun DemoNamespace.addVariableNode(
     dataType: BuiltinDataType = BuiltinDataType.Int32
 ): UaVariableNode {
 
-    val variableNode = UaVariableNode.UaVariableNodeBuilder(server).run {
+    val variableNode = UaVariableNode.UaVariableNodeBuilder(nodeContext).run {
         setNodeId(nodeId)
         setAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
         setUserAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))

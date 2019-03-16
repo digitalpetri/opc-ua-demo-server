@@ -6,13 +6,11 @@ import com.isw.opcua.milo.extensions.inverseReferenceTo
 import com.isw.opcua.milo.extensions.resolve
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.ValueRank
-import org.eclipse.milo.opcua.sdk.server.api.NodeManager
 import org.eclipse.milo.opcua.sdk.server.api.nodes.VariableNode
 import org.eclipse.milo.opcua.sdk.server.model.nodes.variables.AnalogItemNode
 import org.eclipse.milo.opcua.sdk.server.model.types.variables.AnalogItemType
 import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
-import org.eclipse.milo.opcua.sdk.server.nodes.UaNode
 import org.eclipse.milo.opcua.sdk.server.nodes.delegates.AttributeDelegate
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
 import org.eclipse.milo.opcua.stack.core.Identifiers
@@ -22,12 +20,11 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import org.eclipse.milo.opcua.stack.core.types.structured.Range
-import java.util.*
 
 
 fun DemoNamespace.addCttNodes() {
     val cttFolder = UaFolderNode(
-        server,
+        nodeContext,
         NodeId(namespaceIndex, "CTT"),
         QualifiedName(namespaceIndex, "CTT"),
         LocalizedText("CTT")
@@ -120,7 +117,7 @@ private fun DemoNamespace.addAnalogTypeNodes(parentNodeId: NodeId) {
     analogTypes.forEach { dataType ->
         val name = dataType.name
 
-        val node = server.nodeFactory.createNode(
+        val node = nodeFactory.createNode(
             parentNodeId.resolve(name),
             Identifiers.AnalogItemType,
             false

@@ -12,7 +12,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName
 
 fun DemoNamespace.addMethodNodes() {
     val methodFolder = UaFolderNode(
-        server,
+        nodeContext,
         NodeId(namespaceIndex, "Methods"),
         QualifiedName(namespaceIndex, "Methods"),
         LocalizedText("Methods")
@@ -28,7 +28,7 @@ fun DemoNamespace.addMethodNodes() {
 }
 
 private fun DemoNamespace.addSqrtMethod(parentNodeId: NodeId) {
-    val methodNode = UaMethodNode.builder(server)
+    val methodNode = UaMethodNode.builder(nodeContext)
         .setNodeId(NodeId(namespaceIndex, "Methods/sqrt(x)"))
         .setBrowseName(QualifiedName(namespaceIndex, "sqrt(x)"))
         .setDisplayName(LocalizedText(null, "sqrt(x)"))

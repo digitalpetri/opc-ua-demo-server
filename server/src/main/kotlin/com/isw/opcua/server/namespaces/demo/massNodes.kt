@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 fun DemoNamespace.addMassNodes() {
     val massFolder = UaFolderNode(
-        server,
+        nodeContext,
         NodeId(namespaceIndex, "Mass"),
         QualifiedName(namespaceIndex, "Mass"),
         LocalizedText("Mass")

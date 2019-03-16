@@ -15,7 +15,7 @@ import kotlin.random.Random
 
 fun DemoNamespace.addDynamicNodes() {
     val dynamicFolder = UaFolderNode(
-        server,
+        nodeContext,
         NodeId(namespaceIndex, "Dynamic"),
         QualifiedName(namespaceIndex, "Dynamic"),
         LocalizedText("Dynamic")
