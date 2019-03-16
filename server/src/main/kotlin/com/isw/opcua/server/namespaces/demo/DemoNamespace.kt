@@ -12,13 +12,13 @@ import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.UaNodeManager
-import org.eclipse.milo.opcua.sdk.server.api.AttributeServices.ReadContext
-import org.eclipse.milo.opcua.sdk.server.api.AttributeServices.WriteContext
 import org.eclipse.milo.opcua.sdk.server.api.DataItem
 import org.eclipse.milo.opcua.sdk.server.api.MonitoredItem
 import org.eclipse.milo.opcua.sdk.server.api.Namespace
 import org.eclipse.milo.opcua.sdk.server.api.NodeManager
-import org.eclipse.milo.opcua.sdk.server.api.ViewServices.BrowseContext
+import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices.ReadContext
+import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices.WriteContext
+import org.eclipse.milo.opcua.sdk.server.api.services.ViewServices.BrowseContext
 import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerNode
 import org.eclipse.milo.opcua.sdk.server.nodes.*
 import org.eclipse.milo.opcua.sdk.server.nodes.factories.NodeFactory
