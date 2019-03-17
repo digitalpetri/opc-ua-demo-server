@@ -17,6 +17,7 @@ import org.eclipse.milo.opcua.sdk.server.api.*
 import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices.ReadContext
 import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices.WriteContext
 import org.eclipse.milo.opcua.sdk.server.api.services.MethodServices
+import org.eclipse.milo.opcua.sdk.server.api.services.MethodServices.CallContext
 import org.eclipse.milo.opcua.sdk.server.api.services.ViewServices.BrowseContext
 import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerNode
 import org.eclipse.milo.opcua.sdk.server.nodes.*
@@ -171,7 +172,7 @@ class DemoNamespace(
             value ?: DataValue(StatusCodes.Bad_NodeIdUnknown)
         }
 
-        context.complete(values)
+        context.success(values)
     }
 
     override fun write(context: WriteContext, writeValues: List<WriteValue>) {
@@ -195,7 +196,7 @@ class DemoNamespace(
             status ?: StatusCode(StatusCodes.Bad_NodeIdUnknown)
         }
 
-        context.complete(results)
+        context.success(results)
     }
 
     override fun onCreateDataItem(
@@ -269,7 +270,7 @@ class DemoNamespace(
      * @param context  the [CallContext].
      * @param requests The [CallMethodRequest]s for the methods to invoke.
      */
-    override fun call(context: MethodServices.CallContext, requests: List<CallMethodRequest>) {
+    override fun call(context: CallContext, requests: List<CallMethodRequest>) {
         val results = Lists.newArrayListWithCapacity<CallMethodResult>(requests.size)
 
         for (request in requests) {
