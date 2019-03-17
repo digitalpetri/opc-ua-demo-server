@@ -1,5 +1,6 @@
 package com.isw.opcua.server.namespaces.demo
 
+import com.google.common.collect.Lists
 import com.google.common.collect.Maps
 import com.isw.opcua.milo.extensions.defaultValue
 import com.isw.opcua.milo.extensions.inverseReferenceTo
@@ -12,12 +13,10 @@ import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.UaNodeManager
-import org.eclipse.milo.opcua.sdk.server.api.DataItem
-import org.eclipse.milo.opcua.sdk.server.api.MonitoredItem
-import org.eclipse.milo.opcua.sdk.server.api.Namespace
-import org.eclipse.milo.opcua.sdk.server.api.NodeManager
+import org.eclipse.milo.opcua.sdk.server.api.*
 import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices.ReadContext
 import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices.WriteContext
+import org.eclipse.milo.opcua.sdk.server.api.services.MethodServices
 import org.eclipse.milo.opcua.sdk.server.api.services.ViewServices.BrowseContext
 import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerNode
 import org.eclipse.milo.opcua.sdk.server.nodes.*
@@ -30,9 +29,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn
-import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId
-import org.eclipse.milo.opcua.stack.core.types.structured.ViewDescription
-import org.eclipse.milo.opcua.stack.core.types.structured.WriteValue
+import org.eclipse.milo.opcua.stack.core.types.structured.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -263,6 +260,65 @@ class DemoNamespace(
         items.forEach {
             sampledNodes[it]?.samplingEnabled = it.isSamplingEnabled
             subscribedNodes[it]?.samplingEnabled = it.isSamplingEnabled
+        }
+    }
+
+    /**
+     * Invoke one or more methods belonging to this [MethodServices].
+     *
+     * @param context  the [CallContext].
+     * @param requests The [CallMethodRequest]s for the methods to invoke.
+     */
+    override fun call(context: MethodServices.CallContext, requests: List<CallMethodRequest>) {
+        val results = Lists.newArrayListWithCapacity<CallMethodResult>(requests.size)
+
+        for (request in requests) {
+            val handler = getInvocationHandler(
+                request.objectId,
+                request.methodId
+            ).orElse(MethodInvocationHandler.NODE_ID_UNKNOWN)
+
+            try {
+                results.add(handler.invoke(context, request))
+            } catch (t: Throwable) {
+                LoggerFactory.getLogger(javaClass)
+                    .error("Uncaught Throwable invoking method handler for methodId={}.", request.methodId, t)
+
+                results.add(
+                    CallMethodResult(
+                        StatusCode(StatusCodes.Bad_InternalError),
+                        arrayOfNulls(0), arrayOfNulls(0), arrayOfNulls(0)
+                    )
+                )
+            }
+
+        }
+
+        context.complete(results)
+    }
+
+    /**
+     * Get the [MethodInvocationHandler] for the method identified by `methodId`, if it exists.
+     *
+     * @param objectId the [NodeId] identifying the object the method will be invoked on.
+     * @param methodId the [NodeId] identifying the method.
+     * @return the [MethodInvocationHandler] for `methodId`, if it exists.
+     */
+    private fun getInvocationHandler(objectId: NodeId, methodId: NodeId): Optional<MethodInvocationHandler> {
+        return nodeManager.getNode(objectId).flatMap { node ->
+            var methodNode: UaMethodNode? = null
+
+            if (node is UaObjectNode) {
+                methodNode = node.findMethodNode(methodId)
+            } else if (node is UaObjectTypeNode) {
+                methodNode = node.findMethodNode(methodId)
+            }
+
+            if (methodNode != null) {
+                Optional.of(methodNode.invocationHandler)
+            } else {
+                Optional.empty()
+            }
         }
     }
 
