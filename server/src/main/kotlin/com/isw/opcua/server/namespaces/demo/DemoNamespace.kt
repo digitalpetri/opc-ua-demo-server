@@ -39,13 +39,12 @@ import java.util.concurrent.TimeUnit
 import java.util.function.BiConsumer
 
 class DemoNamespace(
-    private val namespaceIndex: UShort,
-    private val coroutineScope: CoroutineScope,
-    internal val server: OpcUaServer
+    internal val server: OpcUaServer,
+    private val coroutineScope: CoroutineScope
 ) : AbstractLifecycle(), Namespace {
 
     companion object {
-        const val NAMESPACE_URI = "urn:industrialsoftworks:opcua:server:demo"
+        const val NAMESPACE_URI: String = "urn:industrialsoftworks:opcua:server:demo"
     }
 
     private val logger: Logger = LoggerFactory.getLogger(DemoNamespace::class.java)
@@ -66,6 +65,12 @@ class DemoNamespace(
 
     private val sampledNodes: ConcurrentMap<DataItem, SampledNode> = Maps.newConcurrentMap()
     private val subscribedNodes: ConcurrentMap<DataItem, SubscribedNode> = Maps.newConcurrentMap()
+
+    private val namespaceIndex: UShort
+
+    init {
+        namespaceIndex = server.namespaceTable.addUri(NAMESPACE_URI)
+    }
 
     override fun onStartup() {
         server.addressSpaceManager.register(this)
@@ -295,7 +300,7 @@ class DemoNamespace(
 
         }
 
-        context.complete(results)
+        context.success(results)
     }
 
     /**

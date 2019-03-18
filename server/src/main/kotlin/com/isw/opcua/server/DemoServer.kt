@@ -152,9 +152,7 @@ class DemoServer(dataDir: File) {
 
         server = OpcUaServer(serverConfig)
 
-        demoNamespace = server.namespaceManager.registerAndAdd(DemoNamespace.NAMESPACE_URI) { idx ->
-            DemoNamespace(idx, coroutineScope, server)
-        }
+        demoNamespace = DemoNamespace(server, coroutineScope)
         demoNamespace.startup()
 
         // GDS Push Support via ServerConfiguration
