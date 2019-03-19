@@ -11,7 +11,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 
 fun DemoNamespace.addNullValueNodes() {
     val dynamicFolder = UaFolderNode(
-        server,
+        nodeContext,
         NodeId(namespaceIndex, "NullValues"),
         QualifiedName(namespaceIndex, "NullValues"),
         LocalizedText("NullValues")

@@ -1,5 +1,6 @@
 package com.isw.opcua.server.namespaces.demo
 
+import com.google.common.collect.Lists
 import com.google.common.collect.Maps
 import com.isw.opcua.milo.extensions.defaultValue
 import com.isw.opcua.milo.extensions.inverseReferenceTo
@@ -10,44 +11,68 @@ import com.isw.opcua.server.util.AbstractLifecycle
 import kotlinx.coroutines.CoroutineScope
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.Reference
-import org.eclipse.milo.opcua.sdk.server.NamespaceNodeManager
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
+import org.eclipse.milo.opcua.sdk.server.UaNodeManager
 import org.eclipse.milo.opcua.sdk.server.api.*
-import org.eclipse.milo.opcua.sdk.server.api.AttributeServices.ReadContext
-import org.eclipse.milo.opcua.sdk.server.api.AttributeServices.WriteContext
+import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices.ReadContext
+import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices.WriteContext
+import org.eclipse.milo.opcua.sdk.server.api.services.MethodServices
+import org.eclipse.milo.opcua.sdk.server.api.services.MethodServices.CallContext
+import org.eclipse.milo.opcua.sdk.server.api.services.ViewServices.BrowseContext
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerNode
 import org.eclipse.milo.opcua.sdk.server.nodes.*
+import org.eclipse.milo.opcua.sdk.server.nodes.factories.NodeFactory
 import org.eclipse.milo.opcua.stack.core.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn
-import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId
-import org.eclipse.milo.opcua.stack.core.types.structured.WriteValue
-import org.eclipse.milo.opcua.stack.core.util.FutureUtils.failedUaFuture
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletableFuture.completedFuture
+import org.eclipse.milo.opcua.stack.core.types.structured.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.util.*
 import java.util.concurrent.ConcurrentMap
+import java.util.concurrent.TimeUnit
 import java.util.function.BiConsumer
 
 class DemoNamespace(
-    private val namespaceIndex: UShort,
-    private val coroutineScope: CoroutineScope,
-    internal val server: OpcUaServer
+    internal val server: OpcUaServer,
+    private val coroutineScope: CoroutineScope
 ) : AbstractLifecycle(), Namespace {
 
     companion object {
-        const val NAMESPACE_URI = "urn:industrialsoftworks:opcua:server:demo"
+        const val NAMESPACE_URI: String = "urn:industrialsoftworks:opcua:server:demo"
     }
+
+    private val logger: Logger = LoggerFactory.getLogger(DemoNamespace::class.java)
 
     private val tickManager = TickManager(coroutineScope)
 
-    private val nodeManager = NamespaceNodeManager(server)
+    internal val nodeManager = UaNodeManager()
+
+    internal val nodeContext = object : UaNodeContext {
+        override fun getServer() =
+            this@DemoNamespace.server
+
+        override fun getNodeManager() =
+            this@DemoNamespace.nodeManager
+    }
+
+    internal val nodeFactory = NodeFactory(nodeContext)
 
     private val sampledNodes: ConcurrentMap<DataItem, SampledNode> = Maps.newConcurrentMap()
     private val subscribedNodes: ConcurrentMap<DataItem, SubscribedNode> = Maps.newConcurrentMap()
 
+    private val namespaceIndex: UShort = server.namespaceTable.addUri(NAMESPACE_URI)
+
+
     override fun onStartup() {
+        server.addressSpaceManager.register(this)
+        server.addressSpaceManager.register(nodeManager)
+
         addCttNodes()
         addMassNodes()
         addTurtleNodes()
@@ -55,24 +80,77 @@ class DemoNamespace(
         addMethodNodes()
         addDynamicNodes()
         addNullValueNodes()
+
+        // Set the EventNotifier bit on Server Node for Events.
+        val serverNode = server.addressSpaceManager.getManagedNode(Identifiers.Server).orElse(null)
+
+        if (serverNode is ServerNode) {
+            serverNode.eventNotifier = ubyte(1)
+
+            // Post a bogus Event every couple seconds
+            server.scheduledExecutorService.scheduleAtFixedRate({
+                try {
+                    val eventNode = server.eventFactory.createEvent(
+                        NodeId(1, UUID.randomUUID()),
+                        Identifiers.BaseEventType
+                    )
+
+                    eventNode.browseName = QualifiedName(1, "foo")
+                    eventNode.displayName = LocalizedText.english("foo")
+
+                    eventNode.eventId = ByteString.of(byteArrayOf(0, 1, 2, 3))
+                    eventNode.eventType = Identifiers.BaseEventType
+                    eventNode.sourceNode = serverNode.getNodeId()
+                    eventNode.sourceName = serverNode.getDisplayName().text
+                    eventNode.time = DateTime.now()
+                    eventNode.receiveTime = DateTime.NULL_VALUE
+                    eventNode.message = LocalizedText.english("event message!")
+                    eventNode.severity = ushort(2)
+
+                    server.eventBus.post(eventNode)
+
+                    eventNode.delete()
+                } catch (e: Throwable) {
+                    logger.error("Error creating EventNode: {}", e.message, e)
+                }
+            }, 0, 2, TimeUnit.SECONDS)
+        }
     }
 
     override fun onShutdown() {
         sampledNodes.values.forEach { it.shutdown() }
+
+        server.addressSpaceManager.unregister(this)
+        server.addressSpaceManager.unregister(nodeManager)
     }
 
     override fun getNamespaceUri(): String = NAMESPACE_URI
 
     override fun getNamespaceIndex(): UShort = this@DemoNamespace.namespaceIndex
 
-    override fun getNodeManager(): NodeManager<UaNode> = nodeManager
-
-    override fun browse(context: AccessContext, nodeId: NodeId): CompletableFuture<List<Reference>> {
+    override fun browse(context: BrowseContext, viewDescription: ViewDescription, nodeId: NodeId) {
         val node: UaNode? = nodeManager[nodeId]
 
         val references: List<Reference>? = node?.references ?: maybeTurtleReferences(nodeId)
 
-        return references?.let { completedFuture(it) } ?: failedUaFuture(StatusCodes.Bad_NodeIdUnknown)
+        if (references != null) {
+            context.success(references)
+        } else {
+            context.failure(StatusCodes.Bad_NodeIdUnknown)
+        }
+    }
+
+    override fun getReferences(
+        context: BrowseContext,
+        viewDescription: ViewDescription,
+        sourceNodeId: NodeId
+    ) {
+
+        val references: List<Reference> =
+            nodeManager.getReferences(sourceNodeId) +
+                (maybeTurtleReferences(sourceNodeId) ?: emptyList())
+
+        context.success(references)
     }
 
     override fun read(
@@ -96,7 +174,7 @@ class DemoNamespace(
             value ?: DataValue(StatusCodes.Bad_NodeIdUnknown)
         }
 
-        context.complete(values)
+        context.success(values)
     }
 
     override fun write(context: WriteContext, writeValues: List<WriteValue>) {
@@ -120,7 +198,7 @@ class DemoNamespace(
             status ?: StatusCode(StatusCodes.Bad_NodeIdUnknown)
         }
 
-        context.complete(results)
+        context.success(results)
     }
 
     override fun onCreateDataItem(
@@ -188,6 +266,65 @@ class DemoNamespace(
         }
     }
 
+    /**
+     * Invoke one or more methods belonging to this [MethodServices].
+     *
+     * @param context  the [CallContext].
+     * @param requests The [CallMethodRequest]s for the methods to invoke.
+     */
+    override fun call(context: CallContext, requests: List<CallMethodRequest>) {
+        val results = Lists.newArrayListWithCapacity<CallMethodResult>(requests.size)
+
+        for (request in requests) {
+            val handler = getInvocationHandler(
+                request.objectId,
+                request.methodId
+            ).orElse(MethodInvocationHandler.NODE_ID_UNKNOWN)
+
+            try {
+                results.add(handler.invoke(context, request))
+            } catch (t: Throwable) {
+                LoggerFactory.getLogger(javaClass)
+                    .error("Uncaught Throwable invoking method handler for methodId={}.", request.methodId, t)
+
+                results.add(
+                    CallMethodResult(
+                        StatusCode(StatusCodes.Bad_InternalError),
+                        arrayOfNulls(0), arrayOfNulls(0), arrayOfNulls(0)
+                    )
+                )
+            }
+
+        }
+
+        context.success(results)
+    }
+
+    /**
+     * Get the [MethodInvocationHandler] for the method identified by `methodId`, if it exists.
+     *
+     * @param objectId the [NodeId] identifying the object the method will be invoked on.
+     * @param methodId the [NodeId] identifying the method.
+     * @return the [MethodInvocationHandler] for `methodId`, if it exists.
+     */
+    private fun getInvocationHandler(objectId: NodeId, methodId: NodeId): Optional<MethodInvocationHandler> {
+        return nodeManager.getNode(objectId).flatMap { node ->
+            var methodNode: UaMethodNode? = null
+
+            if (node is UaObjectNode) {
+                methodNode = node.findMethodNode(methodId)
+            } else if (node is UaObjectTypeNode) {
+                methodNode = node.findMethodNode(methodId)
+            }
+
+            if (methodNode != null) {
+                Optional.of(methodNode.invocationHandler)
+            } else {
+                Optional.empty()
+            }
+        }
+    }
+
     inner class SampledNode(
         item: DataItem,
         scope: CoroutineScope,
@@ -236,9 +373,13 @@ class DemoNamespace(
 
 }
 
+fun Optional<NodeManager<UaNode>>.addNode(node: UaNode) {
+    this.ifPresent { it.addNode(node) }
+}
+
 fun DemoNamespace.addFolderNode(parentNodeId: NodeId, name: String): UaFolderNode {
     val folderNode = UaFolderNode(
-        server,
+        nodeContext,
         parentNodeId.resolve(name),
         QualifiedName(namespaceIndex, name),
         LocalizedText(name)
@@ -261,7 +402,7 @@ fun DemoNamespace.addVariableNode(
     dataType: BuiltinDataType = BuiltinDataType.Int32
 ): UaVariableNode {
 
-    val variableNode = UaVariableNode.UaVariableNodeBuilder(server).run {
+    val variableNode = UaVariableNode.UaVariableNodeBuilder(nodeContext).run {
         setNodeId(nodeId)
         setAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
         setUserAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))

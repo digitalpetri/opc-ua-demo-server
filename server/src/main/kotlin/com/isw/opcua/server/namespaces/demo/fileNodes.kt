@@ -16,7 +16,7 @@ import java.nio.file.StandardCopyOption
 
 fun DemoNamespace.addFileNodes() {
     val fileFolder = UaFolderNode(
-        server,
+        nodeContext,
         NodeId(namespaceIndex, "Files"),
         QualifiedName(namespaceIndex, "Files"),
         LocalizedText("Files")
@@ -33,7 +33,7 @@ fun DemoNamespace.addFileNodes() {
 }
 
 private fun DemoNamespace.addManifestoFile(fileFolder: UaFolderNode) {
-    val fileNode = server.nodeFactory.createNode(
+    val fileNode = nodeFactory.createNode(
         NodeId(namespaceIndex, "manifesto.txt"),
         Identifiers.FileType,
         true

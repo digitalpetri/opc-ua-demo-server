@@ -15,11 +15,11 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 
 
-private const val MAX_TURTLES: Long = Long.MAX_VALUE
+private const val MAX_TURTLES: Long = 1000L
 
 internal fun DemoNamespace.addTurtleNodes() {
     val turtlesFolder = UaFolderNode(
-        server,
+        nodeContext,
         NodeId(namespaceIndex, "[turtles]"),
         QualifiedName(namespaceIndex, "Turtles"),
         LocalizedText("Turtles")
@@ -57,7 +57,7 @@ internal fun DemoNamespace.addTurtleNodes() {
 
 private fun DemoNamespace.addTurtleTypeNode() {
     val turtleType = UaObjectTypeNode(
-        server,
+        nodeContext,
         NodeId(namespaceIndex, "TurtleType"),
         QualifiedName(namespaceIndex, "TurtleType"),
         LocalizedText("TurtleType"),
@@ -80,7 +80,7 @@ internal fun DemoNamespace.maybeTurtleNode(nodeId: NodeId): UaObjectNode? {
 
     return turtleNumber?.let {
         UaObjectNode(
-            server,
+            nodeContext,
             NodeId(namespaceIndex, "[turtles]$it"),
             QualifiedName(namespaceIndex, "Turtle"),
             LocalizedText("Turtle")

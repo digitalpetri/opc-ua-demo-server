@@ -152,14 +152,13 @@ class DemoServer(dataDir: File) {
 
         server = OpcUaServer(serverConfig)
 
-        demoNamespace = server.namespaceManager.registerAndAdd(DemoNamespace.NAMESPACE_URI) { idx ->
-            DemoNamespace(idx, coroutineScope, server)
-        }
+        demoNamespace = DemoNamespace(server, coroutineScope)
+        demoNamespace.startup()
 
         // GDS Push Support via ServerConfiguration
-        val serverConfigurationNode = server.nodeManager.get(
-            Identifiers.ServerConfiguration
-        ) as ServerConfigurationNode
+        val serverConfigurationNode = server.addressSpaceManager
+            .getManagedNode(Identifiers.ServerConfiguration)
+            .orElse(null) as ServerConfigurationNode
 
         serverConfigurationObject = ServerConfigurationObject(
             serverConfigurationNode,
@@ -173,7 +172,6 @@ class DemoServer(dataDir: File) {
             serverConfigurationObject.startup()
         }
 
-        demoNamespace.startup()
         server.startup().get()
 
         if (config[ServerConfig.Registration.enabled]) {

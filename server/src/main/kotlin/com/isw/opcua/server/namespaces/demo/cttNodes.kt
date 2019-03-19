@@ -24,7 +24,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.Range
 
 fun DemoNamespace.addCttNodes() {
     val cttFolder = UaFolderNode(
-        server,
+        nodeContext,
         NodeId(namespaceIndex, "CTT"),
         QualifiedName(namespaceIndex, "CTT"),
         LocalizedText("CTT")
@@ -117,7 +117,7 @@ private fun DemoNamespace.addAnalogTypeNodes(parentNodeId: NodeId) {
     analogTypes.forEach { dataType ->
         val name = dataType.name
 
-        val node = server.nodeFactory.createNode(
+        val node = nodeFactory.createNode(
             parentNodeId.resolve(name),
             Identifiers.AnalogItemType,
             false
