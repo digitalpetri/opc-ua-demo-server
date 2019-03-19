@@ -51,7 +51,7 @@ class DemoNamespace(
 
     private val tickManager = TickManager(coroutineScope)
 
-    internal val nodeManager = UaNodeManager()
+    internal val nodeManager = UaNodeManager(server.namespaceTable)
 
     internal val nodeContext = object : UaNodeContext {
         override fun getServer() =
@@ -66,11 +66,8 @@ class DemoNamespace(
     private val sampledNodes: ConcurrentMap<DataItem, SampledNode> = Maps.newConcurrentMap()
     private val subscribedNodes: ConcurrentMap<DataItem, SubscribedNode> = Maps.newConcurrentMap()
 
-    private val namespaceIndex: UShort
+    private val namespaceIndex: UShort = server.namespaceTable.addUri(NAMESPACE_URI)
 
-    init {
-        namespaceIndex = server.namespaceTable.addUri(NAMESPACE_URI)
-    }
 
     override fun onStartup() {
         server.addressSpaceManager.register(this)
