@@ -51,7 +51,7 @@ class DemoNamespace(
 
     private val tickManager = TickManager(coroutineScope)
 
-    internal val nodeManager = UaNodeManager(server.namespaceTable)
+    internal val nodeManager = UaNodeManager()
 
     internal val nodeContext = object : UaNodeContext {
         override fun getServer() =

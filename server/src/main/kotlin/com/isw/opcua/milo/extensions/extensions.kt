@@ -19,7 +19,7 @@ fun UaNode.referenceTo(targetNodeId: NodeId, typeId: NodeId) {
             this.nodeId,
             typeId,
             targetNodeId.expanded(),
-            true
+            Reference.Direction.FORWARD
         )
     )
 }
@@ -30,7 +30,7 @@ fun UaNode.inverseReferenceTo(targetNodeId: NodeId, typeId: NodeId) {
             this.nodeId,
             typeId,
             targetNodeId.expanded(),
-            false
+            Reference.Direction.INVERSE
         )
     )
 }
