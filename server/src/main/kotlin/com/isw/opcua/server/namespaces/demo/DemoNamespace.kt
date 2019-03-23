@@ -14,6 +14,7 @@ import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.UaNodeManager
 import org.eclipse.milo.opcua.sdk.server.api.*
+import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
 import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices.ReadContext
 import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices.WriteContext
 import org.eclipse.milo.opcua.sdk.server.api.services.MethodServices
@@ -68,6 +69,9 @@ class DemoNamespace(
 
     private val namespaceIndex: UShort = server.namespaceTable.addUri(NAMESPACE_URI)
 
+    private val filter = SimpleAddressSpaceFilter.create {
+        it.namespaceIndex == namespaceIndex
+    }
 
     override fun onStartup() {
         server.addressSpaceManager.register(this)
@@ -122,6 +126,10 @@ class DemoNamespace(
 
         server.addressSpaceManager.unregister(this)
         server.addressSpaceManager.unregister(nodeManager)
+    }
+
+    override fun getFilter(): AddressSpaceFilter {
+        return filter
     }
 
     override fun getNamespaceUri(): String = NAMESPACE_URI

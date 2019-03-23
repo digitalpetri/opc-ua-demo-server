@@ -8,7 +8,8 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.bouncycastle.util.io.pem.PemReader
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
-import org.eclipse.milo.opcua.sdk.server.api.MethodInvocationHandler
+import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
+import org.eclipse.milo.opcua.sdk.server.api.methods.Out
 import org.eclipse.milo.opcua.sdk.server.model.methods.CreateSigningRequestMethod
 import org.eclipse.milo.opcua.sdk.server.model.methods.GetRejectedListMethod
 import org.eclipse.milo.opcua.sdk.server.model.methods.UpdateCertificateMethod
@@ -35,7 +36,6 @@ import java.security.KeyStore
 import java.security.PrivateKey
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 
 
 class ServerConfigurationObject(
@@ -115,7 +115,7 @@ class ServerConfigurationObject(
             subjectName: String?,
             regeneratePrivateKey: Boolean,
             nonce: ByteString?,
-            certificateRequest: AtomicReference<ByteString>
+            certificateRequest: Out<ByteString>
         ) {
 
             val session = context.session.orElseThrow()
@@ -213,7 +213,7 @@ class ServerConfigurationObject(
             issuerCertificates: Array<out ByteString>?,
             privateKeyFormat: String?,
             privateKey: ByteString?,
-            applyChangesRequired: AtomicReference<Boolean>
+            applyChangesRequired: Out<Boolean>
         ) {
 
             val session = context.session.orElseThrow()
@@ -304,7 +304,7 @@ class ServerConfigurationObject(
 
         private val server: OpcUaServer = node.nodeContext.server
 
-        override fun invoke(context: InvocationContext, certificates: AtomicReference<Array<ByteString>>) {
+        override fun invoke(context: InvocationContext, certificates: Out<Array<ByteString>>) {
             val trustListManager = server.config.trustListManager
 
             val bs = trustListManager.rejectedCertificates.mapNotNull {

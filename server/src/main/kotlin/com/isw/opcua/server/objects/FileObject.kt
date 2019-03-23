@@ -3,7 +3,8 @@ package com.isw.opcua.server.objects
 import com.google.common.collect.HashBasedTable
 import com.google.common.collect.Table
 import com.isw.opcua.server.util.AbstractLifecycle
-import org.eclipse.milo.opcua.sdk.server.api.MethodInvocationHandler
+import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
+import org.eclipse.milo.opcua.sdk.server.api.methods.Out
 import org.eclipse.milo.opcua.sdk.server.api.nodes.VariableNode
 import org.eclipse.milo.opcua.sdk.server.model.methods.*
 import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileNode
@@ -23,7 +24,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.RandomAccessFile
 import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 
 
 open class FileObject(
@@ -154,7 +154,7 @@ open class FileObject(
         override fun invoke(
             context: InvocationContext,
             mode: UByte,
-            fileHandle: AtomicReference<UInteger>
+            fileHandle: Out<UInteger>
         ) {
 
             val session = context.session.orElseThrow()
@@ -228,7 +228,7 @@ open class FileObject(
             context: InvocationContext,
             fileHandle: UInteger,
             length: Int,
-            data: AtomicReference<ByteString>
+            data: Out<ByteString>
         ) {
 
             val session = context.session.orElseThrow()
@@ -288,7 +288,7 @@ open class FileObject(
         override fun invoke(
             context: InvocationContext,
             fileHandle: UInteger,
-            position: AtomicReference<ULong>
+            position: Out<ULong>
         ) {
 
             val session = context.session.orElseThrow()

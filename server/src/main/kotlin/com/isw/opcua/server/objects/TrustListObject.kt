@@ -2,7 +2,8 @@ package com.isw.opcua.server.objects
 
 import com.isw.opcua.server.util.ExecutableByAdmin
 import org.bouncycastle.util.encoders.Hex
-import org.eclipse.milo.opcua.sdk.server.api.MethodInvocationHandler
+import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
+import org.eclipse.milo.opcua.sdk.server.api.methods.Out
 import org.eclipse.milo.opcua.sdk.server.model.methods.AddCertificateMethod
 import org.eclipse.milo.opcua.sdk.server.model.methods.CloseAndUpdateMethod
 import org.eclipse.milo.opcua.sdk.server.model.methods.OpenWithMasksMethod
@@ -32,7 +33,6 @@ import java.io.RandomAccessFile
 import java.security.cert.CertificateFactory
 import java.security.cert.X509CRL
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 
 
 private val logger: Logger = LoggerFactory.getLogger(TrustListObject::class.java)
@@ -101,7 +101,7 @@ class TrustListObject(
         override fun invoke(
             context: InvocationContext,
             mode: UByte,
-            fileHandle: AtomicReference<UInteger>
+            fileHandle: Out<UInteger>
         ) {
 
             val modeInt = mode.toInt()
@@ -123,7 +123,7 @@ class TrustListObject(
         override fun invoke(
             context: InvocationContext,
             masks: UInteger,
-            fileHandle: AtomicReference<UInteger>
+            fileHandle: Out<UInteger>
         ) {
 
             val session = context.session.orElseThrow()
@@ -145,7 +145,7 @@ class TrustListObject(
         override fun invoke(
             context: InvocationContext,
             fileHandle: UInteger,
-            applyChangesRequired: AtomicReference<Boolean>
+            applyChangesRequired: Out<Boolean>
         ) {
 
             val session = context.session.orElseThrow()
