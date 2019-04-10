@@ -2,6 +2,7 @@ package com.isw.opcua.server.objects
 
 import com.isw.opcua.server.util.ExecutableByAdmin
 import org.bouncycastle.util.encoders.Hex
+import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
 import org.eclipse.milo.opcua.sdk.server.api.methods.Out
 import org.eclipse.milo.opcua.sdk.server.model.methods.AddCertificateMethod
@@ -13,8 +14,7 @@ import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager
-import org.eclipse.milo.opcua.stack.core.serialization.EncodingLimits
-import org.eclipse.milo.opcua.stack.core.types.OpcUaDataTypeManager
+import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext
 import org.eclipse.milo.opcua.stack.core.types.OpcUaDefaultBinaryEncoding
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime
@@ -38,9 +38,10 @@ import java.util.concurrent.TimeUnit
 private val logger: Logger = LoggerFactory.getLogger(TrustListObject::class.java)
 
 class TrustListObject(
+    private val server: OpcUaServer,
     private val trustListNode: TrustListNode,
     private val trustListManager: TrustListManager
-) : FileObject(trustListNode, { trustListManager.openTrustListFile() }) {
+) : FileObject(trustListNode, { trustListManager.openTrustListFile(server.serializationContext) }) {
 
     override fun onStartup() {
         super.onStartup()
@@ -128,7 +129,7 @@ class TrustListObject(
 
             val session = context.session.orElseThrow()
 
-            val file = trustListManager.openTrustListFile(masks)
+            val file = trustListManager.openTrustListFile(session.server.serializationContext, masks)
             val raf = RandomAccessFile(file, "r")
 
             val handle = uint(fileHandleSequence.incrementAndGet())
@@ -161,10 +162,9 @@ class TrustListObject(
                     file.readFully(bs)
 
                     val newTrustList = OpcUaDefaultBinaryEncoding.getInstance().decode(
+                        session.server.serializationContext,
                         ByteString.of(bs),
-                        TrustListDataType.BinaryEncodingId,
-                        EncodingLimits.DEFAULT,
-                        OpcUaDataTypeManager.getInstance()
+                        TrustListDataType.BinaryEncodingId
                     ) as? TrustListDataType
 
                     newTrustList?.let { trustList ->
@@ -286,7 +286,7 @@ private fun UInteger.isSet(masks: TrustListMasks): Boolean {
     return (this.toInt() and masks.value) == masks.value
 }
 
-private fun TrustListManager.openTrustListFile(masks: UInteger = UInteger.MAX): File {
+private fun TrustListManager.openTrustListFile(context: SerializationContext, masks: UInteger = UInteger.MAX): File {
     val trustList = this.getTrustListDataType(masks)
 
     return File.createTempFile("TrustListDataType", null).apply {
@@ -295,10 +295,9 @@ private fun TrustListManager.openTrustListFile(masks: UInteger = UInteger.MAX): 
         deleteOnExit()
 
         val encoded = OpcUaDefaultBinaryEncoding.getInstance().encode(
+            context,
             trustList,
-            TrustListDataType.BinaryEncodingId,
-            EncodingLimits.DEFAULT,
-            OpcUaDataTypeManager.getInstance()
+            TrustListDataType.BinaryEncodingId
         ) as ByteString
 
         writeBytes(encoded.bytesOrEmpty())

@@ -161,6 +161,7 @@ class DemoServer(dataDir: File) {
             .orElse(null) as ServerConfigurationNode
 
         serverConfigurationObject = ServerConfigurationObject(
+            server,
             serverConfigurationNode,
             keyStore,
             trustListManager

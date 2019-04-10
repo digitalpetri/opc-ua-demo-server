@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit
 
 
 class ServerConfigurationObject(
+    private val server: OpcUaServer,
     private val serverConfigurationNode: ServerConfigurationNode,
     private val keyStore: ServerKeyStore,
     private val trustListManager: TrustListManager
@@ -76,7 +77,7 @@ class ServerConfigurationObject(
             .defaultApplicationGroupNode
             .trustListNode as TrustListNode
 
-        trustListObject = TrustListObject(trustListNode, trustListManager)
+        trustListObject = TrustListObject(server, trustListNode, trustListManager)
         trustListObject.startup()
     }
 
