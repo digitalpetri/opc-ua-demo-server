@@ -2,12 +2,12 @@ package com.isw.opcua.server.objects
 
 import com.google.common.collect.HashBasedTable
 import com.google.common.collect.Table
-import com.isw.opcua.server.util.AbstractLifecycle
+import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
 import org.eclipse.milo.opcua.sdk.server.api.methods.Out
 import org.eclipse.milo.opcua.sdk.server.api.nodes.VariableNode
 import org.eclipse.milo.opcua.sdk.server.model.methods.*
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileNode
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.sdk.server.nodes.delegates.AttributeDelegate
@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 
 open class FileObject(
-    private val fileNode: FileNode,
+    private val fileNode: FileTypeNode,
     private val openFile: () -> File
 ) : AbstractLifecycle() {
 

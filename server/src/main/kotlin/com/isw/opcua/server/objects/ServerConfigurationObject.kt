@@ -1,20 +1,20 @@
 package com.isw.opcua.server.objects
 
 import com.isw.opcua.server.ServerKeyStore
-import com.isw.opcua.server.util.AbstractLifecycle
 import com.isw.opcua.server.util.ExecutableByAdmin
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.bouncycastle.util.io.pem.PemReader
+import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
 import org.eclipse.milo.opcua.sdk.server.api.methods.Out
 import org.eclipse.milo.opcua.sdk.server.model.methods.CreateSigningRequestMethod
 import org.eclipse.milo.opcua.sdk.server.model.methods.GetRejectedListMethod
 import org.eclipse.milo.opcua.sdk.server.model.methods.UpdateCertificateMethod
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerConfigurationNode
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.TrustListNode
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerConfigurationTypeNode
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.TrustListTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.StatusCodes
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit
 
 class ServerConfigurationObject(
     private val server: OpcUaServer,
-    private val serverConfigurationNode: ServerConfigurationNode,
+    private val serverConfigurationNode: ServerConfigurationTypeNode,
     private val keyStore: ServerKeyStore,
     private val trustListManager: TrustListManager
 ) : AbstractLifecycle() {
@@ -75,7 +75,7 @@ class ServerConfigurationObject(
         val trustListNode = serverConfigurationNode
             .certificateGroupsNode
             .defaultApplicationGroupNode
-            .trustListNode as TrustListNode
+            .trustListNode as TrustListTypeNode
 
         trustListObject = TrustListObject(server, trustListNode, trustListManager)
         trustListObject.startup()

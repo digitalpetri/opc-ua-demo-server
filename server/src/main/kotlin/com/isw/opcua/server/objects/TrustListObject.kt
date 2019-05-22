@@ -9,7 +9,7 @@ import org.eclipse.milo.opcua.sdk.server.model.methods.AddCertificateMethod
 import org.eclipse.milo.opcua.sdk.server.model.methods.CloseAndUpdateMethod
 import org.eclipse.milo.opcua.sdk.server.model.methods.OpenWithMasksMethod
 import org.eclipse.milo.opcua.sdk.server.model.methods.RemoveCertificateMethod
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.TrustListNode
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.TrustListTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
@@ -39,7 +39,7 @@ private val logger: Logger = LoggerFactory.getLogger(TrustListObject::class.java
 
 class TrustListObject(
     private val server: OpcUaServer,
-    private val trustListNode: TrustListNode,
+    private val trustListNode: TrustListTypeNode,
     private val trustListManager: TrustListManager
 ) : FileObject(trustListNode, { trustListManager.openTrustListFile(server.serializationContext) }) {
 
@@ -164,7 +164,7 @@ class TrustListObject(
                     val newTrustList = OpcUaDefaultBinaryEncoding.getInstance().decode(
                         session.server.serializationContext,
                         ByteString.of(bs),
-                        TrustListDataType.BinaryEncodingId
+                        TrustListDataType.BINARY_ENCODING_ID
                     ) as? TrustListDataType
 
                     newTrustList?.let { trustList ->
@@ -297,7 +297,7 @@ private fun TrustListManager.openTrustListFile(context: SerializationContext, ma
         val encoded = OpcUaDefaultBinaryEncoding.getInstance().encode(
             context,
             trustList,
-            TrustListDataType.BinaryEncodingId
+            TrustListDataType.BINARY_ENCODING_ID
         ) as ByteString
 
         writeBytes(encoded.bytesOrEmpty())

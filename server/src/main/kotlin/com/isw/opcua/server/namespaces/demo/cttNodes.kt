@@ -7,7 +7,7 @@ import com.isw.opcua.milo.extensions.resolve
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.ValueRank
 import org.eclipse.milo.opcua.sdk.server.api.nodes.VariableNode
-import org.eclipse.milo.opcua.sdk.server.model.nodes.variables.AnalogItemNode
+import org.eclipse.milo.opcua.sdk.server.model.nodes.variables.AnalogItemTypeNode
 import org.eclipse.milo.opcua.sdk.server.model.types.variables.AnalogItemType
 import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
@@ -121,7 +121,7 @@ private fun DemoNamespace.addAnalogTypeNodes(parentNodeId: NodeId) {
             parentNodeId.resolve(name),
             Identifiers.AnalogItemType,
             false
-        ) as AnalogItemNode
+        ) as AnalogItemTypeNode
 
         node.browseName = QualifiedName(namespaceIndex, name)
         node.displayName = LocalizedText(name)

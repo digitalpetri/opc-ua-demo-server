@@ -3,7 +3,7 @@ package com.isw.opcua.server.namespaces.demo
 import com.isw.opcua.milo.extensions.inverseReferenceTo
 import com.isw.opcua.server.DemoServer
 import com.isw.opcua.server.objects.FileObject
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileNode
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText
@@ -51,7 +51,7 @@ private fun DemoNamespace.addManifestoFile(fileFolder: UaFolderNode) {
         StandardCopyOption.REPLACE_EXISTING
     )
 
-    val fileObject = (fileNode as? FileNode)?.let {
+    val fileObject = (fileNode as? FileTypeNode)?.let {
         FileObject(it) { tempFile }
     }
 

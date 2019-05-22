@@ -1,8 +1,8 @@
 package com.isw.opcua.server.sampling
 
-import com.isw.opcua.server.util.AbstractLifecycle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.api.DataItem
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
@@ -33,7 +33,7 @@ abstract class SampledDataItem(
             item.setValue(sampleInitialValue(System.currentTimeMillis()))
 
             synchronized(this) {
-                if (super.running) {
+                if (super.isRunning()) {
                     tick = tickManager.registerForTick(item.samplingInterval.toLong()) { tick(it) }
                 }
             }

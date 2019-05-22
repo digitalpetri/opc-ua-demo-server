@@ -10,7 +10,7 @@ import kotlinx.coroutines.future.await
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerConfigurationNode
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerConfigurationTypeNode
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil
 import org.eclipse.milo.opcua.stack.client.UaStackClient
 import org.eclipse.milo.opcua.stack.client.UaStackClientConfig
@@ -158,7 +158,7 @@ class DemoServer(dataDir: File) {
         // GDS Push Support via ServerConfiguration
         val serverConfigurationNode = server.addressSpaceManager
             .getManagedNode(Identifiers.ServerConfiguration)
-            .orElse(null) as ServerConfigurationNode
+            .orElse(null) as ServerConfigurationTypeNode
 
         serverConfigurationObject = ServerConfigurationObject(
             server,

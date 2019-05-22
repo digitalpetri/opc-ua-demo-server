@@ -7,10 +7,10 @@ import com.isw.opcua.milo.extensions.inverseReferenceTo
 import com.isw.opcua.milo.extensions.resolve
 import com.isw.opcua.server.sampling.SampledDataItem
 import com.isw.opcua.server.sampling.TickManager
-import com.isw.opcua.server.util.AbstractLifecycle
 import kotlinx.coroutines.CoroutineScope
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.Reference
+import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.UaNodeManager
 import org.eclipse.milo.opcua.sdk.server.api.*
@@ -20,7 +20,7 @@ import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices.WriteCon
 import org.eclipse.milo.opcua.sdk.server.api.services.MethodServices
 import org.eclipse.milo.opcua.sdk.server.api.services.MethodServices.CallContext
 import org.eclipse.milo.opcua.sdk.server.api.services.ViewServices.BrowseContext
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerNode
+import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.*
 import org.eclipse.milo.opcua.sdk.server.nodes.factories.NodeFactory
 import org.eclipse.milo.opcua.stack.core.*
@@ -88,7 +88,7 @@ class DemoNamespace(
         // Set the EventNotifier bit on Server Node for Events.
         val serverNode = server.addressSpaceManager.getManagedNode(Identifiers.Server).orElse(null)
 
-        if (serverNode is ServerNode) {
+        if (serverNode is ServerTypeNode) {
             serverNode.eventNotifier = ubyte(1)
 
             // Post a bogus Event every couple seconds
