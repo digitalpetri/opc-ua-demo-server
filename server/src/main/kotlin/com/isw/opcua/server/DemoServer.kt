@@ -121,7 +121,7 @@ class DemoServer(dataDir: File) {
                 keyStorePassword = "password"
             ),
             applicationUuid
-        )
+        ) { certificateHostnames() }
 
         val trustListManager = DefaultTrustListManager(pkiDir)
 
@@ -264,6 +264,22 @@ class DemoServer(dataDir: File) {
             buildNumber,
             buildDate
         )
+    }
+
+    private fun certificateHostnames(): List<String> {
+        return config[ServerConfig.certificateHostnameList].flatMap {
+            if ("<.+>".toRegex().matches(it)) {
+                val hostname = it.removeSurrounding("<", ">")
+
+                if (hostname == "hostname") {
+                    HostnameUtil.getHostnames(HostnameUtil.getHostname())
+                } else {
+                    HostnameUtil.getHostnames(hostname)
+                }
+            } else {
+                setOf(it)
+            }
+        }
     }
 
     private fun createEndpointConfigurations(

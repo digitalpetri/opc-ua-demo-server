@@ -1,7 +1,6 @@
 package com.isw.opcua.server
 
 import com.isw.opcua.server.util.KeyStoreManager
-import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil
 import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateBuilder
 import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateGenerator
 import java.security.KeyPair
@@ -12,7 +11,8 @@ import java.util.regex.Pattern
 
 class ServerKeyStore private constructor(
     private val settings: Settings,
-    private val applicationUuid: UUID
+    private val applicationUuid: UUID,
+    private val getHostnames: () -> Set<String>
 ) : KeyStoreManager(settings) {
 
     companion object {
@@ -26,10 +26,13 @@ class ServerKeyStore private constructor(
 
         operator fun invoke(
             settings: Settings,
-            applicationUuid: UUID = UUID.randomUUID()
+            applicationUuid: UUID = UUID.randomUUID(),
+            getHostnames: () -> Collection<String>
         ): ServerKeyStore {
 
-            return ServerKeyStore(settings, applicationUuid).also { it.initialize() }
+            val serverKeyStore = ServerKeyStore(settings, applicationUuid) { getHostnames().toSet() }
+
+            return serverKeyStore.also { it.initialize() }
         }
 
     }
@@ -68,8 +71,7 @@ class ServerKeyStore private constructor(
             .setCountryCode("US")
             .setApplicationUri(applicationUri)
 
-        // Get as many hostnames and IP addresses as we can listed in the certificate.
-        for (hostname in HostnameUtil.getHostnames("0.0.0.0", true)) {
+        for (hostname in getHostnames()) {
             if (IP_ADDR_PATTERN.matcher(hostname).matches()) {
                 builder.addIpAddress(hostname)
             } else {
