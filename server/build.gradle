@@ -13,6 +13,7 @@ sourceCompatibility = 1.8
 application {
     mainClassName = 'com.isw.opcua.server.MiloDemoServer'
     applicationName = 'milo-demo-server'
+    applicationDefaultJvmArgs = ['-Xmx512M']
 }
 
 shadowDistTar {
