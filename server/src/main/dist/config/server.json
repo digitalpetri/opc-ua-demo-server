@@ -1,0 +1,27 @@
+{
+  "serverConfig": {
+    "bindAddressList": [
+      "0.0.0.0"
+    ],
+    "bindPort": 62541,
+    "endpointAddressList": [
+      "<hostname>",
+      "<localhost>"
+    ],
+    "securityPolicyList": [
+      "None",
+      "Basic256Sha256",
+      "Aes128_Sha256_RsaOaep",
+      "Aes256_Sha256_RsaPss"
+    ],
+    "certificateHostnameList": [
+      "<0.0.0.0>"
+    ],
+    "gdsPushEnabled": false,
+    "registration": {
+      "enabled": false,
+      "frequency": 60000,
+      "endpointUrl": "opc.tcp://localhost:4840/UADiscovery"
+    }
+  }
+}

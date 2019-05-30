@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'application'
+    id 'distribution'
     id 'org.jetbrains.kotlin.jvm' version '1.3.31'
     id 'com.github.johnrengelman.shadow' version '5.0.0'
 }
@@ -10,18 +10,41 @@ version '0.1-SNAPSHOT'
 
 sourceCompatibility = 1.8
 
-application {
-    mainClassName = 'com.isw.opcua.server.MiloDemoServer'
-    applicationName = 'milo-demo-server'
-    applicationDefaultJvmArgs = ['-Xmx512M']
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
 }
 
-shadowDistTar {
-    baseName = applicationName
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
 }
 
-shadowDistZip {
-    baseName = applicationName
+shadowJar {
+
+}
+
+tasks.build.dependsOn tasks.shadowJar
+
+distributions {
+    main {
+        baseName = "milo-demo-server"
+
+        mkdir("logs")
+
+        contents {
+            into("lib") {
+                from shadowJar
+            }
+
+            into("") {
+                // hack to create create an empty "logs" directory in dist root
+                def tmpDir = File.createTempDir()
+                def logDir = tmpDir.toPath().resolve("logs").toFile()
+                logDir.mkdir()
+
+                from tmpDir
+            }
+        }
+    }
 }
 
 repositories {
@@ -31,6 +54,7 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-reflect"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.2.1"
 
@@ -41,9 +65,4 @@ dependencies {
     implementation 'ch.qos.logback:logback-classic:1.2.3'
 }
 
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
-}
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
-}
+

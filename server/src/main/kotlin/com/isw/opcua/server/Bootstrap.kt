@@ -18,7 +18,8 @@ import kotlin.system.measureTimeMillis
 fun main() {
     val userDir = File(System.getProperty("user.dir"))
 
-    val dataDir = userDir.resolve("data").apply {
+    // "data" dir is a step out of the "bin" folder
+    val dataDir = userDir.resolve("..").apply {
         if (!exists()) {
             assert(mkdirs())
         }
