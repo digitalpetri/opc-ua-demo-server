@@ -24,4 +24,5 @@ gradle-app.setting
 **/target/*
 target/*
 
-server/src/main/home/data/*
+server/src/main/home/data/config/*
+server/src/main/home/data/security/*
