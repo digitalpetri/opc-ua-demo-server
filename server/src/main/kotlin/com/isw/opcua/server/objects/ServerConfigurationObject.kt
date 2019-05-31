@@ -50,17 +50,17 @@ class ServerConfigurationObject(
     override fun onStartup() {
         serverConfigurationNode.createSigningRequestMethodNode.apply {
             invocationHandler = CreateSigningRequestImpl(this)
-            setAttributeDelegate(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdmin)
         }
 
         serverConfigurationNode.updateCertificateMethodNode.apply {
             invocationHandler = UpdateCertificateImpl(this, keyStore)
-            setAttributeDelegate(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdmin)
         }
 
         serverConfigurationNode.getRejectedListMethodNode.apply {
             invocationHandler = GetRejectedListMethodImpl(this)
-            setAttributeDelegate(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdmin)
         }
 
         serverConfigurationNode.serverCapabilities = arrayOf("")

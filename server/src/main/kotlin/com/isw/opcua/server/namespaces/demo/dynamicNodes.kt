@@ -2,10 +2,8 @@ package com.isw.opcua.server.namespaces.demo
 
 import com.isw.opcua.milo.extensions.inverseReferenceTo
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
-import org.eclipse.milo.opcua.sdk.server.api.nodes.VariableNode
-import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
-import org.eclipse.milo.opcua.sdk.server.nodes.delegates.AttributeDelegate
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
@@ -36,12 +34,8 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
         accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
         userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 
-        setAttributeDelegate(object : AttributeDelegate {
-            override fun getValue(context: AttributeContext, node: VariableNode): DataValue {
-                node.value = DataValue(Variant(Random.nextInt()))
-
-                return super.getValue(context, node)
-            }
+        filterChain.addLast(AttributeFilters.getValue {
+            DataValue(Variant(Random.nextInt()))
         })
     }
 
@@ -49,12 +43,8 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
         accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
         userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 
-        setAttributeDelegate(object : AttributeDelegate {
-            override fun getValue(context: AttributeContext, node: VariableNode): DataValue {
-                node.value = DataValue(Variant(Random.nextLong()))
-
-                return super.getValue(context, node)
-            }
+        filterChain.addLast(AttributeFilters.getValue {
+            DataValue(Variant(Random.nextLong()))
         })
     }
 
@@ -62,12 +52,8 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
         accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
         userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 
-        setAttributeDelegate(object : AttributeDelegate {
-            override fun getValue(context: AttributeContext, node: VariableNode): DataValue {
-                node.value = DataValue(Variant(Random.nextFloat()))
-
-                return super.getValue(context, node)
-            }
+        filterChain.addLast(AttributeFilters.getValue {
+            DataValue(Variant(Random.nextFloat()))
         })
     }
 
@@ -75,12 +61,8 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
         accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
         userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 
-        setAttributeDelegate(object : AttributeDelegate {
-            override fun getValue(context: AttributeContext, node: VariableNode): DataValue {
-                node.value = DataValue(Variant(Random.nextDouble()))
-
-                return super.getValue(context, node)
-            }
+        filterChain.addLast(AttributeFilters.getValue {
+            DataValue(Variant(Random.nextDouble()))
         })
     }
 }

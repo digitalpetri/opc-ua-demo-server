@@ -5,21 +5,21 @@ import com.google.common.collect.Table
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
 import org.eclipse.milo.opcua.sdk.server.api.methods.Out
-import org.eclipse.milo.opcua.sdk.server.api.nodes.VariableNode
 import org.eclipse.milo.opcua.sdk.server.model.methods.*
 import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileTypeNode
-import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
-import org.eclipse.milo.opcua.sdk.server.nodes.delegates.AttributeDelegate
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.*
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ulong
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.*
 import java.io.File
 import java.io.FileOutputStream
 import java.io.RandomAccessFile
@@ -60,21 +60,17 @@ open class FileObject(
             invocationHandler = getSetPositionMethod(this)
         }
 
-        fileNode.openCountNode.setAttributeDelegate(object : AttributeDelegate {
-            override fun getValue(context: AttributeContext, node: VariableNode): DataValue {
-                val count: UShort = Unsigned.ushort(handles.size())
+        fileNode.openCountNode.filterChain.addLast(AttributeFilters.getValue {
+            val count: UShort = ushort(handles.size())
 
-                return DataValue(Variant(count))
-            }
+            DataValue(Variant(count))
         })
 
-        fileNode.sizeNode.setAttributeDelegate(object : AttributeDelegate {
-            override fun getValue(context: AttributeContext, node: VariableNode): DataValue {
-                val file = openFile()
-                val size: ULong = ulong(file.length())
+        fileNode.sizeNode.filterChain.addLast(AttributeFilters.getValue {
+            val file: File = openFile()
+            val size: ULong = ulong(file.length())
 
-                return DataValue(Variant(size))
-            }
+            DataValue(Variant(size))
         })
 
         fileNode.writable = false

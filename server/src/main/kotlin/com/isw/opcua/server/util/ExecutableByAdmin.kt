@@ -1,19 +1,21 @@
 package com.isw.opcua.server.util
 
-import org.eclipse.milo.opcua.sdk.server.api.nodes.MethodNode
-import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
-import org.eclipse.milo.opcua.sdk.server.nodes.delegates.AttributeDelegate
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilter
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilterContext.GetAttributeContext
+import org.eclipse.milo.opcua.stack.core.AttributeId
 
-object ExecutableByAdmin : AttributeDelegate {
+object ExecutableByAdmin : AttributeFilter {
 
-    override fun isExecutable(context: AttributeContext, node: MethodNode): Boolean {
-        return true
-    }
+    override fun getAttribute(ctx: GetAttributeContext, attributeId: AttributeId): Any {
+        return when (attributeId) {
+            AttributeId.Executable -> true
+            AttributeId.UserExecutable -> {
+                val user = ctx.session.orElse(null)?.identityObject
 
-    override fun isUserExecutable(context: AttributeContext, node: MethodNode): Boolean {
-        val user = context.session.orElse(null)?.identityObject
-
-        return user == "admin"
+                return user == "admin"
+            }
+            else -> ctx.getAttribute(attributeId)
+        }
     }
 
 }

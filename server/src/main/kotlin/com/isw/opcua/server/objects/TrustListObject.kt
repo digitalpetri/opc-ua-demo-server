@@ -48,27 +48,27 @@ class TrustListObject(
 
         trustListNode.openWithMasksMethodNode.apply {
             invocationHandler = OpenWithMasksImpl(this)
-            setAttributeDelegate(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdmin)
         }
 
         trustListNode.closeAndUpdateMethodNode.apply {
             invocationHandler = CloseAndUpdateImpl(this)
-            setAttributeDelegate(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdmin)
         }
 
         trustListNode.addCertificateMethodNode.apply {
             invocationHandler = AddCertificateImpl(this)
-            setAttributeDelegate(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdmin)
         }
 
         trustListNode.removeCertificateMethodNode.apply {
             invocationHandler = RemoveCertificateImpl(this)
-            setAttributeDelegate(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdmin)
         }
 
         trustListNode.openMethodNode.apply {
             invocationHandler = OpenImpl(this)
-            setAttributeDelegate(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdmin)
         }
     }
 

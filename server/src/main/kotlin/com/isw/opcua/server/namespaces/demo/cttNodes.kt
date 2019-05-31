@@ -12,10 +12,9 @@ import org.eclipse.milo.opcua.sdk.server.model.types.variables.AnalogItemType
 import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.delegates.AttributeDelegate
-import org.eclipse.milo.opcua.stack.core.BuiltinDataType
-import org.eclipse.milo.opcua.stack.core.Identifiers
-import org.eclipse.milo.opcua.stack.core.StatusCodes
-import org.eclipse.milo.opcua.stack.core.UaException
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilter
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilterContext.SetAttributeContext
+import org.eclipse.milo.opcua.stack.core.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
@@ -133,7 +132,7 @@ private fun DemoNamespace.addAnalogTypeNodes(parentNodeId: NodeId) {
         node.euRange = Range(0.0, 100.0)
         node.value = DataValue(Variant(dataType.defaultValue()))
 
-        node.setAttributeDelegate(EuRangeCheckDelegate)
+        node.filterChain.addLast(EuRangeCheckFilter)
 
         nodeManager.addNode(node)
         node.inverseReferenceTo(analogTypeFolder.nodeId, Identifiers.Organizes)
@@ -198,6 +197,36 @@ private object EuRangeCheckDelegate : AttributeDelegate {
                 throw UaException(StatusCodes.Bad_TypeMismatch)
             }
         }
+    }
+
+}
+
+/**
+ * [AttributeFilter] that checks to see if a Node is an [AnalogItemType] and, if it is, throws an exception with
+ * [StatusCodes.Bad_OutOfRange] when a value is written outside the configured EU [Range], or
+ * [StatusCodes.Bad_TypeMismatch] if the value is not a number.
+ */
+private object EuRangeCheckFilter : AttributeFilter {
+
+    override fun setAttribute(ctx: SetAttributeContext, attributeId: AttributeId, value: Any) {
+        val node = ctx.node
+
+        if (attributeId == AttributeId.Value && node is AnalogItemType) {
+            val v = (value as? DataValue)?.value?.value
+
+            if (v is Number) {
+                val low = node.euRange.low
+                val high = node.euRange.high
+
+                if (v.toDouble() !in low..high) {
+                    throw UaException(StatusCodes.Bad_OutOfRange)
+                }
+            } else {
+                throw UaException(StatusCodes.Bad_TypeMismatch)
+            }
+        }
+
+        ctx.setAttribute(attributeId, value)
     }
 
 }
