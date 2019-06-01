@@ -9,7 +9,6 @@ import kotlinx.coroutines.launch
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentMap
-import java.util.concurrent.CopyOnWriteArrayList
 
 
 class TickManager(private val coroutineScope: CoroutineScope) {
@@ -18,7 +17,7 @@ class TickManager(private val coroutineScope: CoroutineScope) {
 
     private val tickerJobs: ConcurrentMap<Long, Job> = Maps.newConcurrentMap()
 
-    private val callbackMap: ConcurrentMap<Long, CopyOnWriteArrayList<suspend (Long) -> Unit>> = Maps.newConcurrentMap()
+    private val callbackMap: ConcurrentMap<Long, HashSet<suspend (Long) -> Unit>> = Maps.newConcurrentMap()
 
 
     /**
@@ -30,7 +29,7 @@ class TickManager(private val coroutineScope: CoroutineScope) {
     ): Tick = synchronized(this) {
 
         callbackMap
-            .getOrPut(rateMillis) { CopyOnWriteArrayList() }
+            .getOrPut(rateMillis) { HashSet() }
             .add(callback)
 
         checkTickerJobs()
@@ -51,7 +50,7 @@ class TickManager(private val coroutineScope: CoroutineScope) {
                 currentRate = newRateMillis
 
                 callbackMap
-                    .getOrPut(newRateMillis) { CopyOnWriteArrayList() }
+                    .getOrPut(newRateMillis) { HashSet() }
                     .add(callback)
 
                 checkTickerJobs()
