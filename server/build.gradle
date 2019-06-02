@@ -19,7 +19,10 @@ compileTestKotlin {
 }
 
 shadowJar {
-
+    minimize {
+        exclude(dependency("org.bouncycastle:.*:.*"))
+        exclude(dependency("org.jetbrains.kotlin:kotlin-reflect:.*"))
+    }
 }
 
 tasks.build.dependsOn tasks.shadowJar
