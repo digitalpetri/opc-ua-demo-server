@@ -1,6 +1,7 @@
 package com.isw.opcua.server.sampling
 
 import com.google.common.collect.Maps
+import com.google.common.collect.Sets
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.SendChannel
@@ -11,13 +12,15 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentMap
 
 
+private typealias Callback = suspend (Long) -> Unit
+
 class TickManager(private val coroutineScope: CoroutineScope) {
 
     private val logger: Logger = LoggerFactory.getLogger(TickManager::class.java)
 
     private val tickerJobs: ConcurrentMap<Long, Job> = Maps.newConcurrentMap()
 
-    private val callbackMap: ConcurrentMap<Long, HashSet<suspend (Long) -> Unit>> = Maps.newConcurrentMap()
+    private val callbackMap: ConcurrentMap<Long, MutableSet<Callback>> = Maps.newConcurrentMap()
 
 
     /**
@@ -29,7 +32,7 @@ class TickManager(private val coroutineScope: CoroutineScope) {
     ): Tick = synchronized(this) {
 
         callbackMap
-            .getOrPut(rateMillis) { HashSet() }
+            .getOrPut(rateMillis) { Sets.newConcurrentHashSet() }
             .add(callback)
 
         checkTickerJobs()
@@ -50,7 +53,7 @@ class TickManager(private val coroutineScope: CoroutineScope) {
                 currentRate = newRateMillis
 
                 callbackMap
-                    .getOrPut(newRateMillis) { HashSet() }
+                    .getOrPut(newRateMillis) { Sets.newConcurrentHashSet() }
                     .add(callback)
 
                 checkTickerJobs()
