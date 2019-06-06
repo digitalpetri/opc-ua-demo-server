@@ -74,11 +74,13 @@ class TickManager(private val coroutineScope: CoroutineScope) {
                 tickerJobs[rate] = coroutineScope.launch {
                     while (true) {
                         val startTime = System.currentTimeMillis()
-                        callbackMap[rate]?.forEach { it.invoke(startTime) }
+                        val callbacksAtRate = callbackMap[rate]
+                        callbacksAtRate?.forEach { it.invoke(startTime) }
                         val elapsedTime = System.currentTimeMillis() - startTime
 
                         if (elapsedTime > rate) {
                             logger.warn("aggregate callback time exceeded tick rate: ${elapsedTime}ms > ${rate}ms")
+                            logger.warn("${callbacksAtRate?.size ?: 0} callbacks registered at ${rate}ms")
                         }
 
                         delay(rate)
