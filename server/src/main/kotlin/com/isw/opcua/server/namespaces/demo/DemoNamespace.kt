@@ -215,7 +215,8 @@ class DemoNamespace(
         requestedQueueSize: UInteger,
         revisionCallback: BiConsumer<Double, UInteger>
     ) {
-        if (itemToMonitor.nodeId.identifier.toString().startsWith("Mass")) {
+
+        if (itemToMonitor.nodeId.isMassNode()) {
             revisionCallback.accept(0.0, requestedQueueSize)
         } else {
             super.onCreateDataItem(itemToMonitor, requestedSamplingInterval, requestedQueueSize, revisionCallback)
@@ -228,7 +229,8 @@ class DemoNamespace(
         requestedQueueSize: UInteger,
         revisionCallback: BiConsumer<Double, UInteger>
     ) {
-        if (itemToModify.nodeId.identifier.toString().startsWith("Mass")) {
+
+        if (itemToModify.nodeId.isMassNode()) {
             revisionCallback.accept(0.0, requestedQueueSize)
         } else {
             super.onModifyDataItem(itemToModify, requestedSamplingInterval, requestedQueueSize, revisionCallback)
@@ -241,7 +243,7 @@ class DemoNamespace(
             val node: UaNode? = nodeManager.get(nodeId)
 
             if (node != null) {
-                if (nodeId.identifier.toString().startsWith("Mass")) {
+                if (nodeId.isMassNode()) {
                     val subscribedNode = SubscribedNode(item, node)
                     subscribedNodes[item] = subscribedNode
                     subscribedNode.startup()
@@ -252,6 +254,11 @@ class DemoNamespace(
                 }
             }
         }
+    }
+
+    private fun NodeId.isMassNode(): Boolean {
+        val id = identifier  as? UInteger
+        return id is UInteger && id.toInt() < 26000
     }
 
     override fun onDataItemsModified(items: List<DataItem>) {
