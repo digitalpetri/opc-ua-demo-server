@@ -132,7 +132,7 @@ class DemoServer(dataDir: File) {
 
         val certificateValidator = DefaultCertificateValidator(trustListManager)
 
-        val createEndpointConfigurations = createEndpointConfigurations(
+        val endpoints = createEndpointConfigurations(
             config,
             certificateManager
         )
@@ -146,7 +146,7 @@ class DemoServer(dataDir: File) {
             .setCertificateManager(certificateManager)
             .setCertificateValidator(certificateValidator)
             .setIdentityValidator(identityValidator)
-            .setEndpoints(createEndpointConfigurations)
+            .setEndpoints(endpoints)
             .setLimits(ServerLimits)
             .build()
 
