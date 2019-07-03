@@ -31,6 +31,10 @@ class TickManager(private val coroutineScope: CoroutineScope) {
         callback: suspend (Long) -> Unit
     ): Tick = synchronized(this) {
 
+        require(rateMillis > 0L) {
+            "rate: $rateMillis <= 0"
+        }
+
         callbackMap
             .getOrPut(rateMillis) { Sets.newConcurrentHashSet() }
             .add(callback)
@@ -48,6 +52,11 @@ class TickManager(private val coroutineScope: CoroutineScope) {
             }
 
             override fun modify(newRateMillis: Long) = synchronized(this@TickManager) {
+                require(rateMillis > 0L) {
+                    "rate: $rateMillis <= 0"
+                }
+
+
                 callbackMap[currentRate]?.remove(callback)
 
                 currentRate = newRateMillis
