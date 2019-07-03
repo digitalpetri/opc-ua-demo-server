@@ -27,7 +27,6 @@ import org.eclipse.milo.opcua.stack.core.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn
@@ -419,8 +418,8 @@ fun DemoNamespace.addVariableNode(
 
     val variableNode = UaVariableNode.UaVariableNodeBuilder(nodeContext).run {
         setNodeId(nodeId)
-        setAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
-        setUserAccessLevel(Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
+        setAccessLevel(ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
+        setUserAccessLevel(ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
         setBrowseName(QualifiedName(namespaceIndex, name))
         setDisplayName(LocalizedText.english(name))
         setDataType(dataType.nodeId)
