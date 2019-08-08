@@ -33,7 +33,7 @@ internal fun DemoNamespace.addTurtleNodes() {
 
     val turtleIconStream = DemoServer::class.java
         .classLoader
-        .getResourceAsStream("turtle-icon.png")
+        .getResourceAsStream("turtle-icon.png")!!
 
     val turtleIconBytes = turtleIconStream.readAllBytes()
 

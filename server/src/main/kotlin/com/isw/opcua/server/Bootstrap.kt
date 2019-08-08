@@ -36,7 +36,7 @@ fun main() {
             Files.copy(
                 DemoServer::class.java
                     .classLoader
-                    .getResourceAsStream("default-logback.xml"),
+                    .getResourceAsStream("default-logback.xml")!!,
                 toPath()
             )
         }

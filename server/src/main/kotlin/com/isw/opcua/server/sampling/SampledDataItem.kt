@@ -9,7 +9,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
 
 abstract class SampledDataItem(
     protected val item: DataItem,
-    protected val scope: CoroutineScope,
+    private val scope: CoroutineScope,
     private val tickManager: TickManager
 ) : AbstractLifecycle() {
 

@@ -80,7 +80,7 @@ class DemoServer(dataDir: File) {
                     Files.copy(
                         DemoServer::class.java
                             .classLoader
-                            .getResourceAsStream("default-server.json"),
+                            .getResourceAsStream("default-server.json")!!,
                         this.toPath()
                     )
                 }
@@ -268,17 +268,7 @@ class DemoServer(dataDir: File) {
 
     private fun certificateHostnames(): List<String> {
         return config[ServerConfig.certificateHostnameList].flatMap {
-            if ("<.+>".toRegex().matches(it)) {
-                val hostname = it.removeSurrounding("<", ">")
-
-                if (hostname == "hostname") {
-                    HostnameUtil.getHostnames(HostnameUtil.getHostname())
-                } else {
-                    HostnameUtil.getHostnames(hostname)
-                }
-            } else {
-                setOf(it)
-            }
+            it.parseHostnames()
         }
     }
 
@@ -297,17 +287,7 @@ class DemoServer(dataDir: File) {
         val bindAddresses: List<String> = config[ServerConfig.bindAddressList]
 
         val endpointAddresses: List<String> = config[ServerConfig.endpointAddressList].flatMap {
-            if ("<.+>".toRegex().matches(it)) {
-                val hostname = it.removeSurrounding("<", ">")
-
-                if (hostname == "hostname") {
-                    HostnameUtil.getHostnames(HostnameUtil.getHostname())
-                } else {
-                    HostnameUtil.getHostnames(hostname)
-                }
-            } else {
-                setOf(it)
-            }
+            it.parseHostnames()
         }
 
         for (bindAddress in bindAddresses) {
@@ -375,6 +355,20 @@ class DemoServer(dataDir: File) {
         }
 
         return endpointConfigurations
+    }
+
+    private fun String.parseHostnames(): Set<String> {
+        return if ("<.+>".toRegex().matches(this)) {
+            val hostname = this.removeSurrounding("<", ">")
+
+            if (hostname == "hostname") {
+                HostnameUtil.getHostnames(HostnameUtil.getHostname())
+            } else {
+                HostnameUtil.getHostnames(hostname)
+            }
+        } else {
+            setOf(this)
+        }
     }
 
 }

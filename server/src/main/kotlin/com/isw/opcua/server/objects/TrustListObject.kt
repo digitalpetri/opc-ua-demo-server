@@ -156,7 +156,7 @@ class TrustListObject(
             if (filePair != null) {
                 val (file, mode) = filePair
 
-                if (mode.isSet(FileObject.FileModeBit.Write)) {
+                if (mode.isSet(FileModeBit.Write)) {
                     file.channel.position(0L)
                     val bs = ByteArray(file.length().toInt())
                     file.readFully(bs)

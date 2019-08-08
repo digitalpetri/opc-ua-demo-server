@@ -45,7 +45,7 @@ class ServerConfigurationObject(
     private val trustListManager: TrustListManager
 ) : AbstractLifecycle() {
 
-    lateinit var trustListObject: TrustListObject
+    private lateinit var trustListObject: TrustListObject
 
     override fun onStartup() {
         serverConfigurationNode.createSigningRequestMethodNode.apply {

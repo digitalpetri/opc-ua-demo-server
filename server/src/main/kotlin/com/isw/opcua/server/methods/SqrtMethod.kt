@@ -8,6 +8,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument
 import org.slf4j.LoggerFactory
+import kotlin.math.sqrt
 
 class SqrtMethod(node: UaMethodNode) : AbstractMethodInvocationHandler(node) {
 
@@ -29,7 +30,7 @@ class SqrtMethod(node: UaMethodNode) : AbstractMethodInvocationHandler(node) {
         logger.debug("Invoking sqrt() method of objectId={}", invocationContext.objectId)
 
         val x = inputValues[0].value as Double
-        val xSqrt = Math.sqrt(x)
+        val xSqrt = sqrt(x)
 
         return arrayOf(Variant(xSqrt))
     }

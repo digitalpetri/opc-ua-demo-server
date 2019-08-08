@@ -46,7 +46,7 @@ private fun DemoNamespace.addManifestoFile(fileFolder: UaFolderNode) {
     Files.copy(
         DemoServer::class.java
             .classLoader
-            .getResourceAsStream("manifesto.txt"),
+            .getResourceAsStream("manifesto.txt")!!,
         tempFile.toPath(),
         StandardCopyOption.REPLACE_EXISTING
     )
