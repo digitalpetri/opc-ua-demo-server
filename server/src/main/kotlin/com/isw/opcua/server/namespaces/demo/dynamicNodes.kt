@@ -35,7 +35,11 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
         userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 
         filterChain.addLast(AttributeFilters.getValue {
-            DataValue(Variant(Random.nextInt()))
+            DataValue(
+                Variant(Random.nextInt()),
+                StatusCode.GOOD,
+                DateTime.nowNanos()
+            )
         })
     }
 
@@ -44,7 +48,11 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
         userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 
         filterChain.addLast(AttributeFilters.getValue {
-            DataValue(Variant(Random.nextLong()))
+            DataValue(
+                Variant(Random.nextLong()),
+                StatusCode.GOOD,
+                DateTime.nowNanos()
+            )
         })
     }
 
@@ -53,7 +61,11 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
         userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 
         filterChain.addLast(AttributeFilters.getValue {
-            DataValue(Variant(Random.nextFloat()))
+            DataValue(
+                Variant(Random.nextFloat()),
+                StatusCode.GOOD,
+                DateTime.nowNanos()
+            )
         })
     }
 
@@ -62,7 +74,11 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
         userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
 
         filterChain.addLast(AttributeFilters.getValue {
-            DataValue(Variant(Random.nextDouble()))
+            DataValue(
+                Variant(Random.nextDouble()),
+                StatusCode.GOOD,
+                DateTime.nowNanos()
+            )
         })
     }
 }
