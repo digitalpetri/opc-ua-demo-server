@@ -6,6 +6,7 @@ import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.api.DataItem
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
+import org.slf4j.LoggerFactory
 
 abstract class SampledDataItem(
     protected val item: DataItem,
@@ -17,16 +18,6 @@ abstract class SampledDataItem(
     var samplingEnabled: Boolean = true
 
     private var tick: TickManager.Tick? = null
-
-    private suspend fun tick(currentTime: Long) {
-        if (samplingEnabled) {
-            try {
-                item.setValue(sampleCurrentValue(currentTime))
-            } catch (t: Throwable) {
-                item.setValue(DataValue(StatusCodes.Bad_InternalError))
-            }
-        }
-    }
 
     override fun onStartup() {
         scope.launch {
@@ -42,6 +33,19 @@ abstract class SampledDataItem(
 
     override fun onShutdown(): Unit = synchronized(this) {
         tick?.cancel()
+    }
+
+    private suspend fun tick(currentTime: Long) {
+        if (samplingEnabled) {
+            try {
+                item.setValue(sampleCurrentValue(currentTime))
+            } catch (t: Throwable) {
+                LoggerFactory.getLogger(javaClass)
+                    .error("Error sampling value for ${item.readValueId}", t)
+
+                item.setValue(DataValue(StatusCodes.Bad_InternalError))
+            }
+        }
     }
 
     fun modifyRate(newRate: Double) {
