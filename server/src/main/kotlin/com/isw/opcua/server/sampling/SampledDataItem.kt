@@ -25,7 +25,14 @@ abstract class SampledDataItem(
 
             synchronized(this) {
                 if (super.isRunning()) {
-                    tick = tickManager.registerForTick(item.samplingInterval.toLong()) { tick(it) }
+                    try {
+                        tick = tickManager.registerForTick(item.samplingInterval.toLong()) { tick(it) }
+                    } catch (t: Throwable) {
+                        LoggerFactory.getLogger(javaClass)
+                            .error("item=${item.readValueId} samplingInterval=${item.samplingInterval}")
+
+                        throw t
+                    }
                 }
             }
         }
