@@ -82,16 +82,8 @@ class ServerConfigurationObject(
     }
 
     override fun onShutdown() {
-        serverConfigurationNode.createSigningRequestMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
-        }
-
-        serverConfigurationNode.updateCertificateMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
-        }
-
-        serverConfigurationNode.getRejectedListMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
+        serverConfigurationNode.componentNodes.filterIsInstance<UaMethodNode>().forEach {
+            it.invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
         }
 
         trustListObject.shutdown()
@@ -267,7 +259,11 @@ class ServerConfigurationObject(
             )
 
             server.scheduledExecutorService.schedule(
-                { server.stackServer.connectedChannels.forEach { it.disconnect() } },
+                {
+                    server.executorService.execute {
+                        server.stackServer.connectedChannels.forEach { it.disconnect() }
+                    }
+                },
                 3,
                 TimeUnit.SECONDS
             )

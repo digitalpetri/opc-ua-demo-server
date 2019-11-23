@@ -78,28 +78,8 @@ open class FileObject(
     }
 
     override fun onShutdown() {
-        fileNode.openMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
-        }
-
-        fileNode.closeMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
-        }
-
-        fileNode.readMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
-        }
-
-        fileNode.writeMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
-        }
-
-        fileNode.getPositionMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
-        }
-
-        fileNode.setPositionMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
+        fileNode.componentNodes.filterIsInstance<UaMethodNode>().forEach {
+            it.invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
         }
 
         handles.values().forEach { (f, _) -> f.close() }

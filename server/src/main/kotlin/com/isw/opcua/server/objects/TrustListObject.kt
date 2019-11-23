@@ -73,24 +73,8 @@ class TrustListObject(
     }
 
     override fun onShutdown() {
-        trustListNode.openWithMasksMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
-        }
-
-        trustListNode.closeAndUpdateMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
-        }
-
-        trustListNode.addCertificateMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
-        }
-
-        trustListNode.removeCertificateMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
-        }
-
-        trustListNode.openMethodNode.apply {
-            invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
+        trustListNode.componentNodes.filterIsInstance<UaMethodNode>().forEach {
+            it.invocationHandler = MethodInvocationHandler.NOT_IMPLEMENTED
         }
 
         super.onShutdown()
