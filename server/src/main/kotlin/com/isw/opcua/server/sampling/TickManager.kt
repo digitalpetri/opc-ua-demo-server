@@ -56,7 +56,6 @@ class TickManager(private val coroutineScope: CoroutineScope) {
                     "rate: $rateMillis <= 0"
                 }
 
-
                 callbackMap[currentRate]?.remove(callback)
 
                 currentRate = newRateMillis

@@ -28,8 +28,11 @@ abstract class SampledDataItem(
                     try {
                         tick = tickManager.registerForTick(item.samplingInterval.toLong()) { tick(it) }
                     } catch (t: Throwable) {
-                        LoggerFactory.getLogger(javaClass)
-                            .error("item=${item.readValueId} samplingInterval=${item.samplingInterval}")
+                        LoggerFactory.getLogger(javaClass).error(
+                            "Error registering tick for item=${item.readValueId} " +
+                                "samplingInterval=${item.samplingInterval}",
+                            t
+                        )
 
                         throw t
                     }
@@ -56,7 +59,15 @@ abstract class SampledDataItem(
     }
 
     fun modifyRate(newRate: Double) {
-        tick?.modify(newRate.toLong())
+        try {
+            tick?.modify(newRate.toLong())
+        } catch (t: Throwable) {
+            LoggerFactory.getLogger(javaClass).error(
+                "Error modifying rate for item=${item.readValueId} " +
+                    "samplingInterval=${item.samplingInterval}",
+                t
+            )
+        }
     }
 
     protected abstract suspend fun sampleCurrentValue(currentTime: Long): DataValue
