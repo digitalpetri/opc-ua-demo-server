@@ -38,8 +38,8 @@ private fun DemoNamespace.addSqrtMethod(parentNodeId: NodeId) {
         .build()
 
     val sqrtMethod = SqrtMethod(methodNode)
-    methodNode.setProperty(UaMethodNode.InputArguments, sqrtMethod.inputArguments)
-    methodNode.setProperty(UaMethodNode.OutputArguments, sqrtMethod.outputArguments)
+    methodNode.inputArguments = sqrtMethod.inputArguments
+    methodNode.outputArguments = sqrtMethod.outputArguments
     methodNode.invocationHandler = sqrtMethod
 
     nodeManager.addNode(methodNode)

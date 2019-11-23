@@ -4,6 +4,7 @@ import com.isw.opcua.milo.extensions.inverseReferenceTo
 import com.isw.opcua.milo.extensions.referenceTo
 import com.isw.opcua.server.DemoServer
 import org.eclipse.milo.opcua.sdk.core.Reference
+import org.eclipse.milo.opcua.sdk.core.nodes.ObjectNodeProperties
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectTypeNode
@@ -38,7 +39,7 @@ internal fun DemoNamespace.addTurtleNodes() {
     val turtleIconBytes = turtleIconStream.readAllBytes()
 
     turtlesFolder.icon = ByteString.of(turtleIconBytes)
-    turtlesFolder.getPropertyNode(UaObjectNode.Icon).ifPresent {
+    turtlesFolder.getPropertyNode(ObjectNodeProperties.Icon).ifPresent {
         it.dataType = Identifiers.ImagePNG
     }
 
