@@ -1,7 +1,7 @@
 package com.isw.opcua.server.objects
 
 import com.isw.opcua.server.ServerKeyStore
-import com.isw.opcua.server.util.ExecutableByAdmin
+import com.isw.opcua.server.namespaces.filters.ExecutableByAdmin
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
 import org.bouncycastle.pkcs.PKCS10CertificationRequest

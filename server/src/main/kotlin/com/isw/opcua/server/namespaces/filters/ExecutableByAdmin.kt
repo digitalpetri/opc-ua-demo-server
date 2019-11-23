@@ -1,4 +1,4 @@
-package com.isw.opcua.server.util
+package com.isw.opcua.server.namespaces.filters
 
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilter
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilterContext.GetAttributeContext

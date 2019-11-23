@@ -1,6 +1,6 @@
 package com.isw.opcua.server.objects
 
-import com.isw.opcua.server.util.ExecutableByAdmin
+import com.isw.opcua.server.namespaces.filters.ExecutableByAdmin
 import org.bouncycastle.util.encoders.Hex
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler

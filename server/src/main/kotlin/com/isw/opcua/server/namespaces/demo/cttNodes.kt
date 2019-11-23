@@ -4,17 +4,13 @@ import com.isw.opcua.milo.extensions.defaultValue
 import com.isw.opcua.milo.extensions.defaultValueArray
 import com.isw.opcua.milo.extensions.inverseReferenceTo
 import com.isw.opcua.milo.extensions.resolve
+import com.isw.opcua.server.namespaces.filters.EuRangeCheckFilter
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.ValueRank
-import org.eclipse.milo.opcua.sdk.server.api.nodes.VariableNode
 import org.eclipse.milo.opcua.sdk.server.model.nodes.variables.AnalogItemTypeNode
-import org.eclipse.milo.opcua.sdk.server.model.types.variables.AnalogItemType
-import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
-import org.eclipse.milo.opcua.sdk.server.nodes.delegates.AttributeDelegate
-import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilter
-import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilterContext.SetAttributeContext
-import org.eclipse.milo.opcua.stack.core.*
+import org.eclipse.milo.opcua.stack.core.BuiltinDataType
+import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
@@ -170,63 +166,4 @@ private fun DemoNamespace.addSecurityAccessNodes(parentNodeId: NodeId) {
     )
     nodeWithCurrentWrite.accessLevel = ubyte(AccessLevel.CurrentWrite.value)
     nodeWithCurrentWrite.accessLevel = ubyte(AccessLevel.CurrentWrite.value)
-}
-
-/**
- * [AttributeDelegate] that checks to see if a VariableNode is an [AnalogItemType] and, if it is, throws an exception
- * with [StatusCodes.Bad_OutOfRange] when a value is written outside the configured EU [Range].
- */
-private object EuRangeCheckDelegate : AttributeDelegate {
-
-    override fun setValue(context: AttributeContext, node: VariableNode, value: DataValue) {
-        if (node is AnalogItemType) {
-            val low = node.euRange.low
-            val high = node.euRange.high
-
-            val v = value.value?.value
-
-            if (v is Number) {
-                val d = v.toDouble()
-
-                if (d in low..high) {
-                    super.setValue(context, node, value)
-                } else {
-                    throw UaException(StatusCodes.Bad_OutOfRange)
-                }
-            } else {
-                throw UaException(StatusCodes.Bad_TypeMismatch)
-            }
-        }
-    }
-
-}
-
-/**
- * [AttributeFilter] that checks to see if a Node is an [AnalogItemType] and, if it is, throws an exception with
- * [StatusCodes.Bad_OutOfRange] when a value is written outside the configured EU [Range], or
- * [StatusCodes.Bad_TypeMismatch] if the value is not a number.
- */
-private object EuRangeCheckFilter : AttributeFilter {
-
-    override fun setAttribute(ctx: SetAttributeContext, attributeId: AttributeId, value: Any) {
-        val node = ctx.node
-
-        if (attributeId == AttributeId.Value && node is AnalogItemType) {
-            val v = (value as? DataValue)?.value?.value
-
-            if (v is Number) {
-                val low = node.euRange.low
-                val high = node.euRange.high
-
-                if (v.toDouble() !in low..high) {
-                    throw UaException(StatusCodes.Bad_OutOfRange)
-                }
-            } else {
-                throw UaException(StatusCodes.Bad_TypeMismatch)
-            }
-        }
-
-        ctx.setAttribute(attributeId, value)
-    }
-
 }

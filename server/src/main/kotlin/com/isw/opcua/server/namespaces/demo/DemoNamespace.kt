@@ -256,7 +256,7 @@ class DemoNamespace(
     }
 
     private fun NodeId.isMassNode(): Boolean {
-        val id = identifier  as? UInteger
+        val id = identifier as? UInteger
         return id is UInteger && id.toInt() < 26000
     }
 

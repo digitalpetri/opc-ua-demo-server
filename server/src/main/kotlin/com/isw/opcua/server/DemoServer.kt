@@ -7,6 +7,7 @@ import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.json.toJson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
+import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator
@@ -33,7 +34,7 @@ import java.io.File
 import java.nio.file.Files
 import java.util.*
 
-class DemoServer(dataDir: File) {
+class DemoServer(dataDir: File) : AbstractLifecycle() {
 
     companion object {
         const val APPLICATION_URI = "urn:eclipse:milo:opcua:server"
@@ -68,27 +69,7 @@ class DemoServer(dataDir: File) {
     private val demoNamespace: DemoNamespace
 
     init {
-        config = with(Config()) {
-            addSpec(ServerConfig)
-
-            val configFile = dataDir
-                .resolve("config")
-                .resolve("server.json")
-
-            configFile.apply {
-                if (!exists()) {
-                    Files.copy(
-                        DemoServer::class.java
-                            .classLoader
-                            .getResourceAsStream("default-server.json")!!,
-                        this.toPath()
-                    )
-                }
-                assert(exists())
-            }
-
-            from.json.file(configFile)
-        }
+        config = readConfig(dataDir)
 
         logger.info("config: \n${config.toJson.toText()}")
 
@@ -168,7 +149,7 @@ class DemoServer(dataDir: File) {
         )
     }
 
-    fun startup() {
+    override fun onStartup() {
         if (config[ServerConfig.gdsPushEnabled]) {
             serverConfigurationObject.startup()
         }
@@ -188,7 +169,7 @@ class DemoServer(dataDir: File) {
         }
     }
 
-    fun shutdown() {
+    override fun onShutdown() {
         if (config[ServerConfig.gdsPushEnabled]) {
             serverConfigurationObject.shutdown()
         }
@@ -196,6 +177,30 @@ class DemoServer(dataDir: File) {
         demoNamespace.shutdown()
         runBlocking { supervisor.cancelAndJoin() }
         server.shutdown().get()
+    }
+
+    private fun readConfig(dataDir: File): Config {
+        return with(Config()) {
+            addSpec(ServerConfig)
+
+            val configFile = dataDir
+                .resolve("config")
+                .resolve("server.json")
+
+            configFile.apply {
+                if (!exists()) {
+                    Files.copy(
+                        DemoServer::class.java
+                            .classLoader
+                            .getResourceAsStream("default-server.json")!!,
+                        this.toPath()
+                    )
+                }
+                assert(exists())
+            }
+
+            from.json.file(configFile)
+        }
     }
 
     private suspend fun registerWithLds() {
