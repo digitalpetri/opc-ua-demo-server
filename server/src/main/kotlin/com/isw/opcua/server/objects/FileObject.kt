@@ -135,6 +135,10 @@ open class FileObject(
 
             val session = context.session.orElseThrow()
 
+            if (mode.toInt() == 0) {
+                throw UaException(StatusCodes.Bad_InvalidArgument, "mode invalid")
+            }
+
             // bits: Read, Write, EraseExisting, Append
             var modeString = ""
             var erase = false
