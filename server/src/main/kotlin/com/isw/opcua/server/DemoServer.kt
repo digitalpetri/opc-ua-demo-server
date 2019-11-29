@@ -273,7 +273,7 @@ class DemoServer(dataDir: File) : AbstractLifecycle() {
 
     private fun certificateHostnames(): List<String> {
         return config[ServerConfig.certificateHostnameList].flatMap {
-            it.parseHostnames()
+            it.parseHostnames(includeLoopback = false)
         }
     }
 
@@ -292,7 +292,7 @@ class DemoServer(dataDir: File) : AbstractLifecycle() {
         val bindAddresses: List<String> = config[ServerConfig.bindAddressList]
 
         val endpointAddresses: List<String> = config[ServerConfig.endpointAddressList].flatMap {
-            it.parseHostnames()
+            it.parseHostnames(includeLoopback = true)
         }
 
         for (bindAddress in bindAddresses) {
@@ -362,14 +362,14 @@ class DemoServer(dataDir: File) : AbstractLifecycle() {
         return endpointConfigurations
     }
 
-    private fun String.parseHostnames(): Set<String> {
+    private fun String.parseHostnames(includeLoopback: Boolean): Set<String> {
         return if ("<.+>".toRegex().matches(this)) {
             val hostname = this.removeSurrounding("<", ">")
 
             if (hostname == "hostname") {
                 HostnameUtil.getHostnames(HostnameUtil.getHostname())
             } else {
-                HostnameUtil.getHostnames(hostname)
+                HostnameUtil.getHostnames(hostname, includeLoopback)
             }
         } else {
             setOf(this)
