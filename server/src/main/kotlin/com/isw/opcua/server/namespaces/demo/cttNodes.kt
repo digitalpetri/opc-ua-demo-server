@@ -179,5 +179,5 @@ private fun DemoNamespace.addSecurityAccessNodes(parentNodeId: NodeId) {
         "AccessLevel_CurrentWrite"
     )
     nodeWithCurrentWrite.accessLevel = ubyte(AccessLevel.CurrentWrite.value)
-    nodeWithCurrentWrite.accessLevel = ubyte(AccessLevel.CurrentWrite.value)
+    nodeWithCurrentWrite.userAccessLevel = ubyte(AccessLevel.CurrentWrite.value)
 }
