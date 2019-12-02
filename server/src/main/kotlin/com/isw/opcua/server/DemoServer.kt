@@ -336,6 +336,12 @@ class DemoServer(dataDir: File) : AbstractLifecycle() {
                         endpointConfigurations.add(
                             builder.copy()
                                 .setSecurityPolicy(securityPolicy)
+                                .setSecurityMode(MessageSecurityMode.Sign)
+                                .build()
+                        )
+                        endpointConfigurations.add(
+                            builder.copy()
+                                .setSecurityPolicy(securityPolicy)
                                 .setSecurityMode(MessageSecurityMode.SignAndEncrypt)
                                 .build()
                         )
