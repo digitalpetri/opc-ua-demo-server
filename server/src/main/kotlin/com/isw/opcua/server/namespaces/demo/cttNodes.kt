@@ -66,6 +66,20 @@ private fun DemoNamespace.addScalarNodes(parentNodeId: NodeId) {
         val node = addVariableNode(scalarFolder.nodeId, name, dataType = dataType)
         node.value = DataValue(Variant(dataType.defaultValue()))
     }
+
+    addVariableNode(
+        parentNodeId = scalarFolder.nodeId,
+        name = "Integer",
+        dataTypeId = Identifiers.Integer,
+        value = BuiltinDataType.Int32.defaultValue()
+    )
+
+    addVariableNode(
+        parentNodeId = scalarFolder.nodeId,
+        name = "UInteger",
+        dataTypeId = Identifiers.UInteger,
+        value = BuiltinDataType.UInt32.defaultValue()
+    )
 }
 
 private fun DemoNamespace.addArrayNodes(parentNodeId: NodeId) {

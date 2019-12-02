@@ -244,12 +244,16 @@ class DemoNamespace(
             if (node != null) {
                 if (nodeId.isMassNode()) {
                     val subscribedNode = SubscribedNode(item, node)
-                    subscribedNodes[item] = subscribedNode
+                    subscribedNode.samplingEnabled = item.isSamplingEnabled
                     subscribedNode.startup()
+
+                    subscribedNodes[item] = subscribedNode
                 } else {
                     val sampledNode = SampledNode(item, coroutineScope, node)
-                    sampledNodes[item] = sampledNode
+                    sampledNode.samplingEnabled = item.isSamplingEnabled
                     sampledNode.startup()
+
+                    sampledNodes[item] = sampledNode
                 }
             }
         }
@@ -416,16 +420,33 @@ fun DemoNamespace.addVariableNode(
     dataType: BuiltinDataType = BuiltinDataType.Int32
 ): UaVariableNode {
 
+    return addVariableNode(
+        parentNodeId,
+        name,
+        nodeId,
+        dataType.nodeId,
+        dataType.defaultValue()
+    )
+}
+
+fun DemoNamespace.addVariableNode(
+    parentNodeId: NodeId,
+    name: String,
+    nodeId: NodeId = parentNodeId.resolve(name),
+    dataTypeId: NodeId,
+    value: Any
+): UaVariableNode {
+
     val variableNode = UaVariableNode.UaVariableNodeBuilder(nodeContext).run {
         setNodeId(nodeId)
         setAccessLevel(ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
         setUserAccessLevel(ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
         setBrowseName(QualifiedName(namespaceIndex, name))
         setDisplayName(LocalizedText.english(name))
-        setDataType(dataType.nodeId)
+        setDataType(dataTypeId)
         setTypeDefinition(Identifiers.BaseDataVariableType)
         setMinimumSamplingInterval(100.0)
-        setValue(DataValue(Variant(dataType.defaultValue())))
+        setValue(DataValue(Variant(value)))
 
         build()
     }
