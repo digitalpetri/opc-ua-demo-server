@@ -83,7 +83,7 @@ internal fun DemoNamespace.maybeTurtleNode(nodeId: NodeId): UaObjectNode? {
         UaObjectNode(
             nodeContext,
             NodeId(namespaceIndex, "[turtles]$it"),
-            QualifiedName(namespaceIndex, "Turtle"),
+            QualifiedName(namespaceIndex, "Turtle$it"),
             LocalizedText("Turtle")
         )
     }
