@@ -17,7 +17,6 @@ import org.eclipse.milo.opcua.stack.client.UaStackClient
 import org.eclipse.milo.opcua.stack.client.UaStackClientConfig
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager
-import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateValidator
 import org.eclipse.milo.opcua.stack.core.security.DefaultTrustListManager
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile
@@ -27,8 +26,10 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.enumerated.ApplicationType
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode
 import org.eclipse.milo.opcua.stack.core.types.structured.*
+import org.eclipse.milo.opcua.stack.core.util.CertificateValidationUtil.ValidationCheck
 import org.eclipse.milo.opcua.stack.core.util.ManifestUtil
 import org.eclipse.milo.opcua.stack.server.EndpointConfiguration
+import org.eclipse.milo.opcua.stack.server.security.DefaultServerCertificateValidator
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
@@ -111,7 +112,10 @@ class DemoServer(dataDir: File) : AbstractLifecycle() {
             keyStore.getDefaultCertificateChain()?.toTypedArray()
         )
 
-        val certificateValidator = DefaultCertificateValidator(trustListManager)
+        val certificateValidator = DefaultServerCertificateValidator(
+            trustListManager,
+            ValidationCheck.ALL_OPTIONAL_CHECKS
+        )
 
         val endpoints = createEndpointConfigurations(
             config,
