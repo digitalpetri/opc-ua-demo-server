@@ -6,6 +6,7 @@ import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
 import ch.qos.logback.core.util.StatusPrinter
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.Stack
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -16,6 +17,9 @@ import kotlin.system.measureTimeMillis
 
 
 fun main() {
+    // start running this static initializer ASAP, it measurably affects startup time.
+    Thread(Runnable { Identifiers.Boolean }).start()
+
     val userDir = File(System.getProperty("user.dir"))
 
     // "data" dir is a step out of the "bin" folder
