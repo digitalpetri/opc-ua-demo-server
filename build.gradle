@@ -10,8 +10,9 @@ version "0.1-SNAPSHOT"
 
 sourceCompatibility = 1.8
 
-ext {
-    milo_version = "0.4.0-SNAPSHOT"
+project.ext {
+    miloVersion = "0.4.0-SNAPSHOT"
+    packageName = "milo-demo-server"
 }
 
 compileKotlin {
@@ -43,8 +44,8 @@ jar {
         attributes(
             "Main-Class": "com.isw.opcua.server.MiloDemoServer",
             "Implementation-Title": "milo-demo-server",
-            "X-Stack-Version": "$milo_version",
-            "X-SDK-Version": "$milo_version"
+            "X-Stack-Version": "$miloVersion",
+            "X-SDK-Version": "$miloVersion"
         )
     }
 }
@@ -60,8 +61,15 @@ runtime {
         "java.xml",
         "jdk.unsupported"
     ]
-    imageDir = file("$buildDir/milo-demo-server")
-    imageZip = file("$buildDir/milo-demo-server.zip")
+
+    def platformSuffix = ""
+
+    if (project.hasProperty("platform")) {
+        platformSuffix = "-$platform"
+    }
+
+    imageDir = file("$buildDir/${packageName}")
+    imageZip = file("$buildDir/${packageName}${platformSuffix}.zip")
 }
 
 task dist {
@@ -82,8 +90,8 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.2"
 
-    implementation "org.eclipse.milo:sdk-client:$milo_version"
-    implementation "org.eclipse.milo:sdk-server:$milo_version"
+    implementation "org.eclipse.milo:sdk-client:$miloVersion"
+    implementation "org.eclipse.milo:sdk-server:$miloVersion"
 
     implementation "com.uchuhimo:konf:0.13.1"
     implementation "ch.qos.logback:logback-classic:1.2.3"
