@@ -73,7 +73,7 @@ class DemoServer(
     private val demoNamespace: DemoNamespace
 
     init {
-        config = readConfig(dataDir)
+        config = readConfig(configDir)
 
         logger.info("config: \n${config.toJson.toText()}")
 
