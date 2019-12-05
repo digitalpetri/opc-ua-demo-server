@@ -35,10 +35,7 @@ import java.io.File
 import java.nio.file.Files
 import java.util.*
 
-class DemoServer(
-    private val configDir: File,
-    private val dataDir: File
-) : AbstractLifecycle() {
+class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
 
     companion object {
         const val APPLICATION_URI = "urn:eclipse:milo:opcua:server"

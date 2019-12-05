@@ -135,8 +135,8 @@ private fun DemoNamespace.addAnalogTypeNodes(parentNodeId: NodeId) {
         node.browseName = QualifiedName(namespaceIndex, name)
         node.displayName = LocalizedText(name)
         node.dataType = dataType.nodeId
-        node.accessLevel = ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE))
-        node.userAccessLevel = ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE))
+        node.accessLevel = AccessLevel.toValue(AccessLevel.READ_WRITE)
+        node.userAccessLevel = AccessLevel.toValue(AccessLevel.READ_WRITE)
         node.minimumSamplingInterval = 100.0
 
         node.euRange = Range(0.0, 100.0)

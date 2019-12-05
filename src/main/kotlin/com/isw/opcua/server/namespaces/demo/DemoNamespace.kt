@@ -439,8 +439,8 @@ fun DemoNamespace.addVariableNode(
 
     val variableNode = UaVariableNode.UaVariableNodeBuilder(nodeContext).run {
         setNodeId(nodeId)
-        setAccessLevel(ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
-        setUserAccessLevel(ubyte(AccessLevel.getMask(AccessLevel.READ_WRITE)))
+        setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         setBrowseName(QualifiedName(namespaceIndex, name))
         setDisplayName(LocalizedText.english(name))
         setDataType(dataTypeId)

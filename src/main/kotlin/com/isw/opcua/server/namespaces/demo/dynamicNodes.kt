@@ -7,7 +7,6 @@ import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 import kotlin.random.Random
 
 
@@ -31,8 +30,8 @@ fun DemoNamespace.addDynamicNodes() {
 
 private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
     addVariableNode(parentNodeId, "RandomInt32", dataType = BuiltinDataType.Int32).apply {
-        accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
-        userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
+        accessLevel = AccessLevel.toValue(AccessLevel.READ_ONLY)
+        userAccessLevel = AccessLevel.toValue(AccessLevel.READ_ONLY)
 
         filterChain.addLast(AttributeFilters.getValue {
             DataValue(
@@ -44,8 +43,8 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
     }
 
     addVariableNode(parentNodeId, "RandomInt64", dataType = BuiltinDataType.Int64).apply {
-        accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
-        userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
+        accessLevel = AccessLevel.toValue(AccessLevel.READ_ONLY)
+        userAccessLevel = AccessLevel.toValue(AccessLevel.READ_ONLY)
 
         filterChain.addLast(AttributeFilters.getValue {
             DataValue(
@@ -57,8 +56,8 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
     }
 
     addVariableNode(parentNodeId, "RandomFloat", dataType = BuiltinDataType.Float).apply {
-        accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
-        userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
+        accessLevel = AccessLevel.toValue(AccessLevel.READ_ONLY)
+        userAccessLevel = AccessLevel.toValue(AccessLevel.READ_ONLY)
 
         filterChain.addLast(AttributeFilters.getValue {
             DataValue(
@@ -70,8 +69,8 @@ private fun DemoNamespace.addRandomNodes(parentNodeId: NodeId) {
     }
 
     addVariableNode(parentNodeId, "RandomDouble", dataType = BuiltinDataType.Double).apply {
-        accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
-        userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
+        accessLevel = AccessLevel.toValue(AccessLevel.READ_ONLY)
+        userAccessLevel = AccessLevel.toValue(AccessLevel.READ_ONLY)
 
         filterChain.addLast(AttributeFilters.getValue {
             DataValue(

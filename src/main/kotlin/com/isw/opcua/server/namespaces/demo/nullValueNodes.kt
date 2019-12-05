@@ -6,7 +6,6 @@ import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 
 
 fun DemoNamespace.addNullValueNodes() {
@@ -32,8 +31,8 @@ fun DemoNamespace.addNullValueNodes() {
         val name = dataType.name
 
         addVariableNode(dynamicFolder.nodeId, name, dataType = dataType).apply {
-            accessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
-            userAccessLevel = Unsigned.ubyte(AccessLevel.getMask(AccessLevel.READ_ONLY))
+            accessLevel = AccessLevel.toValue(AccessLevel.READ_ONLY)
+            userAccessLevel = AccessLevel.toValue(AccessLevel.READ_ONLY)
 
             value = DataValue(Variant.NULL_VALUE)
         }
