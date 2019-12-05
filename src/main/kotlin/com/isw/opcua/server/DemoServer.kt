@@ -33,6 +33,7 @@ import org.eclipse.milo.opcua.stack.server.security.DefaultServerCertificateVali
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
+import java.text.SimpleDateFormat
 import java.util.*
 
 class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
@@ -253,14 +254,22 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
     }
 
     private fun buildInfo(): BuildInfo {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+
         val manufacturerName = "Industrial Softworks"
         val productName = "Eclipse Milo OPC UA Demo Server"
 
         val softwareVersion = ManifestUtil.read(PROPERTY_SOFTWARE_VERSION).orElse("dev")
         val buildNumber = ManifestUtil.read(PROPERTY_BUILD_NUMBER).orElse("dev")
-        val buildDate = ManifestUtil.read(PROPERTY_BUILD_DATE).map { ts ->
-            DateTime(Calendar.getInstance().also { it.timeInMillis = ts.toLong() }.time)
-        }.orElse(DateTime())
+        val buildDate = ManifestUtil.read(PROPERTY_BUILD_DATE).map { date ->
+            try {
+                DateTime(dateFormat.parse(date))
+            } catch (t: Throwable) {
+                DateTime.NULL_VALUE
+            }
+        }.orElse(DateTime.NULL_VALUE)
 
         return BuildInfo(
             PRODUCT_URI,

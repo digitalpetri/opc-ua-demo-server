@@ -1,8 +1,11 @@
+import java.text.SimpleDateFormat
+
 plugins {
     id "java"
     id "org.jetbrains.kotlin.jvm" version "1.3.60"
     id "org.beryx.runtime" version "1.8.0"
     id "com.github.johnrengelman.shadow" version "5.2.0"
+    id "com.palantir.git-version" version "0.12.2"
 }
 
 group "com.isw.opcua"
@@ -40,14 +43,25 @@ application {
 }
 
 jar {
+    def details = versionDetails()
+
     manifest {
         attributes(
             "Main-Class": "com.isw.opcua.server.MiloDemoServer",
             "Implementation-Title": "milo-demo-server",
             "X-Stack-Version": "$miloVersion",
-            "X-SDK-Version": "$miloVersion"
+            "X-SDK-Version": "$miloVersion",
+            "X-Server-Build-Date": getDate(),
+            "X-Server-Build-Number": details.gitHash,
+            "X-Server-Software-Version": project.version
         )
     }
+}
+
+static def getDate() {
+    def df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    df.setTimeZone(TimeZone.getTimeZone("UTC"))
+    return df.format(new Date());
 }
 
 runtime {
