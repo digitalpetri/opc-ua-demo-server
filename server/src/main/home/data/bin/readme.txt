@@ -1,1 +1,0 @@
-set this directory to the working directory when running from IDE

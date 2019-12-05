@@ -5,6 +5,7 @@ package com.isw.opcua.server
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
 import ch.qos.logback.core.util.StatusPrinter
+import io.github.soc.directories.ProjectDirectories
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.Stack
@@ -20,16 +21,21 @@ fun main() {
     // start running this static initializer ASAP, it measurably affects startup time.
     Thread(Runnable { Identifiers.Boolean }).start()
 
-    val userDir = File(System.getProperty("user.dir"))
+    val directories = ProjectDirectories.from(
+        "com",
+        "Industrial Softworks",
+        "Milo Demo Server"
+    )
 
-    // "data" dir is a step out of the "bin" folder
-    val dataDir = userDir.resolve("..").apply {
+    val configDirPath = System.getProperty("configDir", directories.configDir)
+    val configDir = File(configDirPath).apply {
         if (!exists()) {
             assert(mkdirs())
         }
     }
 
-    val configDir = dataDir.resolve("config").apply {
+    val dataDirPath = System.getProperty("dataDir", directories.dataDir)
+    val dataDir = File(dataDirPath).apply {
         if (!exists()) {
             assert(mkdirs())
         }
@@ -54,7 +60,7 @@ fun main() {
 
     Stack.ConnectionLimits.RATE_LIMIT_ENABLED = false
 
-    val demoServer = DemoServer(dataDir).also { it.startup() }
+    val demoServer = DemoServer(configDir, dataDir).also { it.startup() }
 
     val future = CompletableFuture<Unit>()
 

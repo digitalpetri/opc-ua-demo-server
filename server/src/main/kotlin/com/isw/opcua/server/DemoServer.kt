@@ -26,8 +26,8 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.enumerated.ApplicationType
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode
 import org.eclipse.milo.opcua.stack.core.types.structured.*
-import org.eclipse.milo.opcua.stack.core.util.CertificateValidationUtil.ValidationCheck
 import org.eclipse.milo.opcua.stack.core.util.ManifestUtil
+import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck
 import org.eclipse.milo.opcua.stack.server.EndpointConfiguration
 import org.eclipse.milo.opcua.stack.server.security.DefaultServerCertificateValidator
 import org.slf4j.LoggerFactory
@@ -35,7 +35,10 @@ import java.io.File
 import java.nio.file.Files
 import java.util.*
 
-class DemoServer(dataDir: File) : AbstractLifecycle() {
+class DemoServer(
+    private val configDir: File,
+    private val dataDir: File
+) : AbstractLifecycle() {
 
     companion object {
         const val APPLICATION_URI = "urn:eclipse:milo:opcua:server"
@@ -88,9 +91,7 @@ class DemoServer(dataDir: File) : AbstractLifecycle() {
             }
         }
 
-        val securityDir = dataDir
-            .resolve("security")
-            .also { logger.info("security dir: $it") }
+        val securityDir = dataDir.resolve("security")
 
         val pkiDir = securityDir.toPath()
             .resolve("pki")
@@ -160,6 +161,10 @@ class DemoServer(dataDir: File) : AbstractLifecycle() {
 
         server.startup().get()
 
+        logger.info("config dir: $configDir")
+        logger.info("data dir: $dataDir")
+        logger.info("security dir: ${dataDir.resolve("security")}")
+
         if (config[ServerConfig.Registration.enabled]) {
             val frequency = config[ServerConfig.Registration.frequency]
 
@@ -183,12 +188,11 @@ class DemoServer(dataDir: File) : AbstractLifecycle() {
         server.shutdown().get()
     }
 
-    private fun readConfig(dataDir: File): Config {
+    private fun readConfig(configDir: File): Config {
         return with(Config()) {
             addSpec(ServerConfig)
 
-            val configFile = dataDir
-                .resolve("config")
+            val configFile = configDir
                 .resolve("server.json")
 
             configFile.apply {
