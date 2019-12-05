@@ -14,10 +14,13 @@ import java.io.File
 import java.nio.file.Files
 import java.security.Security
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
 
 
 fun main() {
+    val startNanos = System.nanoTime()
+
     // start running this static initializer ASAP, it measurably affects startup time.
     Thread(Runnable { Identifiers.Boolean }).start()
 
@@ -61,6 +64,17 @@ fun main() {
     Stack.ConnectionLimits.RATE_LIMIT_ENABLED = false
 
     val demoServer = DemoServer(configDir, dataDir).also { it.startup() }
+
+    val startupTimeMillis = TimeUnit.MILLISECONDS.convert(
+        System.nanoTime() - startNanos,
+        TimeUnit.NANOSECONDS
+    )
+
+    LoggerFactory.getLogger(DemoServer::class.java).apply {
+        info("Eclipse Milo Demo Server started in ${startupTimeMillis}ms")
+        info("\tconfig dir:\t$configDir")
+        info("\tdata dir:\t$dataDir")
+    }
 
     val future = CompletableFuture<Unit>()
 

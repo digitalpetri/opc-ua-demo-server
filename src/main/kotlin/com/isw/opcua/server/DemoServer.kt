@@ -161,10 +161,6 @@ class DemoServer(
 
         server.startup().get()
 
-        logger.info("config dir: $configDir")
-        logger.info("data dir: $dataDir")
-        logger.info("security dir: ${dataDir.resolve("security")}")
-
         if (config[ServerConfig.Registration.enabled]) {
             val frequency = config[ServerConfig.Registration.frequency]
 
