@@ -1,11 +1,12 @@
 trigger:
   - master
 
+# don't trigger this pipeline on PRs
 pr: none
 
 jobs:
   # Linux job
-  - template: src/main/pipeline/build-job.yml
+  - template: src/main/pipelines/image-builder-template.yml
     parameters:
       name: Linux
       platform: linux
@@ -13,7 +14,7 @@ jobs:
         vmImage: 'ubuntu-16.04'
 
   # Mac OS job
-  - template: src/main/pipeline/build-job.yml
+  - template: src/main/pipelines/image-builder-template.yml
     parameters:
       name: MacOS
       platform: mac
@@ -21,7 +22,7 @@ jobs:
         vmImage: 'macOS-10.13'
 
   # Windows job
-  - template: src/main/pipeline/build-job.yml
+  - template: src/main/pipelines/image-builder-template.yml
     parameters:
       name: Windows
       platform: win
