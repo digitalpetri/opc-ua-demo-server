@@ -10,7 +10,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName
 
 
-fun DemoNamespace.addMethodNodes() {
+fun DemoNamespace.addDemoMethodNodes() {
     val methodFolder = UaFolderNode(
         nodeContext,
         NodeId(namespaceIndex, "Methods"),

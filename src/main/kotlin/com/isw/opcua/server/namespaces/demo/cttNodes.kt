@@ -7,14 +7,19 @@ import com.isw.opcua.milo.extensions.resolve
 import com.isw.opcua.server.namespaces.filters.EuRangeCheckFilter
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.ValueRank
+import org.eclipse.milo.opcua.sdk.core.ValueRanks
+import org.eclipse.milo.opcua.sdk.server.api.methods.AbstractMethodInvocationHandler
 import org.eclipse.milo.opcua.sdk.server.model.nodes.variables.AnalogItemTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
+import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
+import org.eclipse.milo.opcua.stack.core.types.structured.Argument
 import org.eclipse.milo.opcua.stack.core.types.structured.Range
+import kotlin.random.Random
 
 
 fun DemoNamespace.addCttNodes() {
@@ -35,6 +40,7 @@ fun DemoNamespace.addCttNodes() {
     addStaticNodes(cttFolder.nodeId)
     addReferencesNodes(cttFolder.nodeId)
     addSecurityAccessNodes(cttFolder.nodeId)
+    addMethodNodes(cttFolder.nodeId)
 }
 
 private fun DemoNamespace.addStaticNodes(parentNodeId: NodeId) {
@@ -180,4 +186,148 @@ private fun DemoNamespace.addSecurityAccessNodes(parentNodeId: NodeId) {
     )
     nodeWithCurrentWrite.accessLevel = ubyte(AccessLevel.CurrentWrite.value)
     nodeWithCurrentWrite.userAccessLevel = ubyte(AccessLevel.CurrentWrite.value)
+}
+
+private fun DemoNamespace.addMethodNodes(parentNodeId: NodeId) {
+    val methodFolder = UaFolderNode(
+        nodeContext,
+        parentNodeId.resolve("Methods"),
+        QualifiedName(namespaceIndex, "Methods"),
+        LocalizedText("Methods")
+    )
+
+    nodeManager.addNode(methodFolder)
+
+    methodFolder.inverseReferenceTo(
+        parentNodeId,
+        Identifiers.HasComponent
+    )
+
+    addMethodNoArgs(methodFolder.nodeId)
+    addMethodIO(methodFolder.nodeId)
+    addMethodI(methodFolder.nodeId)
+    addMethodO(methodFolder.nodeId)
+}
+
+private val INPUT_ARGUMENTS = arrayOf(
+    Argument(
+        "I",
+        BuiltinDataType.Int32.nodeId,
+        ValueRanks.Scalar,
+        null,
+        LocalizedText.NULL_VALUE
+    )
+)
+
+private val OUTPUT_ARGUMENTS = arrayOf(
+    Argument(
+        "O",
+        BuiltinDataType.String.nodeId,
+        ValueRanks.Scalar,
+        null,
+        LocalizedText.NULL_VALUE
+    )
+)
+
+private fun DemoNamespace.addMethodNoArgs(parentNodeId: NodeId) {
+    val methodNode = UaMethodNode.builder(nodeContext)
+        .setNodeId(parentNodeId.resolve("methodNoArgs()"))
+        .setBrowseName(QualifiedName(namespaceIndex, "methodNoArgs()"))
+        .setDisplayName(LocalizedText(null, "methodNoArgs()"))
+        .setDescription(
+            LocalizedText.english("A method that has no Input or Output Arguments")
+        )
+        .build()
+
+    methodNode.invocationHandler = object : AbstractMethodInvocationHandler(methodNode) {
+        override fun getInputArguments(): Array<Argument> = emptyArray()
+
+        override fun getOutputArguments(): Array<Argument> = emptyArray()
+
+        override fun invoke(invocationContext: InvocationContext, inputValues: Array<out Variant>): Array<Variant> {
+            return emptyArray()
+        }
+    }
+
+    nodeManager.addNode(methodNode)
+    methodNode.inverseReferenceTo(parentNodeId, Identifiers.HasComponent)
+}
+
+private fun DemoNamespace.addMethodIO(parentNodeId: NodeId) {
+    val methodNode = UaMethodNode.builder(nodeContext)
+        .setNodeId(parentNodeId.resolve("Methods/methodIO(in I, out O)"))
+        .setBrowseName(QualifiedName(namespaceIndex, "methodIO(in I, out O)"))
+        .setDisplayName(LocalizedText(null, "methodIO(in I, out O)"))
+        .setDescription(
+            LocalizedText.english("A method that has Input and Output Arguments")
+        )
+        .build()
+
+    methodNode.inputArguments = INPUT_ARGUMENTS
+    methodNode.outputArguments = OUTPUT_ARGUMENTS
+
+    methodNode.invocationHandler = object : AbstractMethodInvocationHandler(methodNode) {
+        override fun getInputArguments(): Array<Argument> = methodNode.inputArguments ?: emptyArray()
+
+        override fun getOutputArguments(): Array<Argument> = methodNode.outputArguments ?: emptyArray()
+
+        override fun invoke(invocationContext: InvocationContext, inputValues: Array<out Variant>): Array<Variant> {
+            return arrayOf(Variant(inputValues[0].value?.toString()))
+        }
+    }
+
+    nodeManager.addNode(methodNode)
+    methodNode.inverseReferenceTo(parentNodeId, Identifiers.HasComponent)
+}
+
+private fun DemoNamespace.addMethodI(parentNodeId: NodeId) {
+    val methodNode = UaMethodNode.builder(nodeContext)
+        .setNodeId(parentNodeId.resolve("Methods/methodI(in I)"))
+        .setBrowseName(QualifiedName(namespaceIndex, "methodI(in I)"))
+        .setDisplayName(LocalizedText(null, "methodI(in I)"))
+        .setDescription(
+            LocalizedText.english("A method that has Input Argument")
+        )
+        .build()
+
+    methodNode.inputArguments = INPUT_ARGUMENTS
+
+    methodNode.invocationHandler = object : AbstractMethodInvocationHandler(methodNode) {
+        override fun getInputArguments(): Array<Argument> = methodNode.inputArguments ?: emptyArray()
+
+        override fun getOutputArguments(): Array<Argument> = methodNode.outputArguments ?: emptyArray()
+
+        override fun invoke(invocationContext: InvocationContext, inputValues: Array<out Variant>): Array<Variant> {
+            return emptyArray()
+        }
+    }
+
+    nodeManager.addNode(methodNode)
+    methodNode.inverseReferenceTo(parentNodeId, Identifiers.HasComponent)
+}
+
+private fun DemoNamespace.addMethodO(parentNodeId: NodeId) {
+    val methodNode = UaMethodNode.builder(nodeContext)
+        .setNodeId(parentNodeId.resolve("Methods/methodO(out O)"))
+        .setBrowseName(QualifiedName(namespaceIndex, "methodO(out O)"))
+        .setDisplayName(LocalizedText(null, "methodO(out O)"))
+        .setDescription(
+            LocalizedText.english("A method that has an Output Argument")
+        )
+        .build()
+
+    methodNode.outputArguments = OUTPUT_ARGUMENTS
+
+    methodNode.invocationHandler = object : AbstractMethodInvocationHandler(methodNode) {
+        override fun getInputArguments(): Array<Argument> = methodNode.inputArguments ?: emptyArray()
+
+        override fun getOutputArguments(): Array<Argument> = methodNode.outputArguments ?: emptyArray()
+
+        override fun invoke(invocationContext: InvocationContext, inputValues: Array<out Variant>): Array<Variant> {
+            return arrayOf(Variant(Random.nextInt().toString()))
+        }
+    }
+
+    nodeManager.addNode(methodNode)
+    methodNode.inverseReferenceTo(parentNodeId, Identifiers.HasComponent)
 }

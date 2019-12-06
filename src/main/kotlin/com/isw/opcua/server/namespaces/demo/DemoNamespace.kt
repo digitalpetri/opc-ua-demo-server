@@ -80,7 +80,7 @@ class DemoNamespace(
         addMassNodes()
         addTurtleNodes()
         addFileNodes()
-        addMethodNodes()
+        addDemoMethodNodes()
         addDynamicNodes()
         addNullValueNodes()
 
