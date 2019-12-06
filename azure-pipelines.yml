@@ -1,6 +1,8 @@
 trigger:
   - master
 
+pr: none
+
 jobs:
   # Linux job
   - template: src/main/pipeline/build-job.yml
