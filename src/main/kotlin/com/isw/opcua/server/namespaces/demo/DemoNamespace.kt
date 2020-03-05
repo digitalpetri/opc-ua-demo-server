@@ -23,6 +23,9 @@ import org.eclipse.milo.opcua.sdk.server.api.services.ViewServices.BrowseContext
 import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.*
 import org.eclipse.milo.opcua.sdk.server.nodes.factories.NodeFactory
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilter
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilterContext.GetAttributeContext
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilterContext.SetAttributeContext
 import org.eclipse.milo.opcua.stack.core.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
@@ -451,6 +454,8 @@ fun DemoNamespace.addVariableNode(
         build()
     }
 
+    variableNode.filterChain.addFirst(AttributeLoggingFilter())
+
     nodeManager.addNode(variableNode)
 
     variableNode.inverseReferenceTo(
@@ -459,4 +464,47 @@ fun DemoNamespace.addVariableNode(
     )
 
     return variableNode
+}
+
+class AttributeLoggingFilter @JvmOverloads constructor(
+    private val predicate: (AttributeId) -> Boolean = { true }
+) : AttributeFilter {
+
+    private val logger = LoggerFactory.getLogger(javaClass)
+
+    override fun getAttribute(
+        ctx: GetAttributeContext,
+        attributeId: AttributeId
+    ): Any {
+
+        val value = ctx.getAttribute(attributeId)
+
+        // only log external reads
+        if (predicate(attributeId) && ctx.session.isPresent) {
+            logger.debug(
+                "get nodeId={} attributeId={} value={}",
+                ctx.node.nodeId, attributeId, value
+            )
+        }
+
+        return value
+    }
+
+    override fun setAttribute(
+        ctx: SetAttributeContext,
+        attributeId: AttributeId,
+        value: Any
+    ) {
+
+        // only log external writes
+        if (predicate(attributeId) && ctx.session.isPresent) {
+            logger.debug(
+                "set nodeId={} attributeId={} value={}",
+                ctx.node.nodeId, attributeId, value
+            )
+        }
+
+        ctx.setAttribute(attributeId, value)
+    }
+
 }
