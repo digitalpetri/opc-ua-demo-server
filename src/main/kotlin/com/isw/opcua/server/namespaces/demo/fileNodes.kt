@@ -5,6 +5,7 @@ import com.isw.opcua.server.DemoServer
 import com.isw.opcua.server.objects.FileObject
 import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
+import org.eclipse.milo.opcua.sdk.server.nodes.factories.NodeFactory
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
@@ -36,7 +37,11 @@ private fun DemoNamespace.addManifestoFile(fileFolder: UaFolderNode) {
     val fileNode = nodeFactory.createNode(
         NodeId(namespaceIndex, "manifesto.txt"),
         Identifiers.FileType,
-        true
+        object : NodeFactory.InstantiationCallback {
+            override fun includeOptionalNode(typeDefinitionId: NodeId, browseName: QualifiedName): Boolean {
+                return true
+            }
+        }
     )
     fileNode.browseName = QualifiedName(namespaceIndex, "manifesto.txt")
     fileNode.displayName = LocalizedText("manifesto.txt")

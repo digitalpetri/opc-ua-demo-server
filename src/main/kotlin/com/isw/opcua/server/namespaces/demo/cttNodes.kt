@@ -134,8 +134,7 @@ private fun DemoNamespace.addAnalogTypeNodes(parentNodeId: NodeId) {
 
         val node = nodeFactory.createNode(
             parentNodeId.resolve(name),
-            Identifiers.AnalogItemType,
-            false
+            Identifiers.AnalogItemType
         ) as AnalogItemTypeNode
 
         node.browseName = QualifiedName(namespaceIndex, name)
