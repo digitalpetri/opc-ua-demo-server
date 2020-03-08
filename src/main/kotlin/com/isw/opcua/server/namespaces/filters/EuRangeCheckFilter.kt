@@ -15,7 +15,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
  */
 object EuRangeCheckFilter : AttributeFilter {
 
-    override fun setAttribute(ctx: AttributeFilterContext.SetAttributeContext, attributeId: AttributeId, value: Any) {
+    override fun setAttribute(ctx: AttributeFilterContext.SetAttributeContext, attributeId: AttributeId, value: Any?) {
         val node = ctx.node
 
         if (attributeId == AttributeId.Value && node is AnalogItemType) {

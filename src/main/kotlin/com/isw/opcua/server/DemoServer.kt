@@ -142,7 +142,8 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
         // GDS Push Support via ServerConfiguration
         val serverConfigurationNode = server.addressSpaceManager
             .getManagedNode(Identifiers.ServerConfiguration)
-            .orElse(null) as ServerConfigurationTypeNode
+            .map { it as ServerConfigurationTypeNode }
+            .orElseThrow()
 
         serverConfigurationObject = ServerConfigurationObject(
             server,

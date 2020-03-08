@@ -6,7 +6,7 @@ import org.eclipse.milo.opcua.stack.core.AttributeId
 
 object ExecutableByAdmin : AttributeFilter {
 
-    override fun getAttribute(ctx: GetAttributeContext, attributeId: AttributeId): Any {
+    override fun getAttribute(ctx: GetAttributeContext, attributeId: AttributeId): Any? {
         return when (attributeId) {
             AttributeId.Executable -> true
             AttributeId.UserExecutable -> {

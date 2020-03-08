@@ -475,7 +475,7 @@ class AttributeLoggingFilter @JvmOverloads constructor(
     override fun getAttribute(
         ctx: GetAttributeContext,
         attributeId: AttributeId
-    ): Any {
+    ): Any? {
 
         val value = ctx.getAttribute(attributeId)
 
@@ -493,7 +493,7 @@ class AttributeLoggingFilter @JvmOverloads constructor(
     override fun setAttribute(
         ctx: SetAttributeContext,
         attributeId: AttributeId,
-        value: Any
+        value: Any?
     ) {
 
         // only log external writes
