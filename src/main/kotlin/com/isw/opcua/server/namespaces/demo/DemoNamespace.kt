@@ -66,6 +66,8 @@ class DemoNamespace(
 
     internal val nodeFactory = NodeFactory(nodeContext)
 
+    internal lateinit var dictionaryManager: DataTypeDictionaryManager
+
     private val sampledNodes: ConcurrentMap<DataItem, SampledNode> = Maps.newConcurrentMap()
     private val subscribedNodes: ConcurrentMap<DataItem, SubscribedNode> = Maps.newConcurrentMap()
 
@@ -79,6 +81,13 @@ class DemoNamespace(
         server.addressSpaceManager.register(this)
         server.addressSpaceManager.register(nodeManager)
 
+        dictionaryManager = DataTypeDictionaryManager(
+            nodeContext,
+            NAMESPACE_URI
+        )
+
+        dictionaryManager.startup()
+
         addCttNodes()
         addMassNodes()
         addTurtleNodes()
@@ -86,6 +95,7 @@ class DemoNamespace(
         addDemoMethodNodes()
         addDynamicNodes()
         addNullValueNodes()
+        addComplexTypeNodes()
 
         // Set the EventNotifier bit on Server Node for Events.
         val serverNode = server.addressSpaceManager.getManagedNode(Identifiers.Server).orElse(null)
@@ -125,6 +135,8 @@ class DemoNamespace(
 
     override fun onShutdown() {
         sampledNodes.values.forEach { it.shutdown() }
+
+        dictionaryManager.shutdown()
 
         server.addressSpaceManager.unregister(this)
         server.addressSpaceManager.unregister(nodeManager)

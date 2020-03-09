@@ -1,9 +1,6 @@
 package com.isw.opcua.server.namespaces.demo
 
-import com.isw.opcua.milo.extensions.defaultValue
-import com.isw.opcua.milo.extensions.defaultValueArray
-import com.isw.opcua.milo.extensions.inverseReferenceTo
-import com.isw.opcua.milo.extensions.resolve
+import com.isw.opcua.milo.extensions.*
 import com.isw.opcua.server.namespaces.filters.EuRangeCheckFilter
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.ValueRank
@@ -55,6 +52,7 @@ private fun DemoNamespace.addAllProfilesNode(parentNodeId: NodeId) {
 
     addScalarNodes(allProfilesFolder.nodeId)
     addArrayNodes(allProfilesFolder.nodeId)
+    addArray2dNodes(allProfilesFolder.nodeId)
 }
 
 private fun DemoNamespace.addScalarNodes(parentNodeId: NodeId) {
@@ -104,6 +102,25 @@ private fun DemoNamespace.addArrayNodes(parentNodeId: NodeId) {
         node.valueRank = ValueRank.OneDimension.value
         node.arrayDimensions = arrayOf(uint(0))
         node.value = DataValue(Variant(dataType.defaultValueArray()))
+    }
+}
+
+private fun DemoNamespace.addArray2dNodes(parentNodeId: NodeId) {
+    val arrayFolder = addFolderNode(parentNodeId, "Array2d")
+
+    val arrayDataTypes = BuiltinDataType.values().filterNot {
+        it == BuiltinDataType.Variant ||
+            it == BuiltinDataType.DataValue ||
+            it == BuiltinDataType.DiagnosticInfo
+    }
+
+    arrayDataTypes.forEach { dataType ->
+        val name = "${dataType.name}Array2d"
+
+        val node = addVariableNode(arrayFolder.nodeId, name, dataType = dataType)
+        node.valueRank = ValueRank.OneOrMoreDimensions.value
+        node.arrayDimensions = arrayOf(uint(0), uint(0))
+        node.value = DataValue(Variant(dataType.defaultValueArray2d()))
     }
 }
 

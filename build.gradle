@@ -107,6 +107,7 @@ dependencies {
 
     implementation "org.eclipse.milo:sdk-client:$miloVersion"
     implementation "org.eclipse.milo:sdk-server:$miloVersion"
+    implementation "org.eclipse.milo:dictionary-manager:$miloVersion"
 
     implementation "com.uchuhimo:konf:0.13.1"
     implementation "ch.qos.logback:logback-classic:1.2.3"

@@ -73,3 +73,19 @@ fun BuiltinDataType.defaultValueArray(length: Int = 5): Any {
     }
     return array
 }
+
+fun BuiltinDataType.defaultValueArray2d(length: Int = 5): Any {
+    val value = defaultValue()
+
+    val array = java.lang.reflect.Array.newInstance(this.backingClass, length, length)
+
+    for (i in 0 until length) {
+        val innerArray = java.lang.reflect.Array.get(array, i)
+
+        for (j in 0 until length) {
+            java.lang.reflect.Array.set(innerArray, i, value)
+        }
+    }
+
+    return array
+}
