@@ -267,7 +267,7 @@ private fun DemoNamespace.registerCustomUnionType() {
     val binaryEncodingId = CustomUnionType.BINARY_ENCODING_ID
         .localOrThrow(server.namespaceTable)
 
-    dictionaryManager.registerStructureCodec(
+    dictionaryManager.registerUnionCodec(
         CustomUnionType.Codec().asBinaryCodec(),
         "CustomUnionType",
         dataTypeId,
