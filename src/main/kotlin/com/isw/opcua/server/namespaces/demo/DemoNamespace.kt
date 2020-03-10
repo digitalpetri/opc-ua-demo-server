@@ -406,10 +406,6 @@ class DemoNamespace(
 
 }
 
-fun Optional<NodeManager<UaNode>>.addNode(node: UaNode) {
-    this.ifPresent { it.addNode(node) }
-}
-
 fun DemoNamespace.addFolderNode(parentNodeId: NodeId, name: String): UaFolderNode {
     val folderNode = UaFolderNode(
         nodeContext,
