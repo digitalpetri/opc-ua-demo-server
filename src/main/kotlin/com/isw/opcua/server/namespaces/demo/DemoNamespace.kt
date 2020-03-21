@@ -38,6 +38,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.ConcurrentMap
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.function.BiConsumer
 
@@ -67,6 +68,8 @@ class DemoNamespace(
     internal val nodeFactory = NodeFactory(nodeContext)
 
     internal lateinit var dictionaryManager: DataTypeDictionaryManager
+
+    private lateinit var eventFuture: ScheduledFuture<*>
 
     private val sampledNodes: ConcurrentMap<DataItem, SampledNode> = Maps.newConcurrentMap()
     private val subscribedNodes: ConcurrentMap<DataItem, SubscribedNode> = Maps.newConcurrentMap()
@@ -104,7 +107,7 @@ class DemoNamespace(
             serverNode.eventNotifier = ubyte(1)
 
             // Post a bogus Event every couple seconds
-            server.scheduledExecutorService.scheduleAtFixedRate({
+            eventFuture = server.scheduledExecutorService.scheduleAtFixedRate({
                 try {
                     val eventNode = server.eventFactory.createEvent(
                         NodeId(1, UUID.randomUUID()),
@@ -134,6 +137,8 @@ class DemoNamespace(
     }
 
     override fun onShutdown() {
+        eventFuture.cancel(true)
+
         sampledNodes.values.forEach { it.shutdown() }
 
         dictionaryManager.shutdown()
