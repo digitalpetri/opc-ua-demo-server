@@ -202,6 +202,13 @@ private fun DemoNamespace.addSecurityAccessNodes(parentNodeId: NodeId) {
     )
     nodeWithCurrentWrite.accessLevel = ubyte(AccessLevel.CurrentWrite.value)
     nodeWithCurrentWrite.userAccessLevel = ubyte(AccessLevel.CurrentWrite.value)
+
+    val nodeWithCurrentReadNotUser = addVariableNode(
+        securityAccessFolder.nodeId,
+        "AccessLevel_CurrentRead_NotUser"
+    )
+    nodeWithCurrentReadNotUser.accessLevel = ubyte(AccessLevel.CurrentRead.value)
+    nodeWithCurrentReadNotUser.userAccessLevel = ubyte(0)
 }
 
 private fun DemoNamespace.addMethodNodes(parentNodeId: NodeId) {
