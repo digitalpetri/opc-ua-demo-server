@@ -5,6 +5,8 @@ import com.isw.opcua.server.DemoServer
 import com.isw.opcua.server.objects.FileObject
 import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
+import org.eclipse.milo.opcua.sdk.server.nodes.UaNode
+import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode
 import org.eclipse.milo.opcua.sdk.server.nodes.factories.NodeFactory
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText
@@ -40,6 +42,10 @@ private fun DemoNamespace.addManifestoFile(fileFolder: UaFolderNode) {
         object : NodeFactory.InstantiationCallback {
             override fun includeOptionalNode(typeDefinitionId: NodeId, browseName: QualifiedName): Boolean {
                 return true
+            }
+
+            override fun onVariableAdded(parent: UaNode?, instance: UaVariableNode, typeDefinitionId: NodeId) {
+                instance.minimumSamplingInterval = 100.0
             }
         }
     )
