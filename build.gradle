@@ -8,7 +8,7 @@ plugins {
     id "com.palantir.git-version" version "0.12.2"
 }
 
-group "com.isw.opcua"
+group "com.digitalpetri.opcua"
 version "0.1-SNAPSHOT"
 
 sourceCompatibility = 1.8
@@ -35,10 +35,10 @@ shadowJar {
     }
 }
 
-mainClassName = "com.isw.opcua.server/com.isw.opcua.server.MiloDemoServer"
+mainClassName = "com.digitalpetri.opcua.server/com.digitalpetri.opcua.server.MiloDemoServer"
 
 application {
-    mainClassName = "com.isw.opcua.server.MiloDemoServer"
+    mainClassName = "com.digitalpetri.opcua.server.MiloDemoServer"
     applicationName = "milo-demo-server"
 }
 
@@ -47,7 +47,7 @@ jar {
 
     manifest {
         attributes(
-            "Main-Class": "com.isw.opcua.server.MiloDemoServer",
+            "Main-Class": "com.digitalpetri.opcua.server.MiloDemoServer",
             "Implementation-Title": "milo-demo-server",
             "X-Stack-Version": "$miloVersion",
             "X-SDK-Version": "$miloVersion",
@@ -61,7 +61,7 @@ jar {
 static def getDate() {
     def df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
     df.setTimeZone(TimeZone.getTimeZone("UTC"))
-    return df.format(new Date());
+    return df.format(new Date())
 }
 
 runtime {
