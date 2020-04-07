@@ -49,9 +49,10 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
     }
 
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val supervisor = SupervisorJob()
 
+    private val supervisor = SupervisorJob()
     private val coroutineScope = CoroutineScope(supervisor + Dispatchers.Default)
+
     private val identityValidator = UsernameIdentityValidator(true) { authChallenge ->
         val username = authChallenge.username
         val password = authChallenge.password
@@ -63,13 +64,11 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
         adminValid || user1Valid || user2Valid
     }
 
-    private lateinit var demoNamespace: DemoNamespace
-    private lateinit var serverConfigurationObject: ServerConfigurationObject
-
     private val server: OpcUaServer
+    private val serverConfigurationObject: ServerConfigurationObject
+
     private val config: Config
-    private val keyStore: ServerKeyStore
-    private val trustListManager: DefaultTrustListManager
+    private val demoNamespace: DemoNamespace
 
     init {
         config = readConfig(configDir)
@@ -96,7 +95,7 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
             .resolve("pki")
             .toFile().also { it.mkdirs() }
 
-        keyStore = ServerKeyStore(
+        val keyStore = ServerKeyStore(
             KeyStoreManager.Settings(
                 keyStoreFile = securityDir.toPath()
                     .resolve("certificates.pfx").toFile(),
@@ -105,7 +104,7 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
             applicationUuid
         ) { certificateHostnames() }
 
-        trustListManager = DefaultTrustListManager(pkiDir)
+        val trustListManager = DefaultTrustListManager(pkiDir)
 
         val certificateManager = DefaultCertificateManager(
             keyStore.getDefaultKeyPair(),
@@ -136,30 +135,30 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
             .build()
 
         server = OpcUaServer(serverConfig)
-    }
-
-    override fun onStartup() {
-        server.startup().get()
 
         demoNamespace = DemoNamespace(server, coroutineScope)
         demoNamespace.startup()
 
+        // GDS Push Support via ServerConfiguration
+        val serverConfigurationNode = server.addressSpaceManager
+            .getManagedNode(Identifiers.ServerConfiguration)
+            .map { it as ServerConfigurationTypeNode }
+            .orElseThrow()
+
+        serverConfigurationObject = ServerConfigurationObject(
+            server,
+            serverConfigurationNode,
+            keyStore,
+            trustListManager
+        )
+    }
+
+    override fun onStartup() {
         if (config[ServerConfig.gdsPushEnabled]) {
-            // GDS Push Support via ServerConfiguration
-            val serverConfigurationNode = server.addressSpaceManager
-                .getManagedNode(Identifiers.ServerConfiguration)
-                .map { it as ServerConfigurationTypeNode }
-                .orElseThrow()
-
-            serverConfigurationObject = ServerConfigurationObject(
-                server,
-                serverConfigurationNode,
-                keyStore,
-                trustListManager
-            )
-
             serverConfigurationObject.startup()
         }
+
+        server.startup().get()
 
         if (config[ServerConfig.Registration.enabled]) {
             val frequency = config[ServerConfig.Registration.frequency]
