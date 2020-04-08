@@ -14,7 +14,7 @@ version "0.1-SNAPSHOT"
 sourceCompatibility = 1.8
 
 project.ext {
-    miloVersion = "0.4.0-SNAPSHOT"
+    miloVersion = "0.4.0"
     packageName = "milo-demo-server"
 }
 
