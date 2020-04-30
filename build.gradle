@@ -14,7 +14,7 @@ version "0.2-SNAPSHOT"
 sourceCompatibility = 1.8
 
 project.ext {
-    miloVersion = "0.4.0"
+    miloVersion = "0.4.1"
     packageName = "milo-demo-server"
 }
 
@@ -109,7 +109,7 @@ dependencies {
     implementation "org.eclipse.milo:sdk-server:$miloVersion"
     implementation "org.eclipse.milo:dictionary-manager:$miloVersion"
 
-    implementation "com.uchuhimo:konf:0.13.1"
+    implementation "com.uchuhimo:konf-core:0.22.1"
     implementation "ch.qos.logback:logback-classic:1.2.3"
     implementation "io.github.soc:directories:11"
 }
