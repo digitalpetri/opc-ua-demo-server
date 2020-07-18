@@ -32,6 +32,7 @@ shadowJar {
     minimize {
         exclude dependency("org.bouncycastle:.*:.*")
         exclude dependency("org.jetbrains.kotlin:kotlin-reflect:.*")
+        exclude dependency("org.glassfish.jaxb:.*:.*")
     }
 }
 
@@ -65,7 +66,7 @@ static def getDate() {
 }
 
 runtime {
-    options = ["--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"]
+    options = ["--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages", "--bind-services"]
     modules = [
         "jdk.management",
         "java.management",
