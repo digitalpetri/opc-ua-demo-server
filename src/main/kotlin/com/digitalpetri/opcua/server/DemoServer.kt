@@ -1,6 +1,6 @@
 package com.digitalpetri.opcua.server
 
-import com.digitalpetri.opcua.server.namespaces.demo.DemoNamespace
+import com.digitalpetri.opcua.server.namespaces.demo.*
 import com.digitalpetri.opcua.server.objects.ServerConfigurationObject
 import com.digitalpetri.opcua.server.util.KeyStoreManager
 import com.uchuhimo.konf.Config
@@ -68,6 +68,7 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
     private val serverConfigurationObject: ServerConfigurationObject
 
     private val config: Config
+
     private val demoNamespace: DemoNamespace
 
     init {
@@ -136,8 +137,64 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
 
         server = OpcUaServer(serverConfig)
 
-        demoNamespace = DemoNamespace(server, coroutineScope)
+        demoNamespace = DemoNamespace(server)
         demoNamespace.startup()
+
+        val complexTypesFragment = ComplexTypesFragment(
+            server,
+            demoNamespace,
+            demoNamespace.namespaceIndex
+        )
+        complexTypesFragment.startup()
+
+        val cttNodes = CttNodesFragment(
+            server,
+            demoNamespace,
+            demoNamespace.namespaceIndex
+        )
+        cttNodes.startup()
+
+        val dynamicNodes = DynamicNodesFragment(
+            server,
+            demoNamespace,
+            demoNamespace.namespaceIndex
+        )
+        dynamicNodes.startup()
+
+        val fileNodes = FileNodesFragment(
+            server,
+            demoNamespace,
+            demoNamespace.namespaceIndex
+        )
+        fileNodes.startup()
+
+        val massNodes = MassNodesFragment(
+            server,
+            demoNamespace,
+            demoNamespace.namespaceIndex
+        )
+        massNodes.startup()
+
+        val methodNodes = MethodNodesFragment(
+            server,
+            demoNamespace,
+            demoNamespace.namespaceIndex
+        )
+        methodNodes.startup()
+
+        val nullValueNodes = NullValueNodesFragment(
+            server,
+            demoNamespace,
+            demoNamespace.namespaceIndex
+        )
+        nullValueNodes.startup()
+
+        val turtleNodes = TurtleNodesFragment(
+            server,
+            demoNamespace,
+            demoNamespace.namespaceIndex
+        )
+        turtleNodes.startup()
 
         // GDS Push Support via ServerConfiguration
         val serverConfigurationNode = server.addressSpaceManager

@@ -1,7 +1,7 @@
 package com.digitalpetri.opcua.server.objects
 
 import com.digitalpetri.opcua.server.ServerKeyStore
-import com.digitalpetri.opcua.server.namespaces.filters.ExecutableByAdmin
+import com.digitalpetri.opcua.server.namespaces.filters.ExecutableByAdminFilter
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
@@ -50,17 +50,17 @@ class ServerConfigurationObject(
     override fun onStartup() {
         serverConfigurationNode.createSigningRequestMethodNode.apply {
             invocationHandler = CreateSigningRequestImpl(this)
-            filterChain.addLast(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdminFilter)
         }
 
         serverConfigurationNode.updateCertificateMethodNode.apply {
             invocationHandler = UpdateCertificateImpl(this, keyStore)
-            filterChain.addLast(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdminFilter)
         }
 
         serverConfigurationNode.getRejectedListMethodNode.apply {
             invocationHandler = GetRejectedListMethodImpl(this)
-            filterChain.addLast(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdminFilter)
         }
 
         serverConfigurationNode.serverCapabilities = arrayOf("")
@@ -97,7 +97,7 @@ class ServerConfigurationObject(
      * This Method requires an encrypted channel and that the Client provide credentials with administrative rights on the
      * Server.
      */
-    inner class CreateSigningRequestImpl(node: UaMethodNode) : CreateSigningRequestMethod(node) {
+    class CreateSigningRequestImpl(node: UaMethodNode) : CreateSigningRequestMethod(node) {
 
         private val server: OpcUaServer = node.nodeContext.server
 
@@ -191,7 +191,7 @@ class ServerConfigurationObject(
      * This Method requires an encrypted channel and that the Client provide credentials with administrative rights on the
      * Server.
      */
-    inner class UpdateCertificateImpl(
+    class UpdateCertificateImpl(
         node: UaMethodNode,
         private val keyStore: ServerKeyStore
     ) : UpdateCertificateMethod(node) {
@@ -297,7 +297,7 @@ class ServerConfigurationObject(
 
     }
 
-    inner class GetRejectedListMethodImpl(node: UaMethodNode) : GetRejectedListMethod(node) {
+    class GetRejectedListMethodImpl(node: UaMethodNode) : GetRejectedListMethod(node) {
 
         private val server: OpcUaServer = node.nodeContext.server
 

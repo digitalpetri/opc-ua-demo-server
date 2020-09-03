@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentMap
 
 private typealias Callback = suspend (Long) -> Unit
 
-class TickManager(private val coroutineScope: CoroutineScope) {
+object TickManager {
 
     private val logger: Logger = LoggerFactory.getLogger(TickManager::class.java)
 
@@ -27,6 +27,7 @@ class TickManager(private val coroutineScope: CoroutineScope) {
      * Register a [SendChannel] to receive a message every [rateMillis] milliseconds.
      */
     fun registerForTick(
+        coroutineScope: CoroutineScope,
         rateMillis: Long,
         callback: suspend (Long) -> Unit
     ): Tick = synchronized(this) {
@@ -39,7 +40,7 @@ class TickManager(private val coroutineScope: CoroutineScope) {
             .getOrPut(rateMillis) { Sets.newConcurrentHashSet() }
             .add(callback)
 
-        checkTickerJobs()
+        checkTickerJobs(coroutineScope)
 
         return object : Tick {
 
@@ -48,7 +49,7 @@ class TickManager(private val coroutineScope: CoroutineScope) {
             override fun cancel() = synchronized(this@TickManager) {
                 callbackMap[currentRate]?.remove(callback)
 
-                checkTickerJobs()
+                checkTickerJobs(coroutineScope)
             }
 
             override fun modify(newRateMillis: Long) = synchronized(this@TickManager) {
@@ -64,13 +65,13 @@ class TickManager(private val coroutineScope: CoroutineScope) {
                     .getOrPut(newRateMillis) { Sets.newConcurrentHashSet() }
                     .add(callback)
 
-                checkTickerJobs()
+                checkTickerJobs(coroutineScope)
             }
 
         }
     }
 
-    private fun checkTickerJobs() = synchronized(this) {
+    private fun checkTickerJobs(coroutineScope: CoroutineScope) = synchronized(this) {
         callbackMap.entries.forEach { (rate, callbackList) ->
             if (callbackList.isEmpty()) {
                 logger.debug("cancelling ticker job @ ${rate}ms")

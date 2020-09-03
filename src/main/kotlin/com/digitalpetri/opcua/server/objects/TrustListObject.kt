@@ -1,6 +1,6 @@
 package com.digitalpetri.opcua.server.objects
 
-import com.digitalpetri.opcua.server.namespaces.filters.ExecutableByAdmin
+import com.digitalpetri.opcua.server.namespaces.filters.ExecutableByAdminFilter
 import org.bouncycastle.util.encoders.Hex
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
@@ -48,27 +48,27 @@ class TrustListObject(
 
         trustListNode.openWithMasksMethodNode.apply {
             invocationHandler = OpenWithMasksImpl(this)
-            filterChain.addLast(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdminFilter)
         }
 
         trustListNode.closeAndUpdateMethodNode.apply {
             invocationHandler = CloseAndUpdateImpl(this)
-            filterChain.addLast(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdminFilter)
         }
 
         trustListNode.addCertificateMethodNode.apply {
             invocationHandler = AddCertificateImpl(this)
-            filterChain.addLast(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdminFilter)
         }
 
         trustListNode.removeCertificateMethodNode.apply {
             invocationHandler = RemoveCertificateImpl(this)
-            filterChain.addLast(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdminFilter)
         }
 
         trustListNode.openMethodNode.apply {
             invocationHandler = OpenImpl(this)
-            filterChain.addLast(ExecutableByAdmin)
+            filterChain.addLast(ExecutableByAdminFilter)
         }
     }
 

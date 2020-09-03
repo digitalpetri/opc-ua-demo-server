@@ -10,8 +10,7 @@ import org.slf4j.LoggerFactory
 
 abstract class SampledDataItem(
     protected val item: DataItem,
-    private val scope: CoroutineScope,
-    private val tickManager: TickManager
+    private val scope: CoroutineScope
 ) : AbstractLifecycle() {
 
     @Volatile
@@ -26,7 +25,7 @@ abstract class SampledDataItem(
             synchronized(this) {
                 if (super.isRunning()) {
                     try {
-                        tick = tickManager.registerForTick(item.samplingInterval.toLong()) { tick(it) }
+                        tick = TickManager.registerForTick(scope, item.samplingInterval.toLong()) { tick(it) }
                     } catch (t: Throwable) {
                         LoggerFactory.getLogger(javaClass).error(
                             "Error registering tick for item=${item.readValueId} " +

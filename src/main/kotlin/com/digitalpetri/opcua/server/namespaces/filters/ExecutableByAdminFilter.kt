@@ -4,7 +4,7 @@ import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilter
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilterContext.GetAttributeContext
 import org.eclipse.milo.opcua.stack.core.AttributeId
 
-object ExecutableByAdmin : AttributeFilter {
+object ExecutableByAdminFilter : AttributeFilter {
 
     override fun getAttribute(ctx: GetAttributeContext, attributeId: AttributeId): Any? {
         return when (attributeId) {
