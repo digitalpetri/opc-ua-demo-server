@@ -16,8 +16,8 @@ import java.util.concurrent.ConcurrentMap
  */
 abstract class SampledAddressSpaceFragment(
     server: OpcUaServer,
-    private val composite: AddressSpaceComposite
-) : ManagedAddressSpaceFragmentWithLifecycle(server) {
+    composite: AddressSpaceComposite
+) : ManagedAddressSpaceFragmentWithLifecycle(server, composite) {
 
     private val supervisor = SupervisorJob()
     private val coroutineScope = CoroutineScope(supervisor + Dispatchers.Default)
@@ -36,14 +36,6 @@ abstract class SampledAddressSpaceFragment(
 
     override fun getFilter(): AddressSpaceFilter {
         return filter
-    }
-
-    override fun registerAddressSpace(addressSpace: AddressSpaceFragment) {
-        composite.register(addressSpace)
-    }
-
-    override fun unregisterAddressSpace(addressSpace: AddressSpaceFragment) {
-        composite.unregister(addressSpace)
     }
 
     override fun onDataItemsCreated(items: List<DataItem>) {
