@@ -21,7 +21,7 @@ A distribution for your platform will be packaged into a zip file at `build/milo
 
 Build your own distribution or download the distribution for your platform from the GitHub release section.
 
-The packaged distribution includes everything needed to run the demo server, including a Java runtime. Unzip the package for your platform, change into the target direcotyr, and then run `bin/milo-demo-server` (on Linux or macOS) or `bin/milo-demo-server.bat` (on Windows).
+The packaged distribution includes everything needed to run the demo server, including a Java runtime. Unzip the package for your platform, change into the target directory, and then run `bin/milo-demo-server` (on Linux or macOS) or `bin/milo-demo-server.bat` (on Windows).
 
 ### Example
 
