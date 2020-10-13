@@ -61,7 +61,7 @@ fun main() {
     // Required for Aes256_Sha256_RsaPss
     Security.addProvider(BouncyCastleProvider())
 
-    Stack.ConnectionLimits.RATE_LIMIT_ENABLED = false
+    Stack.ConnectionLimits.RATE_LIMIT_ENABLED = true
 
     val demoServer = DemoServer(configDir, dataDir).also { it.startup() }
 
