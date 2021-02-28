@@ -22,7 +22,7 @@ fun main() {
     val startNanos = System.nanoTime()
 
     // start running this static initializer ASAP, it measurably affects startup time.
-    Thread(Runnable { Identifiers.Boolean }).start()
+    Thread { Identifiers.Boolean }.start()
 
     val directories = ProjectDirectories.from(
         "com",
