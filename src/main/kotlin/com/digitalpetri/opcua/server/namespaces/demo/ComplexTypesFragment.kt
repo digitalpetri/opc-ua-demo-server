@@ -9,7 +9,7 @@ import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.core.ValueRanks
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceComposite
-import org.eclipse.milo.opcua.sdk.server.api.DataTypeDictionaryManager
+import org.eclipse.milo.opcua.sdk.server.dtd.DataTypeDictionaryManager
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
