@@ -286,15 +286,13 @@ class CttNodesFragment(
             )
             .build()
 
-        methodNode.inputArguments =
-            INPUT_ARGUMENTS
-        methodNode.outputArguments =
-            OUTPUT_ARGUMENTS
+        methodNode.inputArguments = INPUT_ARGUMENTS
+        methodNode.outputArguments = OUTPUT_ARGUMENTS
 
         methodNode.invocationHandler = object : AbstractMethodInvocationHandler(methodNode) {
-            override fun getInputArguments(): Array<Argument> = methodNode.inputArguments ?: emptyArray()
+            override fun getInputArguments(): Array<out Argument?> = methodNode.inputArguments ?: emptyArray()
 
-            override fun getOutputArguments(): Array<Argument> = methodNode.outputArguments ?: emptyArray()
+            override fun getOutputArguments(): Array<out Argument?> = methodNode.outputArguments ?: emptyArray()
 
             override fun invoke(invocationContext: InvocationContext, inputValues: Array<out Variant>): Array<Variant> {
                 return arrayOf(Variant(inputValues[0].value?.toString()))
@@ -315,13 +313,12 @@ class CttNodesFragment(
             )
             .build()
 
-        methodNode.inputArguments =
-            INPUT_ARGUMENTS
+        methodNode.inputArguments = INPUT_ARGUMENTS
 
         methodNode.invocationHandler = object : AbstractMethodInvocationHandler(methodNode) {
-            override fun getInputArguments(): Array<Argument> = methodNode.inputArguments ?: emptyArray()
+            override fun getInputArguments(): Array<out Argument?> = methodNode.inputArguments ?: emptyArray()
 
-            override fun getOutputArguments(): Array<Argument> = methodNode.outputArguments ?: emptyArray()
+            override fun getOutputArguments(): Array<out Argument?> = methodNode.outputArguments ?: emptyArray()
 
             override fun invoke(invocationContext: InvocationContext, inputValues: Array<out Variant>): Array<Variant> {
                 return emptyArray()
@@ -342,13 +339,12 @@ class CttNodesFragment(
             )
             .build()
 
-        methodNode.outputArguments =
-            OUTPUT_ARGUMENTS
+        methodNode.outputArguments = OUTPUT_ARGUMENTS
 
         methodNode.invocationHandler = object : AbstractMethodInvocationHandler(methodNode) {
-            override fun getInputArguments(): Array<Argument> = methodNode.inputArguments ?: emptyArray()
+            override fun getInputArguments(): Array<out Argument?> = methodNode.inputArguments ?: emptyArray()
 
-            override fun getOutputArguments(): Array<Argument> = methodNode.outputArguments ?: emptyArray()
+            override fun getOutputArguments(): Array<out Argument?> = methodNode.outputArguments ?: emptyArray()
 
             override fun invoke(invocationContext: InvocationContext, inputValues: Array<out Variant>): Array<Variant> {
                 return arrayOf(Variant(Random.nextInt().toString()))
