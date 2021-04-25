@@ -274,7 +274,7 @@ private fun TrustListManager.openTrustListFile(context: SerializationContext, ma
     val trustList = this.getTrustListDataType(masks)
 
     return File.createTempFile("TrustListDataType", null).apply {
-        logger.debug("TrustList file created: {}", path)
+        logger.info("TrustList file created: {}", path)
 
         deleteOnExit()
 

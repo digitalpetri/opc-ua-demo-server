@@ -13,6 +13,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -67,6 +68,9 @@ class FileNodesFragment(
             tempFile.toPath(),
             StandardCopyOption.REPLACE_EXISTING
         )
+
+        LoggerFactory.getLogger(javaClass)
+            .info("Using ${tempFile.path} for manifesto.txt")
 
         val fileObject = (fileNode as? FileTypeNode)?.let {
             FileObject(it) { tempFile }
