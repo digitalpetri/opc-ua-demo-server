@@ -65,16 +65,16 @@ class ComplexTypesFragment(
         val dataTypeId: NodeId = CustomEnumType.TYPE_ID
             .toNodeIdOrThrow(server.namespaceTable)
 
-        val customEnumTypeVariable =
-            UaVariableNode.builder(nodeContext)
-                .setNodeId(NodeId(namespaceIndex, "ComplexTypes/CustomEnumTypeVariable"))
-                .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-                .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-                .setBrowseName(QualifiedName(namespaceIndex, "CustomEnumTypeVariable"))
-                .setDisplayName(LocalizedText.english("CustomEnumTypeVariable"))
-                .setDataType(dataTypeId)
-                .setTypeDefinition(Identifiers.BaseDataVariableType)
-                .build()
+        val customEnumTypeVariable = UaVariableNode.build(nodeContext) {
+            it.setNodeId(NodeId(namespaceIndex, "ComplexTypes/CustomEnumTypeVariable"))
+            it.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+            it.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+            it.setBrowseName(QualifiedName(namespaceIndex, "CustomEnumTypeVariable"))
+            it.setDisplayName(LocalizedText.english("CustomEnumTypeVariable"))
+            it.setDataType(dataTypeId)
+            it.setTypeDefinition(Identifiers.BaseDataVariableType)
+            it.build()
+        }
 
         customEnumTypeVariable.value = DataValue(Variant(CustomEnumType.Field1))
 
@@ -96,16 +96,16 @@ class ComplexTypesFragment(
         val binaryEncodingId: NodeId = CustomStructType.BINARY_ENCODING_ID
             .toNodeIdOrThrow(server.namespaceTable)
 
-        val customStructTypeVariable =
-            UaVariableNode.builder(nodeContext)
-                .setNodeId(NodeId(namespaceIndex, "ComplexTypes/CustomStructTypeVariable"))
-                .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-                .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-                .setBrowseName(QualifiedName(namespaceIndex, "CustomStructTypeVariable"))
-                .setDisplayName(LocalizedText.english("CustomStructTypeVariable"))
-                .setDataType(dataTypeId)
-                .setTypeDefinition(Identifiers.BaseDataVariableType)
-                .build()
+        val customStructTypeVariable = UaVariableNode.build(nodeContext) {
+            it.setNodeId(NodeId(namespaceIndex, "ComplexTypes/CustomStructTypeVariable"))
+            it.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+            it.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+            it.setBrowseName(QualifiedName(namespaceIndex, "CustomStructTypeVariable"))
+            it.setDisplayName(LocalizedText.english("CustomStructTypeVariable"))
+            it.setDataType(dataTypeId)
+            it.setTypeDefinition(Identifiers.BaseDataVariableType)
+            it.build()
+        }
 
         val value = CustomStructType(
             "foo",
@@ -137,16 +137,16 @@ class ComplexTypesFragment(
         val binaryEncodingId: NodeId = CustomUnionType.BINARY_ENCODING_ID
             .toNodeIdOrThrow(server.namespaceTable)
 
-        val customUnionTypeVariable =
-            UaVariableNode.builder(nodeContext)
-                .setNodeId(NodeId(namespaceIndex, "ComplexTypes/CustomUnionTypeVariable"))
-                .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-                .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-                .setBrowseName(QualifiedName(namespaceIndex, "CustomUnionTypeVariable"))
-                .setDisplayName(LocalizedText.english("CustomUnionTypeVariable"))
-                .setDataType(dataTypeId)
-                .setTypeDefinition(Identifiers.BaseDataVariableType)
-                .build()
+        val customUnionTypeVariable = UaVariableNode.build(nodeContext) {
+            it.setNodeId(NodeId(namespaceIndex, "ComplexTypes/CustomUnionTypeVariable"))
+            it.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+            it.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+            it.setBrowseName(QualifiedName(namespaceIndex, "CustomUnionTypeVariable"))
+            it.setDisplayName(LocalizedText.english("CustomUnionTypeVariable"))
+            it.setDataType(dataTypeId)
+            it.setTypeDefinition(Identifiers.BaseDataVariableType)
+            it.build()
+        }
 
         val value: CustomUnionType = CustomUnionType.ofBar("hello")
         val xo = ExtensionObject.encodeDefaultBinary(
