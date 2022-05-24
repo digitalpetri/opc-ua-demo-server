@@ -13,7 +13,7 @@ Authenticate anonymously or with one of the following credential pairs:
 
 ## Building
 
-**Using JDK 11+**, run `./gradlew dist` in the root directory.
+**Using JDK 17+**, run `./gradlew dist` in the root directory.
 
 A distribution for your platform will be packaged into a zip file at `build/milo-demo-server.zip`.
 
