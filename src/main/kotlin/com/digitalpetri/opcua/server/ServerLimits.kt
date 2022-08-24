@@ -32,7 +32,19 @@ object ServerLimits : OpcUaServerConfigLimits {
     }
 
     override fun getMaxMonitoredItems(): UInteger {
-        return uint(15_000)
+        return uint(50_000)
     }
 
+    override fun getMaxMonitoredItemsPerSession(): UInteger {
+        return uint(5000)
+    }
+
+    override fun getMaxSubscriptions(): UInteger {
+        return uint(5_000)
+    }
+
+    override fun getMaxSubscriptionsPerSession(): UInteger {
+        return uint(50)
+    }
+    
 }
