@@ -8,15 +8,31 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 object ServerLimits : OpcUaServerConfigLimits {
 
     override fun getMaxSessionCount(): UInteger {
-        return uint(1000)
+        return uint(100)
+    }
+
+    override fun getMaxSessionTimeout(): Double {
+        return 30_000.0;
     }
 
     override fun getMinPublishingInterval(): Double {
         return 100.0
     }
 
+    override fun getMaxPublishingInterval(): Double {
+        return 15_0000.0;
+    }
+
+    override fun getMaxSubscriptionLifetime(): Double {
+        return 30_000.0;
+    }
+
     override fun getDefaultPublishingInterval(): Double {
         return 100.0
+    }
+
+    override fun getMaxMonitoredItems(): UInteger {
+        return uint(15_000)
     }
 
 }
