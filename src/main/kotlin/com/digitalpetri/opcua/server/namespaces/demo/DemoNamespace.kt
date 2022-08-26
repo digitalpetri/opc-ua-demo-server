@@ -14,7 +14,7 @@ import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNodeContext
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
-import org.eclipse.milo.opcua.stack.core.Identifiers
+import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
 
@@ -26,7 +26,7 @@ class DemoNamespace(server: OpcUaServer) : AddressSpaceComposite(server), Namesp
 
     private val lifecycleManager = LifecycleManager()
 
-    private val namespaceIndex: UShort = server.namespaceTable.addUri(NAMESPACE_URI)
+    private val namespaceIndex: UShort = server.namespaceTable.add(NAMESPACE_URI)
 
     init {
         lifecycleManager.addLifecycle(object : Lifecycle {
@@ -64,7 +64,7 @@ fun UaNodeContext.addVariableNode(
     name: String,
     nodeId: NodeId = parentNodeId.resolve(name),
     dataType: BuiltinDataType = BuiltinDataType.Int32,
-    referenceTypeId: NodeId = Identifiers.HasComponent
+    referenceTypeId: NodeId = NodeIds.HasComponent
 ): UaVariableNode {
 
     return addVariableNode(
@@ -83,7 +83,7 @@ fun UaNodeContext.addVariableNode(
     nodeId: NodeId = parentNodeId.resolve(name),
     dataTypeId: NodeId,
     value: Any,
-    referenceTypeId: NodeId = Identifiers.HasComponent
+    referenceTypeId: NodeId = NodeIds.HasComponent
 ): UaVariableNode {
 
     val variableNode = UaVariableNode.UaVariableNodeBuilder(this).run {
@@ -93,7 +93,7 @@ fun UaNodeContext.addVariableNode(
         setBrowseName(QualifiedName(parentNodeId.namespaceIndex, name))
         setDisplayName(LocalizedText.english(name))
         setDataType(dataTypeId)
-        setTypeDefinition(Identifiers.BaseDataVariableType)
+        setTypeDefinition(NodeIds.BaseDataVariableType)
         setMinimumSamplingInterval(100.0)
         setValue(DataValue(Variant(value)))
 
@@ -124,7 +124,7 @@ fun UaNodeContext.addFolderNode(parentNodeId: NodeId, name: String): UaFolderNod
 
     folderNode.inverseReferenceTo(
         parentNodeId,
-        Identifiers.HasComponent
+        NodeIds.HasComponent
     )
 
     return folderNode

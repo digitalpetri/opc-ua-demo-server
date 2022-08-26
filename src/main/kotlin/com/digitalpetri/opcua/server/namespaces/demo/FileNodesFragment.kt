@@ -5,10 +5,10 @@ import com.digitalpetri.opcua.server.DemoServer
 import com.digitalpetri.opcua.server.objects.FileObject
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceComposite
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileTypeNode
+import org.eclipse.milo.opcua.sdk.server.model.objects.FileTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.factories.NodeFactory
-import org.eclipse.milo.opcua.stack.core.Identifiers
+import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName
@@ -39,8 +39,8 @@ class FileNodesFragment(
         nodeManager.addNode(fileFolder)
 
         fileFolder.inverseReferenceTo(
-            Identifiers.ObjectsFolder,
-            Identifiers.HasComponent
+            NodeIds.ObjectsFolder,
+            NodeIds.HasComponent
         )
 
         addManifestoFile(fileFolder)
@@ -49,7 +49,7 @@ class FileNodesFragment(
     private fun addManifestoFile(fileFolder: UaFolderNode) {
         val fileNode = nodeFactory.createNode(
             NodeId(namespaceIndex, "manifesto.txt"),
-            Identifiers.FileType,
+            NodeIds.FileType,
             object : NodeFactory.InstantiationCallback {
                 override fun includeOptionalNode(typeDefinitionId: NodeId, browseName: QualifiedName): Boolean {
                     return true
@@ -79,7 +79,7 @@ class FileNodesFragment(
         fileObject?.startup()
 
         nodeManager.addNode(fileNode)
-        fileNode.inverseReferenceTo(fileFolder.nodeId, Identifiers.HasComponent)
+        fileNode.inverseReferenceTo(fileFolder.nodeId, NodeIds.HasComponent)
     }
 
 }

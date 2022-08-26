@@ -1,6 +1,6 @@
 package com.digitalpetri.opcua.server.namespaces.filters
 
-import org.eclipse.milo.opcua.sdk.server.model.types.variables.AnalogItemType
+import org.eclipse.milo.opcua.sdk.server.model.variables.AnalogItemType
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilter
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilterContext
 import org.eclipse.milo.opcua.stack.core.AttributeId

@@ -10,19 +10,19 @@ import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
 import org.eclipse.milo.opcua.sdk.server.api.methods.Out
-import org.eclipse.milo.opcua.sdk.server.model.methods.CreateSigningRequestMethod
-import org.eclipse.milo.opcua.sdk.server.model.methods.GetRejectedListMethod
-import org.eclipse.milo.opcua.sdk.server.model.methods.UpdateCertificateMethod
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerConfigurationTypeNode
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.TrustListTypeNode
+import org.eclipse.milo.opcua.sdk.server.model.objects.CertificateGroupTypeNode
+import org.eclipse.milo.opcua.sdk.server.model.objects.ServerConfigurationType
+import org.eclipse.milo.opcua.sdk.server.model.objects.ServerConfigurationTypeNode
+import org.eclipse.milo.opcua.sdk.server.model.objects.TrustListTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
-import org.eclipse.milo.opcua.stack.core.Identifiers
+import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
+import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode
 import org.eclipse.milo.opcua.stack.core.util.CertificateUtil
@@ -68,17 +68,19 @@ class ServerConfigurationObject(
         serverConfigurationNode.maxTrustListSize = Unsigned.uint(0)
         serverConfigurationNode.multicastDnsEnabled = false
 
-        serverConfigurationNode.certificateGroupsNode.defaultApplicationGroupNode.certificateTypes = arrayOf(
-            Identifiers.RsaSha256ApplicationCertificateType
-        )
+        // TODO replace usage of findNode with direct accessor once Organizes references are generated
+        val defaultApplicationGroup = serverConfigurationNode.findNode(QualifiedName(0, "DefaultApplicationGroup"))
+        defaultApplicationGroup.ifPresent { node ->
+            node as CertificateGroupTypeNode
+            node.certificateTypes = arrayOf(
+                NodeIds.RsaSha256ApplicationCertificateType
+            )
 
-        val trustListNode = serverConfigurationNode
-            .certificateGroupsNode
-            .defaultApplicationGroupNode
-            .trustListNode as TrustListTypeNode
+            val trustListNode = node.trustListNode as TrustListTypeNode
 
-        trustListObject = TrustListObject(server, trustListNode, trustListManager)
-        trustListObject.startup()
+            trustListObject = TrustListObject(server, trustListNode, trustListManager)
+            trustListObject.startup()
+        }
     }
 
     override fun onShutdown() {
@@ -97,7 +99,7 @@ class ServerConfigurationObject(
      * This Method requires an encrypted channel and that the Client provide credentials with administrative rights on the
      * Server.
      */
-    class CreateSigningRequestImpl(node: UaMethodNode) : CreateSigningRequestMethod(node) {
+    class CreateSigningRequestImpl(node: UaMethodNode) : ServerConfigurationType.CreateSigningRequestMethod(node) {
 
         private val server: OpcUaServer = node.nodeContext.server
 
@@ -119,15 +121,15 @@ class ServerConfigurationObject(
 
             if (certificateGroupId != null &&
                 certificateGroupId.isNotNull &&
-                certificateGroupId != Identifiers.ServerConfiguration_CertificateGroups_DefaultApplicationGroup
+                certificateGroupId != NodeIds.ServerConfiguration_CertificateGroups_DefaultApplicationGroup
             ) {
 
                 throw UaException(StatusCodes.Bad_InvalidArgument)
             }
 
             val signatureAlgorithm = when (certificateTypeId) {
-                Identifiers.RsaMinApplicationCertificateType -> "SHA1withRSA"
-                Identifiers.RsaSha256ApplicationCertificateType -> "SHA256withRSA"
+                NodeIds.RsaMinApplicationCertificateType -> "SHA1withRSA"
+                NodeIds.RsaSha256ApplicationCertificateType -> "SHA256withRSA"
                 else -> throw UaException(StatusCodes.Bad_InvalidArgument)
             }
 
@@ -194,7 +196,7 @@ class ServerConfigurationObject(
     class UpdateCertificateImpl(
         node: UaMethodNode,
         private val keyStore: ServerKeyStore
-    ) : UpdateCertificateMethod(node) {
+    ) : ServerConfigurationType.UpdateCertificateMethod(node) {
 
         private val server: OpcUaServer = node.nodeContext.server
 
@@ -217,7 +219,7 @@ class ServerConfigurationObject(
 
             if (certificateGroupId != null &&
                 certificateGroupId.isNotNull &&
-                certificateGroupId != Identifiers.ServerConfiguration_CertificateGroups_DefaultApplicationGroup
+                certificateGroupId != NodeIds.ServerConfiguration_CertificateGroups_DefaultApplicationGroup
             ) {
 
                 throw UaException(StatusCodes.Bad_InvalidArgument)
@@ -297,7 +299,7 @@ class ServerConfigurationObject(
 
     }
 
-    class GetRejectedListMethodImpl(node: UaMethodNode) : GetRejectedListMethod(node) {
+    class GetRejectedListMethodImpl(node: UaMethodNode) : ServerConfigurationType.GetRejectedListMethod(node) {
 
         private val server: OpcUaServer = node.nodeContext.server
 

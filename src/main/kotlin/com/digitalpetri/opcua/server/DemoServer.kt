@@ -11,11 +11,11 @@ import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.ServerConfigurationTypeNode
+import org.eclipse.milo.opcua.sdk.server.model.objects.ServerConfigurationTypeNode
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil
 import org.eclipse.milo.opcua.stack.client.UaStackClient
 import org.eclipse.milo.opcua.stack.client.UaStackClientConfig
-import org.eclipse.milo.opcua.stack.core.Identifiers
+import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager
 import org.eclipse.milo.opcua.stack.core.security.DefaultTrustListManager
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
@@ -198,7 +198,7 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
 
         // GDS Push Support via ServerConfiguration
         val serverConfigurationNode = server.addressSpaceManager
-            .getManagedNode(Identifiers.ServerConfiguration)
+            .getManagedNode(NodeIds.ServerConfiguration)
             .map { it as ServerConfigurationTypeNode }
             .orElseThrow()
 

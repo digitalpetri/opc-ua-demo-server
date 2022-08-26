@@ -7,7 +7,7 @@ import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceComposite
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
-import org.eclipse.milo.opcua.stack.core.Identifiers
+import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
 import kotlin.random.Random
@@ -33,8 +33,8 @@ class DynamicNodesFragment(
         nodeManager.addNode(dynamicFolder)
 
         dynamicFolder.inverseReferenceTo(
-            Identifiers.ObjectsFolder,
-            Identifiers.HasComponent
+            NodeIds.ObjectsFolder,
+            NodeIds.HasComponent
         )
 
         addRandomNodes(dynamicFolder.nodeId)

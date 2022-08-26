@@ -5,8 +5,8 @@ import com.google.common.collect.Table
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
 import org.eclipse.milo.opcua.sdk.server.api.methods.Out
-import org.eclipse.milo.opcua.sdk.server.model.methods.*
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.FileTypeNode
+import org.eclipse.milo.opcua.sdk.server.model.objects.FileType
+import org.eclipse.milo.opcua.sdk.server.model.objects.FileTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters
 import org.eclipse.milo.opcua.stack.core.StatusCodes
@@ -86,12 +86,12 @@ open class FileObject(
         handles.clear()
     }
 
-    open fun getOpenMethod(methodNode: UaMethodNode): OpenMethod = OpenImpl(methodNode)
-    open fun getCloseMethod(methodNode: UaMethodNode): CloseMethod = CloseImpl(methodNode)
-    open fun getReadMethod(methodNode: UaMethodNode): ReadMethod = ReadImpl(methodNode)
-    open fun getWriteMethod(methodNode: UaMethodNode): WriteMethod = WriteImpl(methodNode)
-    open fun getGetPositionMethod(methodNode: UaMethodNode): GetPositionMethod = GetPositionImpl(methodNode)
-    open fun getSetPositionMethod(methodNode: UaMethodNode): SetPositionMethod = SetPositionImpl(methodNode)
+    open fun getOpenMethod(methodNode: UaMethodNode): FileType.OpenMethod = OpenImpl(methodNode)
+    open fun getCloseMethod(methodNode: UaMethodNode): FileType.CloseMethod = CloseImpl(methodNode)
+    open fun getReadMethod(methodNode: UaMethodNode): FileType.ReadMethod = ReadImpl(methodNode)
+    open fun getWriteMethod(methodNode: UaMethodNode): FileType.WriteMethod = WriteImpl(methodNode)
+    open fun getGetPositionMethod(methodNode: UaMethodNode): FileType.GetPositionMethod = GetPositionImpl(methodNode)
+    open fun getSetPositionMethod(methodNode: UaMethodNode): FileType.SetPositionMethod = SetPositionImpl(methodNode)
 
     enum class FileModeBit(val value: Int) {
         Read(1),
@@ -125,7 +125,7 @@ open class FileObject(
      *
      * A request to open for reading shall return Bad_NotReadable when the file is already opened for writing.
      */
-    open inner class OpenImpl(node: UaMethodNode) : OpenMethod(node) {
+    open inner class OpenImpl(node: UaMethodNode) : FileType.OpenMethod(node) {
 
         override fun invoke(
             context: InvocationContext,
@@ -185,7 +185,7 @@ open class FileObject(
 
     }
 
-    open inner class CloseImpl(node: UaMethodNode) : CloseMethod(node) {
+    open inner class CloseImpl(node: UaMethodNode) : FileType.CloseMethod(node) {
 
         override fun invoke(context: InvocationContext, fileHandle: UInteger) {
             val session = context.session.orElseThrow()
@@ -203,7 +203,7 @@ open class FileObject(
 
     }
 
-    inner class ReadImpl(node: UaMethodNode) : ReadMethod(node) {
+    inner class ReadImpl(node: UaMethodNode) : FileType.ReadMethod(node) {
         override fun invoke(
             context: InvocationContext,
             fileHandle: UInteger,
@@ -236,7 +236,7 @@ open class FileObject(
         }
     }
 
-    inner class WriteImpl(node: UaMethodNode) : WriteMethod(node) {
+    inner class WriteImpl(node: UaMethodNode) : FileType.WriteMethod(node) {
 
         override fun invoke(
             context: InvocationContext,
@@ -263,7 +263,7 @@ open class FileObject(
 
     }
 
-    inner class GetPositionImpl(node: UaMethodNode) : GetPositionMethod(node) {
+    inner class GetPositionImpl(node: UaMethodNode) : FileType.GetPositionMethod(node) {
 
         override fun invoke(
             context: InvocationContext,
@@ -286,7 +286,7 @@ open class FileObject(
 
     }
 
-    inner class SetPositionImpl(node: UaMethodNode) : SetPositionMethod(node) {
+    inner class SetPositionImpl(node: UaMethodNode) : FileType.SetPositionMethod(node) {
 
         override fun invoke(
             context: InvocationContext,

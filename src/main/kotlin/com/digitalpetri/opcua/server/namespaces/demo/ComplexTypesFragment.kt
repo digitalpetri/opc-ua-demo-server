@@ -13,7 +13,7 @@ import org.eclipse.milo.opcua.sdk.server.dtd.DataTypeDictionaryManager
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
-import org.eclipse.milo.opcua.stack.core.Identifiers
+import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
@@ -48,8 +48,8 @@ class ComplexTypesFragment(
         nodeManager.addNode(complexTypesFolder)
 
         complexTypesFolder.inverseReferenceTo(
-            Identifiers.ObjectsFolder,
-            Identifiers.HasComponent
+            NodeIds.ObjectsFolder,
+            NodeIds.HasComponent
         )
 
         registerCustomEnumType()
@@ -72,7 +72,7 @@ class ComplexTypesFragment(
             it.setBrowseName(QualifiedName(namespaceIndex, "CustomEnumTypeVariable"))
             it.setDisplayName(LocalizedText.english("CustomEnumTypeVariable"))
             it.setDataType(dataTypeId)
-            it.setTypeDefinition(Identifiers.BaseDataVariableType)
+            it.setTypeDefinition(NodeIds.BaseDataVariableType)
             it.build()
         }
 
@@ -83,7 +83,7 @@ class ComplexTypesFragment(
         customEnumTypeVariable.addReference(
             Reference(
                 customEnumTypeVariable.nodeId,
-                Identifiers.Organizes,
+                NodeIds.Organizes,
                 rootFolder.nodeId.expanded(),
                 false
             )
@@ -103,7 +103,7 @@ class ComplexTypesFragment(
             it.setBrowseName(QualifiedName(namespaceIndex, "CustomStructTypeVariable"))
             it.setDisplayName(LocalizedText.english("CustomStructTypeVariable"))
             it.setDataType(dataTypeId)
-            it.setTypeDefinition(Identifiers.BaseDataVariableType)
+            it.setTypeDefinition(NodeIds.BaseDataVariableType)
             it.build()
         }
 
@@ -124,7 +124,7 @@ class ComplexTypesFragment(
         customStructTypeVariable.addReference(
             Reference(
                 customStructTypeVariable.nodeId,
-                Identifiers.Organizes,
+                NodeIds.Organizes,
                 rootFolder.nodeId.expanded(),
                 false
             )
@@ -144,7 +144,7 @@ class ComplexTypesFragment(
             it.setBrowseName(QualifiedName(namespaceIndex, "CustomUnionTypeVariable"))
             it.setDisplayName(LocalizedText.english("CustomUnionTypeVariable"))
             it.setDataType(dataTypeId)
-            it.setTypeDefinition(Identifiers.BaseDataVariableType)
+            it.setTypeDefinition(NodeIds.BaseDataVariableType)
             it.build()
         }
 
@@ -161,7 +161,7 @@ class ComplexTypesFragment(
         customUnionTypeVariable.addReference(
             Reference(
                 customUnionTypeVariable.nodeId,
-                Identifiers.Organizes,
+                NodeIds.Organizes,
                 rootFolder.nodeId.expanded(),
                 false
             )
@@ -240,7 +240,7 @@ class ComplexTypesFragment(
             StructureField(
                 "foo",
                 LocalizedText.NULL_VALUE,
-                Identifiers.String,
+                NodeIds.String,
                 ValueRanks.Scalar,
                 null,
                 server.config.limits.maxStringLength,
@@ -249,7 +249,7 @@ class ComplexTypesFragment(
             StructureField(
                 "bar",
                 LocalizedText.NULL_VALUE,
-                Identifiers.UInt32,
+                NodeIds.UInt32,
                 ValueRanks.Scalar,
                 null,
                 Unsigned.uint(0),
@@ -258,7 +258,7 @@ class ComplexTypesFragment(
             StructureField(
                 "baz",
                 LocalizedText.NULL_VALUE,
-                Identifiers.Boolean,
+                NodeIds.Boolean,
                 ValueRanks.Scalar,
                 null,
                 Unsigned.uint(0),
@@ -268,7 +268,7 @@ class ComplexTypesFragment(
 
         val definition = StructureDefinition(
             binaryEncodingId,
-            Identifiers.Structure,
+            NodeIds.Structure,
             StructureType.Structure,
             fields
         )
@@ -298,7 +298,7 @@ class ComplexTypesFragment(
             StructureField(
                 "foo",
                 LocalizedText.NULL_VALUE,
-                Identifiers.UInt32,
+                NodeIds.UInt32,
                 ValueRanks.Scalar,
                 null,
                 server.config.limits.maxStringLength,
@@ -307,7 +307,7 @@ class ComplexTypesFragment(
             StructureField(
                 "bar",
                 LocalizedText.NULL_VALUE,
-                Identifiers.String,
+                NodeIds.String,
                 ValueRanks.Scalar,
                 null,
                 Unsigned.uint(0),
@@ -317,7 +317,7 @@ class ComplexTypesFragment(
 
         val definition = StructureDefinition(
             binaryEncodingId,
-            Identifiers.Structure,
+            NodeIds.Structure,
             StructureType.Union,
             fields
         )

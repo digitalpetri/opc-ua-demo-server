@@ -4,7 +4,7 @@ import com.digitalpetri.opcua.milo.extensions.inverseReferenceTo
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceComposite
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
-import org.eclipse.milo.opcua.stack.core.Identifiers
+import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName
@@ -33,8 +33,8 @@ class MassNodesFragment(
         nodeManager.addNode(massFolder)
 
         massFolder.inverseReferenceTo(
-            Identifiers.ObjectsFolder,
-            Identifiers.HasComponent
+            NodeIds.ObjectsFolder,
+            NodeIds.HasComponent
         )
 
         addMassInt32Nodes(massFolder.nodeId)

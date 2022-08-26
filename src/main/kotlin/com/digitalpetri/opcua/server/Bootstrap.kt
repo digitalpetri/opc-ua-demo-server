@@ -7,7 +7,7 @@ import ch.qos.logback.classic.joran.JoranConfigurator
 import ch.qos.logback.core.util.StatusPrinter
 import io.github.soc.directories.ProjectDirectories
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.eclipse.milo.opcua.stack.core.Identifiers
+import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.Stack
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -22,7 +22,7 @@ fun main() {
     val startNanos = System.nanoTime()
 
     // start running this static initializer ASAP, it measurably affects startup time.
-    Thread { Identifiers.Boolean }.start()
+    Thread { NodeIds.Boolean }.start()
 
     val directories = ProjectDirectories.from(
         "com",

@@ -6,7 +6,7 @@ import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceComposite
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
-import org.eclipse.milo.opcua.stack.core.Identifiers
+import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
 
@@ -31,8 +31,8 @@ class NullValueNodesFragment(
         nodeManager.addNode(dynamicFolder)
 
         dynamicFolder.inverseReferenceTo(
-            Identifiers.ObjectsFolder,
-            Identifiers.HasComponent
+            NodeIds.ObjectsFolder,
+            NodeIds.HasComponent
         )
 
         val dataTypes = BuiltinDataType.values().filter {

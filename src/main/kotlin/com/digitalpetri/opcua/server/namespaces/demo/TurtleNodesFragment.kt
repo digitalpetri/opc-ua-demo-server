@@ -12,11 +12,13 @@ import org.eclipse.milo.opcua.sdk.server.api.SimpleAddressSpaceFilter
 import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices
 import org.eclipse.milo.opcua.sdk.server.api.services.ViewServices
 import org.eclipse.milo.opcua.sdk.server.nodes.*
-import org.eclipse.milo.opcua.stack.core.Identifiers
+import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId
 import org.eclipse.milo.opcua.stack.core.types.structured.ViewDescription
@@ -117,17 +119,17 @@ class TurtleNodesFragment(
 
         turtlesFolder.icon = ByteString.of(turtleIconBytes)
         turtlesFolder.getPropertyNode(ObjectNodeProperties.Icon).ifPresent {
-            it.dataType = Identifiers.ImagePNG
+            it.dataType = NodeIds.ImagePNG
         }
 
         turtlesFolder.referenceTo(
             NodeId(namespaceIndex, "[turtles]0"),
-            Identifiers.Organizes
+            NodeIds.Organizes
         )
 
         turtlesFolder.inverseReferenceTo(
-            Identifiers.ObjectsFolder,
-            Identifiers.HasComponent
+            NodeIds.ObjectsFolder,
+            NodeIds.HasComponent
         )
 
         addTurtleTypeNode()
@@ -148,8 +150,8 @@ class TurtleNodesFragment(
         nodeManager.addNode(turtleType)
 
         turtleType.inverseReferenceTo(
-            Identifiers.BaseObjectType,
-            Identifiers.HasSubtype
+            NodeIds.BaseObjectType,
+            NodeIds.HasSubtype
         )
     }
 
@@ -161,7 +163,11 @@ class TurtleNodesFragment(
                 nodeContext,
                 NodeId(namespaceIndex, "[turtles]$it"),
                 QualifiedName(namespaceIndex, "Turtle$it"),
-                LocalizedText("Turtle")
+                LocalizedText("Turtle"),
+                LocalizedText.NULL_VALUE,
+                uint(0),
+                uint(0),
+                ubyte(0)
             )
         }
     }
@@ -178,7 +184,7 @@ class TurtleNodesFragment(
             if (prevTurtle >= 0) {
                 references += Reference(
                     nodeId,
-                    Identifiers.Organizes,
+                    NodeIds.Organizes,
                     NodeId(namespaceIndex, "[turtles]$prevTurtle").expanded(),
                     Reference.Direction.INVERSE
                 )
@@ -188,13 +194,13 @@ class TurtleNodesFragment(
                 references += listOf(
                     Reference(
                         nodeId,
-                        Identifiers.Organizes,
+                        NodeIds.Organizes,
                         NodeId(namespaceIndex, "[turtles]$nextTurtle").expanded(),
                         Reference.Direction.FORWARD
                     ),
                     Reference(
                         nodeId,
-                        Identifiers.HasTypeDefinition,
+                        NodeIds.HasTypeDefinition,
                         NodeId(namespaceIndex, "TurtleType").expanded(),
                         Reference.Direction.FORWARD
                     )

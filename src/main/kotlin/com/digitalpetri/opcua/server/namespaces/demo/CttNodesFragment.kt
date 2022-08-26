@@ -8,11 +8,11 @@ import org.eclipse.milo.opcua.sdk.core.ValueRanks
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceComposite
 import org.eclipse.milo.opcua.sdk.server.api.methods.AbstractMethodInvocationHandler
-import org.eclipse.milo.opcua.sdk.server.model.nodes.variables.AnalogItemTypeNode
+import org.eclipse.milo.opcua.sdk.server.model.variables.AnalogItemTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
-import org.eclipse.milo.opcua.stack.core.Identifiers
+import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
@@ -41,8 +41,8 @@ class CttNodesFragment(
         nodeManager.addNode(cttFolder)
 
         cttFolder.inverseReferenceTo(
-            Identifiers.ObjectsFolder,
-            Identifiers.HasComponent
+            NodeIds.ObjectsFolder,
+            NodeIds.HasComponent
         )
 
         addStaticNodes(cttFolder.nodeId)
@@ -85,14 +85,14 @@ class CttNodesFragment(
         nodeContext.addVariableNode(
             parentNodeId = scalarFolder.nodeId,
             name = "Integer",
-            dataTypeId = Identifiers.Integer,
+            dataTypeId = NodeIds.Integer,
             value = BuiltinDataType.Int32.defaultValue()
         )
 
         nodeContext.addVariableNode(
             parentNodeId = scalarFolder.nodeId,
             name = "UInteger",
-            dataTypeId = Identifiers.UInteger,
+            dataTypeId = NodeIds.UInteger,
             value = BuiltinDataType.UInt32.defaultValue()
         )
     }
@@ -162,7 +162,7 @@ class CttNodesFragment(
 
             val node = nodeFactory.createNode(
                 parentNodeId.resolve(name),
-                Identifiers.AnalogItemType
+                NodeIds.AnalogItemType
             ) as AnalogItemTypeNode
 
             node.browseName = QualifiedName(namespaceIndex, name)
@@ -178,7 +178,7 @@ class CttNodesFragment(
             node.filterChain.addLast(EuRangeCheckFilter)
 
             nodeManager.addNode(node)
-            node.inverseReferenceTo(analogTypeFolder.nodeId, Identifiers.Organizes)
+            node.inverseReferenceTo(analogTypeFolder.nodeId, NodeIds.Organizes)
         }
 
     }
@@ -197,9 +197,9 @@ class CttNodesFragment(
         }
 
         val folderNode = nodeContext.addFolderNode(referencesFolder.nodeId, "HasReferencesOfTypeAndSubType")
-        nodeContext.addVariableNode(folderNode.nodeId, "Child1", referenceTypeId = Identifiers.HasChild)
-        nodeContext.addVariableNode(folderNode.nodeId, "Child2", referenceTypeId = Identifiers.HasChild)
-        nodeContext.addVariableNode(folderNode.nodeId, "Child3", referenceTypeId = Identifiers.HasChild)
+        nodeContext.addVariableNode(folderNode.nodeId, "Child1", referenceTypeId = NodeIds.HasChild)
+        nodeContext.addVariableNode(folderNode.nodeId, "Child2", referenceTypeId = NodeIds.HasChild)
+        nodeContext.addVariableNode(folderNode.nodeId, "Child3", referenceTypeId = NodeIds.HasChild)
         nodeContext.addVariableNode(folderNode.nodeId, "Component1")
         nodeContext.addVariableNode(folderNode.nodeId, "Component2")
         nodeContext.addVariableNode(folderNode.nodeId, "Component3")
@@ -243,7 +243,7 @@ class CttNodesFragment(
 
         methodFolder.inverseReferenceTo(
             parentNodeId,
-            Identifiers.HasComponent
+            NodeIds.HasComponent
         )
 
         addMethodNoArgs(methodFolder.nodeId)
@@ -273,7 +273,7 @@ class CttNodesFragment(
         }
 
         nodeManager.addNode(methodNode)
-        methodNode.inverseReferenceTo(parentNodeId, Identifiers.HasComponent)
+        methodNode.inverseReferenceTo(parentNodeId, NodeIds.HasComponent)
     }
 
     private fun addMethodIO(parentNodeId: NodeId) {
@@ -300,7 +300,7 @@ class CttNodesFragment(
         }
 
         nodeManager.addNode(methodNode)
-        methodNode.inverseReferenceTo(parentNodeId, Identifiers.HasComponent)
+        methodNode.inverseReferenceTo(parentNodeId, NodeIds.HasComponent)
     }
 
     private fun addMethodI(parentNodeId: NodeId) {
@@ -326,7 +326,7 @@ class CttNodesFragment(
         }
 
         nodeManager.addNode(methodNode)
-        methodNode.inverseReferenceTo(parentNodeId, Identifiers.HasComponent)
+        methodNode.inverseReferenceTo(parentNodeId, NodeIds.HasComponent)
     }
 
     private fun addMethodO(parentNodeId: NodeId) {
@@ -352,7 +352,7 @@ class CttNodesFragment(
         }
 
         nodeManager.addNode(methodNode)
-        methodNode.inverseReferenceTo(parentNodeId, Identifiers.HasComponent)
+        methodNode.inverseReferenceTo(parentNodeId, NodeIds.HasComponent)
     }
 
     companion object {

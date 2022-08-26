@@ -5,11 +5,8 @@ import org.bouncycastle.util.encoders.Hex
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
 import org.eclipse.milo.opcua.sdk.server.api.methods.Out
-import org.eclipse.milo.opcua.sdk.server.model.methods.AddCertificateMethod
-import org.eclipse.milo.opcua.sdk.server.model.methods.CloseAndUpdateMethod
-import org.eclipse.milo.opcua.sdk.server.model.methods.OpenWithMasksMethod
-import org.eclipse.milo.opcua.sdk.server.model.methods.RemoveCertificateMethod
-import org.eclipse.milo.opcua.sdk.server.model.nodes.objects.TrustListTypeNode
+import org.eclipse.milo.opcua.sdk.server.model.objects.TrustListType
+import org.eclipse.milo.opcua.sdk.server.model.objects.TrustListTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
@@ -103,7 +100,7 @@ class TrustListObject(
 
     }
 
-    inner class OpenWithMasksImpl(node: UaMethodNode) : OpenWithMasksMethod(node) {
+    inner class OpenWithMasksImpl(node: UaMethodNode) : TrustListType.OpenWithMasksMethod(node) {
 
         override fun invoke(
             context: InvocationContext,
@@ -125,7 +122,7 @@ class TrustListObject(
 
     }
 
-    inner class CloseAndUpdateImpl(node: UaMethodNode) : CloseAndUpdateMethod(node) {
+    inner class CloseAndUpdateImpl(node: UaMethodNode) : TrustListType.CloseAndUpdateMethod(node) {
 
         override fun invoke(
             context: InvocationContext,
@@ -216,7 +213,7 @@ class TrustListObject(
 
     }
 
-    inner class AddCertificateImpl(node: UaMethodNode) : AddCertificateMethod(node) {
+    inner class AddCertificateImpl(node: UaMethodNode) : TrustListType.AddCertificateMethod(node) {
 
         override fun invoke(
             context: InvocationContext,
@@ -239,7 +236,7 @@ class TrustListObject(
 
     }
 
-    inner class RemoveCertificateImpl(node: UaMethodNode) : RemoveCertificateMethod(node) {
+    inner class RemoveCertificateImpl(node: UaMethodNode) : TrustListType.RemoveCertificateMethod(node) {
 
         override fun invoke(
             context: InvocationContext,
