@@ -22,7 +22,6 @@ import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
-import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode
 import org.eclipse.milo.opcua.stack.core.util.CertificateUtil
@@ -68,19 +67,15 @@ class ServerConfigurationObject(
         serverConfigurationNode.maxTrustListSize = Unsigned.uint(0)
         serverConfigurationNode.multicastDnsEnabled = false
 
-        // TODO replace usage of findNode with direct accessor once Organizes references are generated
-        val defaultApplicationGroup = serverConfigurationNode.findNode(QualifiedName(0, "DefaultApplicationGroup"))
-        defaultApplicationGroup.ifPresent { node ->
-            node as CertificateGroupTypeNode
-            node.certificateTypes = arrayOf(
-                NodeIds.RsaSha256ApplicationCertificateType
-            )
+        val defaultApplicationGroup: CertificateGroupTypeNode =
+            serverConfigurationNode.certificateGroupsNode.defaultApplicationGroupNode
 
-            val trustListNode = node.trustListNode as TrustListTypeNode
+        defaultApplicationGroup.certificateTypes = arrayOf(NodeIds.RsaSha256ApplicationCertificateType)
 
-            trustListObject = TrustListObject(server, trustListNode, trustListManager)
-            trustListObject.startup()
-        }
+        val trustListNode: TrustListTypeNode = defaultApplicationGroup.trustListNode
+
+        trustListObject = TrustListObject(server, trustListNode, trustListManager)
+        trustListObject.startup()
     }
 
     override fun onShutdown() {
