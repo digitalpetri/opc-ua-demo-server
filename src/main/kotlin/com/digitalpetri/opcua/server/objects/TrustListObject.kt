@@ -10,9 +10,9 @@ import org.eclipse.milo.opcua.sdk.server.model.objects.TrustListTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaException
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext
+import org.eclipse.milo.opcua.stack.core.encoding.binary.OpcUaDefaultBinaryEncoding
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager
-import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext
-import org.eclipse.milo.opcua.stack.core.types.OpcUaDefaultBinaryEncoding
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte
@@ -38,7 +38,7 @@ class TrustListObject(
     private val server: OpcUaServer,
     private val trustListNode: TrustListTypeNode,
     private val trustListManager: TrustListManager
-) : FileObject(trustListNode, { trustListManager.openTrustListFile(server.serializationContext) }) {
+) : FileObject(trustListNode, { trustListManager.openTrustListFile(server.encodingContext) }) {
 
     override fun onStartup() {
         super.onStartup()
@@ -110,7 +110,7 @@ class TrustListObject(
 
             val session = context.session.orElseThrow()
 
-            val file = trustListManager.openTrustListFile(session.server.serializationContext, masks)
+            val file = trustListManager.openTrustListFile(session.server.encodingContext, masks)
             val raf = RandomAccessFile(file, "r")
 
             val handle = uint(fileHandleSequence.incrementAndGet())
@@ -143,7 +143,7 @@ class TrustListObject(
                     file.readFully(bs)
 
                     val newTrustList = OpcUaDefaultBinaryEncoding.getInstance().decode(
-                        session.server.serializationContext,
+                        session.server.encodingContext,
                         ByteString.of(bs),
                         TrustListDataType.BINARY_ENCODING_ID
                     ) as? TrustListDataType
@@ -199,7 +199,10 @@ class TrustListObject(
 
                 trustListNode.nodeContext.server.apply {
                     scheduledExecutorService.schedule(
-                        { stackServer.connectedChannels.forEach { it.disconnect() } },
+                        {
+                            // TODO
+                            //stackServer.connectedChannels.forEach { it.disconnect() }
+                        },
                         3,
                         TimeUnit.SECONDS
                     )
@@ -267,7 +270,7 @@ private fun UInteger.isSet(masks: TrustListMasks): Boolean {
     return (this.toInt() and masks.value) == masks.value
 }
 
-private fun TrustListManager.openTrustListFile(context: SerializationContext, masks: UInteger = UInteger.MAX): File {
+private fun TrustListManager.openTrustListFile(context: EncodingContext, masks: UInteger = UInteger.MAX): File {
     val trustList = this.getTrustListDataType(masks)
 
     return File.createTempFile("TrustListDataType", null).apply {

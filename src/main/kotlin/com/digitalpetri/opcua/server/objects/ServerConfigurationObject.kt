@@ -258,7 +258,8 @@ class ServerConfigurationObject(
             server.scheduledExecutorService.schedule(
                 {
                     server.executorService.execute {
-                        server.stackServer.connectedChannels.forEach { it.disconnect() }
+                        // TODO
+                        //server.stackServer.connectedChannels.forEach { it.disconnect() }
                     }
                 },
                 3,

@@ -106,12 +106,12 @@ dependencies {
 
     implementation "org.eclipse.milo:sdk-client:$miloVersion"
     implementation "org.eclipse.milo:sdk-server:$miloVersion"
-    implementation "org.eclipse.milo:dictionary-manager:$miloVersion"
+    implementation "org.eclipse.milo:dtd-manager:$miloVersion"
 
     implementation "com.google.guava:guava:31.1-jre"
 
     implementation 'com.uchuhimo:konf-core:1.1.2'
-    implementation 'ch.qos.logback:logback-classic:1.2.11'
+    implementation 'ch.qos.logback:logback-classic:1.4.3'
     implementation 'io.github.soc:directories:12'
 }
 

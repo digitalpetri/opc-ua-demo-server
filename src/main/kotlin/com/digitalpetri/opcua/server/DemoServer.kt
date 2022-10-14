@@ -7,29 +7,45 @@ import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.json.toJson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
+import org.eclipse.milo.opcua.sdk.client.DiscoveryClient
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
+import org.eclipse.milo.opcua.sdk.server.api.config.EndpointConfig
 import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator
 import org.eclipse.milo.opcua.sdk.server.model.objects.ServerConfigurationTypeNode
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil
-import org.eclipse.milo.opcua.stack.client.UaStackClient
-import org.eclipse.milo.opcua.stack.client.UaStackClientConfig
+import org.eclipse.milo.opcua.stack.core.NamespaceTable
 import org.eclipse.milo.opcua.stack.core.NodeIds
+import org.eclipse.milo.opcua.stack.core.ServerTable
+import org.eclipse.milo.opcua.stack.core.channel.EncodingLimits
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingManager
+import org.eclipse.milo.opcua.stack.core.encoding.OpcUaEncodingManager
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager
+import org.eclipse.milo.opcua.stack.core.security.DefaultServerCertificateValidator
 import org.eclipse.milo.opcua.stack.core.security.DefaultTrustListManager
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile
+import org.eclipse.milo.opcua.stack.core.types.DataTypeManager
+import org.eclipse.milo.opcua.stack.core.types.OpcUaDataTypeManager
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.enumerated.ApplicationType
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode
-import org.eclipse.milo.opcua.stack.core.types.structured.*
+import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo
+import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription
+import org.eclipse.milo.opcua.stack.core.types.structured.RegisteredServer
+import org.eclipse.milo.opcua.stack.core.types.structured.UserTokenPolicy
 import org.eclipse.milo.opcua.stack.core.util.ManifestUtil
 import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck
-import org.eclipse.milo.opcua.stack.server.EndpointConfiguration
-import org.eclipse.milo.opcua.stack.server.security.DefaultServerCertificateValidator
+import org.eclipse.milo.opcua.stack.transport.client.tcp.OpcTcpClientTransport
+import org.eclipse.milo.opcua.stack.transport.client.tcp.OpcTcpClientTransportConfigBuilder
+import org.eclipse.milo.opcua.stack.transport.server.OpcServerTransport
+import org.eclipse.milo.opcua.stack.transport.server.OpcServerTransportFactory
+import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransport
+import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransportConfigBuilder
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
@@ -135,7 +151,20 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
             .setLimits(ServerLimits)
             .build()
 
-        server = OpcUaServer(serverConfig)
+
+        val transportFactory = object : OpcServerTransportFactory {
+            override fun create(profile: TransportProfile): OpcServerTransport {
+                if (profile == TransportProfile.TCP_UASC_UABINARY) {
+                    val transportConfig = OpcTcpServerTransportConfigBuilder().build()
+
+                    return OpcTcpServerTransport(transportConfig)
+                } else {
+                    throw RuntimeException("unsupported transport: $profile")
+                }
+            }
+        }
+
+        server = OpcUaServer(serverConfig, transportFactory)
 
         demoNamespace = DemoNamespace(server)
         demoNamespace.startup()
@@ -265,47 +294,39 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
 
     private suspend fun registerWithLds() {
         try {
-            val endpointUrl = config[ServerConfig.Registration.endpointUrl]
+            val endpointUrl: String = config[ServerConfig.Registration.endpointUrl]
 
-            val stackClient = UaStackClient.create(
-                UaStackClientConfig.builder()
-                    .setEndpoint(
-                        EndpointDescription(
-                            endpointUrl,
-                            null,
-                            null,
-                            MessageSecurityMode.None,
-                            SecurityPolicy.None.uri,
-                            null,
-                            TransportProfile.TCP_UASC_UABINARY.uri,
-                            ubyte(0)
-                        )
-                    )
-                    .build()
+            val endpointDescription = EndpointDescription(
+                endpointUrl,
+                null,
+                null,
+                MessageSecurityMode.None,
+                SecurityPolicy.None.uri,
+                null,
+                TransportProfile.TCP_UASC_UABINARY.uri,
+                ubyte(0)
             )
 
-            stackClient.connect().await()
+            val transport = OpcTcpClientTransport(OpcTcpClientTransportConfigBuilder().build())
 
-            val discoveryUrls = server.stackServer
-                .endpointDescriptions
-                .map { endpoint -> endpoint.endpointUrl }
-                .filter { url -> url.endsWith("/discovery") }
+            val discoveryClient = DiscoveryClient(endpointDescription, transport)
+            discoveryClient.connect().await()
 
-            stackClient.sendRequest(
-                RegisterServerRequest(
-                    stackClient.newRequestHeader(),
-                    RegisteredServer(
-                        server.config.applicationUri,
-                        server.config.productUri,
-                        arrayOf(server.config.applicationName),
-                        ApplicationType.Server,
-                        null,
-                        discoveryUrls.toTypedArray(),
-                        null,
-                        true
-                    )
-                )
-            ).await()
+            val discoveryUrls: List<String> = server.endpointDescriptions
+                .flatMap { it.server.discoveryUrls.toList() }
+
+            val registeredServer = RegisteredServer(
+                server.config.applicationUri,
+                server.config.productUri,
+                arrayOf(server.config.applicationName),
+                ApplicationType.Server,
+                null,
+                discoveryUrls.toTypedArray(),
+                null,
+                true
+            )
+
+            discoveryClient.registerServer(registeredServer).await()
         } catch (e: Exception) {
             logger.error("Error registering with LDS: ${e.message}")
         }
@@ -348,9 +369,9 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
     private fun createEndpointConfigurations(
         config: Config,
         certificateManager: DefaultCertificateManager
-    ): Set<EndpointConfiguration> {
+    ): Set<EndpointConfig> {
 
-        val endpointConfigurations = LinkedHashSet<EndpointConfiguration>()
+        val endpointConfigurations = LinkedHashSet<EndpointConfig>()
 
         val userTokenPolicies = mutableListOf<UserTokenPolicy>().apply {
             add(OpcUaServerConfig.USER_TOKEN_POLICY_ANONYMOUS)
@@ -365,7 +386,7 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
 
         for (bindAddress in bindAddresses) {
             for (hostname in endpointAddresses) {
-                val builder = EndpointConfiguration.newBuilder()
+                val builder = EndpointConfig.newBuilder()
                     .setTransportProfile(TransportProfile.TCP_UASC_UABINARY)
                     .setBindAddress(bindAddress)
                     .setBindPort(config[ServerConfig.bindPort])
@@ -414,7 +435,6 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
 
                 /*
                  * It's good practice to provide a discovery-specific endpoint with no security.
-                 * It's required practice if all regular endpoints have security configured.
                  *
                  * Usage of the  "/discovery" suffix is defined by OPC UA Part 6:
                  *
@@ -448,6 +468,33 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
         } else {
             setOf(this)
         }
+    }
+
+    private class DefaultEncodingContext : EncodingContext {
+
+        private val namespaceTable = NamespaceTable()
+        private val serverTable = ServerTable()
+
+        override fun getDataTypeManager(): DataTypeManager {
+            return OpcUaDataTypeManager.getInstance()
+        }
+
+        override fun getEncodingManager(): EncodingManager {
+            return OpcUaEncodingManager.getInstance()
+        }
+
+        override fun getEncodingLimits(): EncodingLimits {
+            return EncodingLimits.DEFAULT
+        }
+
+        override fun getNamespaceTable(): NamespaceTable {
+            return namespaceTable
+        }
+
+        override fun getServerTable(): ServerTable {
+            return serverTable
+        }
+
     }
 
 }

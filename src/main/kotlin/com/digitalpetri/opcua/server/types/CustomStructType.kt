@@ -3,11 +3,11 @@ package com.digitalpetri.opcua.server.types
 import com.digitalpetri.opcua.server.namespaces.demo.DemoNamespace
 import com.google.common.base.MoreObjects
 import com.google.common.base.Objects
-import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext
-import org.eclipse.milo.opcua.stack.core.serialization.UaDecoder
-import org.eclipse.milo.opcua.stack.core.serialization.UaEncoder
-import org.eclipse.milo.opcua.stack.core.serialization.UaStructure
-import org.eclipse.milo.opcua.stack.core.serialization.codecs.GenericDataTypeCodec
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext
+import org.eclipse.milo.opcua.stack.core.encoding.GenericDataTypeCodec
+import org.eclipse.milo.opcua.stack.core.encoding.UaDecoder
+import org.eclipse.milo.opcua.stack.core.encoding.UaEncoder
+import org.eclipse.milo.opcua.stack.core.types.UaStructuredType
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
@@ -16,7 +16,7 @@ class CustomStructType @JvmOverloads constructor(
     val foo: String? = null,
     val bar: UInteger = uint(0),
     val isBaz: Boolean = false
-) : UaStructure {
+) : UaStructuredType {
 
     override fun getTypeId(): ExpandedNodeId {
         return TYPE_ID
@@ -36,8 +36,8 @@ class CustomStructType @JvmOverloads constructor(
         if (other == null || javaClass != other.javaClass) return false
         val that = other as CustomStructType
         return isBaz == that.isBaz &&
-            Objects.equal(foo, that.foo) &&
-            Objects.equal(bar, that.bar)
+                Objects.equal(foo, that.foo) &&
+                Objects.equal(bar, that.bar)
     }
 
     override fun hashCode(): Int {
@@ -58,25 +58,25 @@ class CustomStructType @JvmOverloads constructor(
             return CustomStructType::class.java
         }
 
-        override fun decode(
-            context: SerializationContext,
+        override fun decodeType(
+            context: EncodingContext,
             decoder: UaDecoder
         ): CustomStructType {
 
-            val foo = decoder.readString("Foo")
-            val bar = decoder.readUInt32("Bar")
-            val baz = decoder.readBoolean("Baz")
+            val foo = decoder.decodeString("Foo")
+            val bar = decoder.decodeUInt32("Bar")
+            val baz = decoder.decodeBoolean("Baz")
             return CustomStructType(foo, bar, baz)
         }
 
-        override fun encode(
-            context: SerializationContext,
+        override fun encodeType(
+            context: EncodingContext,
             encoder: UaEncoder, value: CustomStructType
         ) {
 
-            encoder.writeString("Foo", value.foo)
-            encoder.writeUInt32("Bar", value.bar)
-            encoder.writeBoolean("Baz", value.isBaz)
+            encoder.encodeString("Foo", value.foo)
+            encoder.encodeUInt32("Bar", value.bar)
+            encoder.encodeBoolean("Baz", value.isBaz)
         }
 
     }

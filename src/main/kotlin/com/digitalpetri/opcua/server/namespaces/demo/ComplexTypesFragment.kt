@@ -7,9 +7,11 @@ import com.digitalpetri.opcua.server.types.CustomUnionType
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.core.ValueRanks
+import org.eclipse.milo.opcua.sdk.core.dtd.BinaryDataTypeCodec
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceComposite
-import org.eclipse.milo.opcua.sdk.server.dtd.DataTypeDictionaryManager
+import org.eclipse.milo.opcua.sdk.server.dtd.BinaryDataTypeDictionaryManager
+import org.eclipse.milo.opcua.sdk.server.nodes.UaDataTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
@@ -17,6 +19,7 @@ import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import org.eclipse.milo.opcua.stack.core.types.enumerated.StructureType
 import org.eclipse.milo.opcua.stack.core.types.structured.*
 
@@ -26,7 +29,7 @@ class ComplexTypesFragment(
     private val namespaceIndex: UShort
 ) : SampledAddressSpaceFragment(server, composite) {
 
-    private val dictionaryManager = DataTypeDictionaryManager(
+    private val dictionaryManager = BinaryDataTypeDictionaryManager(
         nodeContext,
         DemoNamespace.NAMESPACE_URI
     )
@@ -109,11 +112,11 @@ class ComplexTypesFragment(
 
         val value = CustomStructType(
             "foo",
-            Unsigned.uint(42),
+            uint(42),
             true
         )
         val xo = ExtensionObject.encodeDefaultBinary(
-            server.serializationContext,
+            server.encodingContext,
             value,
             binaryEncodingId
         )
@@ -150,7 +153,7 @@ class ComplexTypesFragment(
 
         val value: CustomUnionType = CustomUnionType.ofBar("hello")
         val xo = ExtensionObject.encodeDefaultBinary(
-            server.serializationContext,
+            server.encodingContext,
             value,
             binaryEncodingId
         )
@@ -172,11 +175,30 @@ class ComplexTypesFragment(
         val dataTypeId = CustomEnumType.TYPE_ID
             .toNodeIdOrThrow(server.namespaceTable)
 
-        dictionaryManager.registerEnumCodec(
-            CustomEnumType.Codec().asBinaryCodec(),
-            "CustomEnumType",
-            dataTypeId
+        // Add a custom DataTypeNode with a SubtypeOf reference to Enumeration
+        val dataTypeNode = UaDataTypeNode(
+            nodeContext,
+            dataTypeId,
+            QualifiedName(namespaceIndex, "CustomEnumType"),
+            LocalizedText.english("CustomEnumType"),
+            LocalizedText.NULL_VALUE,
+            uint(0),
+            uint(0),
+            false
         )
+
+        dataTypeNode.addReference(
+            Reference(
+                dataTypeId,
+                NodeIds.HasSubtype,
+                NodeIds.Enumeration.expanded(),
+                Reference.Direction.INVERSE
+            )
+        )
+
+        nodeManager.addNode(dataTypeNode)
+
+        // Define the enumeration
         val fields = arrayOf(
             EnumField(
                 0L,
@@ -200,6 +222,19 @@ class ComplexTypesFragment(
 
         val definition = EnumDefinition(fields)
 
+        dataTypeNode.dataTypeDefinition = definition
+
+        // This Enum is zero-based and naturally incrementing, so we set the EnumStrings property.
+        // If it were more complex the EnumValues property would be used instead.
+        dataTypeNode.setEnumStrings(
+            arrayOf(
+                LocalizedText.english("Field0"),
+                LocalizedText.english("Field1"),
+                LocalizedText.english("Field2")
+            )
+        )
+
+        // Legacy DataTypeDictionary support
         val description = EnumDescription(
             dataTypeId,
             QualifiedName(namespaceIndex, "CustomEnumType"),
@@ -207,35 +242,40 @@ class ComplexTypesFragment(
             Unsigned.ubyte(BuiltinDataType.Int32.typeId)
         )
 
-        dictionaryManager.registerEnumDescription(description)
+        dictionaryManager.registerEnum(description)
     }
 
     private fun registerCustomStructType() {
         // Get the NodeId for the DataType and encoding Nodes.
-        val dataTypeId = CustomStructType.TYPE_ID
+        val dataTypeId: NodeId = CustomStructType.TYPE_ID
             .toNodeIdOrThrow(server.namespaceTable)
-        val binaryEncodingId = CustomStructType.BINARY_ENCODING_ID
+        val binaryEncodingId: NodeId = CustomStructType.BINARY_ENCODING_ID
             .toNodeIdOrThrow(server.namespaceTable)
 
-        // At a minimum, custom types must have their codec registered.
-        // If clients don't need to dynamically discover types and will
-        // register the codecs on their own then this is all that is
-        // necessary.
-        // The dictionary manager will add a corresponding DataType Node to
-        // the AddressSpace.
-        dictionaryManager.registerStructureCodec(
-            CustomStructType.Codec().asBinaryCodec(),
-            "CustomStructType",
+        // Add a custom DataTypeNode with a SubtypeOf reference to Structure
+        val dataTypeNode = UaDataTypeNode(
+            nodeContext,
             dataTypeId,
-            binaryEncodingId
+            QualifiedName(namespaceIndex, "CustomStructType"),
+            LocalizedText.english("CustomStructType"),
+            LocalizedText.NULL_VALUE,
+            uint(0),
+            uint(0),
+            false
         )
 
-        // If the custom type also needs to be discoverable by clients then it
-        // needs an entry in a DataTypeDictionary that can be read by those
-        // clients. We describe the type using StructureDefinition or
-        // EnumDefinition and register it with the dictionary manager.
-        // The dictionary manager will add all the necessary nodes to the
-        // AddressSpace and generate the required dictionary bsd.xml file.
+        dataTypeNode.addReference(
+            Reference(
+                dataTypeId,
+                NodeIds.HasSubtype,
+                NodeIds.Structure.expanded(),
+                Reference.Direction.INVERSE
+            )
+        )
+
+        nodeManager.addNode(dataTypeNode)
+
+        // Define the struct
         val fields = arrayOf(
             StructureField(
                 "foo",
@@ -252,7 +292,7 @@ class ComplexTypesFragment(
                 NodeIds.UInt32,
                 ValueRanks.Scalar,
                 null,
-                Unsigned.uint(0),
+                uint(0),
                 false
             ),
             StructureField(
@@ -261,7 +301,7 @@ class ComplexTypesFragment(
                 NodeIds.Boolean,
                 ValueRanks.Scalar,
                 null,
-                Unsigned.uint(0),
+                uint(0),
                 false
             )
         )
@@ -272,28 +312,64 @@ class ComplexTypesFragment(
             StructureType.Structure,
             fields
         )
+
+        dataTypeNode.dataTypeDefinition = definition
+
+        // Register Codecs for each supported encoding with DataTypeManager
+        nodeContext.server.dataTypeManager.registerType(
+            dataTypeId,
+            CustomStructType.Codec(),
+            binaryEncodingId,
+            null,
+            null
+        )
+
+        // Legacy DataTypeDictionary support
         val description = StructureDescription(
             dataTypeId,
             QualifiedName(namespaceIndex, "CustomStructType"),
             definition
         )
 
-        dictionaryManager.registerStructureDescription(description, binaryEncodingId)
+        dictionaryManager.registerStructure(
+            "CustomStructType",
+            dataTypeId,
+            binaryEncodingId,
+            BinaryDataTypeCodec.from(CustomStructType.Codec()),
+            description
+        )
     }
 
     private fun registerCustomUnionType() {
-        val dataTypeId = CustomUnionType.TYPE_ID
+        val dataTypeId: NodeId = CustomUnionType.TYPE_ID
             .toNodeIdOrThrow(server.namespaceTable)
-        val binaryEncodingId = CustomUnionType.BINARY_ENCODING_ID
+        val binaryEncodingId: NodeId = CustomUnionType.BINARY_ENCODING_ID
             .toNodeIdOrThrow(server.namespaceTable)
 
-        dictionaryManager.registerUnionCodec(
-            CustomUnionType.Codec().asBinaryCodec(),
-            "CustomUnionType",
+        // Add a custom DataTypeNode with a SubtypeOf reference to Union
+        val dataTypeNode = UaDataTypeNode(
+            nodeContext,
             dataTypeId,
-            binaryEncodingId
+            QualifiedName(namespaceIndex, "CustomUnionType"),
+            LocalizedText.english("CustomUnionType"),
+            LocalizedText.NULL_VALUE,
+            uint(0),
+            uint(0),
+            false
         )
 
+        dataTypeNode.addReference(
+            Reference(
+                dataTypeId,
+                NodeIds.HasSubtype,
+                NodeIds.Union.expanded(),
+                Reference.Direction.INVERSE
+            )
+        )
+
+        nodeManager.addNode(dataTypeNode)
+
+        // Define the Union
         val fields = arrayOf(
             StructureField(
                 "foo",
@@ -310,7 +386,7 @@ class ComplexTypesFragment(
                 NodeIds.String,
                 ValueRanks.Scalar,
                 null,
-                Unsigned.uint(0),
+                uint(0),
                 false
             )
         )
@@ -321,13 +397,32 @@ class ComplexTypesFragment(
             StructureType.Union,
             fields
         )
+
+        dataTypeNode.dataTypeDefinition = definition
+
+        // Register Codecs for each supported encoding with DataTypeManager
+        nodeContext.server.dataTypeManager.registerType(
+            dataTypeId,
+            CustomUnionType.Codec(),
+            binaryEncodingId,
+            null,
+            null
+        )
+
+        // Legacy DataTypeDictionary support
         val description = StructureDescription(
             dataTypeId,
             QualifiedName(namespaceIndex, "CustomUnionType"),
             definition
         )
 
-        dictionaryManager.registerStructureDescription(description, binaryEncodingId)
+        dictionaryManager.registerStructure(
+            "CustomUnionType",
+            dataTypeId,
+            binaryEncodingId,
+            BinaryDataTypeCodec.from(CustomUnionType.Codec()),
+            description
+        )
     }
 
 }

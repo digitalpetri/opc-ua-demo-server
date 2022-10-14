@@ -1,41 +1,20 @@
 package com.digitalpetri.opcua.server.types
 
 import com.digitalpetri.opcua.server.namespaces.demo.DemoNamespace
-import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext
-import org.eclipse.milo.opcua.stack.core.serialization.UaDecoder
-import org.eclipse.milo.opcua.stack.core.serialization.UaEncoder
-import org.eclipse.milo.opcua.stack.core.serialization.UaEnumeration
-import org.eclipse.milo.opcua.stack.core.serialization.codecs.GenericDataTypeCodec
+import org.eclipse.milo.opcua.stack.core.types.UaEnumeratedType
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId
 
-enum class CustomEnumType(private val value: Int) : UaEnumeration {
+enum class CustomEnumType(private val value: Int) : UaEnumeratedType {
     Field0(0),
     Field1(1),
     Field2(2);
 
-    override fun getValue(): Int {
-        return value
+    override fun getTypeId(): ExpandedNodeId {
+        return TYPE_ID
     }
 
-    class Codec : GenericDataTypeCodec<CustomEnumType>() {
-
-        override fun getType(): Class<CustomEnumType> {
-            return CustomEnumType::class.java
-        }
-
-        override fun decode(context: SerializationContext, decoder: UaDecoder): CustomEnumType? {
-            return from(decoder.readInt32(null))
-        }
-
-        override fun encode(
-            context: SerializationContext,
-            encoder: UaEncoder,
-            value: CustomEnumType
-        ) {
-
-            encoder.writeInt32(null, value.getValue())
-        }
-
+    override fun getValue(): Int {
+        return value
     }
 
     companion object {

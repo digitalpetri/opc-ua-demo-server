@@ -4,17 +4,20 @@ import com.digitalpetri.opcua.server.namespaces.demo.DemoNamespace
 import com.google.common.base.MoreObjects
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.UaSerializationException
-import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext
-import org.eclipse.milo.opcua.stack.core.serialization.UaDecoder
-import org.eclipse.milo.opcua.stack.core.serialization.UaEncoder
-import org.eclipse.milo.opcua.stack.core.serialization.UaStructure
-import org.eclipse.milo.opcua.stack.core.serialization.codecs.GenericDataTypeCodec
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext
+import org.eclipse.milo.opcua.stack.core.encoding.GenericDataTypeCodec
+import org.eclipse.milo.opcua.stack.core.encoding.UaDecoder
+import org.eclipse.milo.opcua.stack.core.encoding.UaEncoder
+import org.eclipse.milo.opcua.stack.core.types.UaStructuredType
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 import org.eclipse.milo.opcua.stack.core.types.structured.Union
 
-class CustomUnionType private constructor(private val type: Type, private val value: Any?) : Union(), UaStructure {
+class CustomUnionType private constructor(
+    private val type: Type,
+    private val value: Any?
+) : Union(), UaStructuredType {
 
     override fun getTypeId(): ExpandedNodeId {
         return TYPE_ID
@@ -83,19 +86,21 @@ class CustomUnionType private constructor(private val type: Type, private val va
             return CustomUnionType::class.java
         }
 
-        override fun decode(context: SerializationContext, decoder: UaDecoder): CustomUnionType {
-            val switchValue = decoder.readUInt32("SwitchValue")
+        override fun decodeType(context: EncodingContext, decoder: UaDecoder): CustomUnionType {
+            val switchValue = decoder.decodeUInt32("SwitchValue")
 
             return when (switchValue.toInt()) {
                 0 -> ofNull()
                 1 -> {
-                    val foo = decoder.readUInt32("foo")
+                    val foo = decoder.decodeUInt32("foo")
                     ofFoo(foo)
                 }
+
                 2 -> {
-                    val bar = decoder.readString("bar")
+                    val bar = decoder.decodeString("bar")
                     ofBar(bar)
                 }
+
                 else -> throw UaSerializationException(
                     StatusCodes.Bad_DecodingError,
                     "unknown field in Union CustomUnionType: $switchValue"
@@ -103,13 +108,13 @@ class CustomUnionType private constructor(private val type: Type, private val va
             }
         }
 
-        override fun encode(
-            context: SerializationContext,
+        override fun encodeType(
+            context: EncodingContext,
             encoder: UaEncoder,
             value: CustomUnionType
         ) {
 
-            encoder.writeUInt32(
+            encoder.encodeUInt32(
                 "SwitchValue",
                 Unsigned.uint(value.type.ordinal)
             )
@@ -118,11 +123,13 @@ class CustomUnionType private constructor(private val type: Type, private val va
                 Type.Null -> {
                     // noop
                 }
+
                 Type.Foo -> {
-                    encoder.writeUInt32("foo", value.asFoo())
+                    encoder.encodeUInt32("foo", value.asFoo())
                 }
+
                 Type.Bar -> {
-                    encoder.writeString("bar", value.asBar())
+                    encoder.encodeString("bar", value.asBar())
                 }
             }
         }
