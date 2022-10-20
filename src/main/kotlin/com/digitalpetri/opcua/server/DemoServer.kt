@@ -312,7 +312,8 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
             val discoveryClient = DiscoveryClient(endpointDescription, transport)
             discoveryClient.connect().await()
 
-            val discoveryUrls: List<String> = server.endpointDescriptions
+            val discoveryUrls: List<String> = server.applicationContext
+                .endpointDescriptions
                 .flatMap { it.server.discoveryUrls.toList() }
 
             val registeredServer = RegisteredServer(
