@@ -393,7 +393,7 @@ class ComplexTypesFragment(
 
         val definition = StructureDefinition(
             binaryEncodingId,
-            NodeIds.Structure,
+            NodeIds.Union,
             StructureType.Union,
             fields
         )

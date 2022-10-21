@@ -74,7 +74,7 @@ fun BuiltinDataType.defaultValueArray(length: Int = 5): Any {
     return array
 }
 
-fun BuiltinDataType.defaultValueArray2d(length: Int = 5): Any {
+fun BuiltinDataType.defaultValueArray2d(length: Int = 5): Matrix {
     val value = defaultValue()
 
     val array = java.lang.reflect.Array.newInstance(this.backingClass, length, length)
@@ -87,5 +87,5 @@ fun BuiltinDataType.defaultValueArray2d(length: Int = 5): Any {
         }
     }
 
-    return array
+    return Matrix(array)
 }

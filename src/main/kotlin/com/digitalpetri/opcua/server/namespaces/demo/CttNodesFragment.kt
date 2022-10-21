@@ -131,7 +131,7 @@ class CttNodesFragment(
             val node = nodeContext.addVariableNode(arrayFolder.nodeId, name, dataType = dataType)
             node.valueRank = ValueRank.OneOrMoreDimensions.value
             node.arrayDimensions = arrayOf(Unsigned.uint(0), Unsigned.uint(0))
-            node.value = DataValue(Variant(dataType.defaultValueArray2d()))
+            node.value = DataValue(Variant.ofMatrix(dataType.defaultValueArray2d()))
         }
     }
 

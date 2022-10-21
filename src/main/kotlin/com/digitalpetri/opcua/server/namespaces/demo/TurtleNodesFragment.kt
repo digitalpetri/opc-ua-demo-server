@@ -31,7 +31,7 @@ class TurtleNodesFragment(
 
     companion object {
 
-        private const val MAX_TURTLES: Long = 1000L
+        private const val MAX_TURTLES: Long = 100_000L
 
     }
 

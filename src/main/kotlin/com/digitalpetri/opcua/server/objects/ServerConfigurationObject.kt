@@ -108,6 +108,8 @@ class ServerConfigurationObject(
             certificateRequest: Out<ByteString>
         ) {
 
+            println("CreateSigningRequest()")
+
             val session = context.session.orElseThrow()
 
             if (session.endpoint.securityMode == MessageSecurityMode.None) {
@@ -206,6 +208,8 @@ class ServerConfigurationObject(
             applyChangesRequired: Out<Boolean>
         ) {
 
+            println("UpdateCertificate()")
+
             val session = context.session.orElseThrow()
 
             if (session.endpoint.securityMode == MessageSecurityMode.None) {
@@ -228,7 +232,7 @@ class ServerConfigurationObject(
                 CertificateUtil.decodeCertificate(it.bytesOrEmpty())
             }
 
-            val keyPair: KeyPair = if (privateKey == null || privateKey.isNull) {
+            val keyPair: KeyPair = if (privateKey == null || privateKey.isNullOrEmpty) {
                 // Use current PrivateKey + new certificates
                 val oldKeyPair = certificateManager.getKeyPair(thumbprint).orElseThrow()
 
