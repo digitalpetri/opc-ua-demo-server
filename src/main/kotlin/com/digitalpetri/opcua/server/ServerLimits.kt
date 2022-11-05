@@ -7,7 +7,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 
 object ServerLimits : OpcUaServerConfigLimits {
 
-    override fun getMaxSessionCount(): UInteger {
+    override fun getMaxSessions(): UInteger {
         return uint(100)
     }
 
@@ -31,8 +31,6 @@ object ServerLimits : OpcUaServerConfigLimits {
         return 100.0
     }
 
-    // TODO uncomment after master is merged into 2.0
-    /*
     override fun getMaxMonitoredItems(): UInteger {
         return uint(50_000)
     }
@@ -48,6 +46,5 @@ object ServerLimits : OpcUaServerConfigLimits {
     override fun getMaxSubscriptionsPerSession(): UInteger {
         return uint(50)
     }
-     */
-    
+
 }
