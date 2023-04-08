@@ -8,8 +8,8 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.bouncycastle.util.io.pem.PemReader
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
-import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
-import org.eclipse.milo.opcua.sdk.server.api.methods.Out
+import org.eclipse.milo.opcua.sdk.server.methods.MethodInvocationHandler
+import org.eclipse.milo.opcua.sdk.server.methods.Out
 import org.eclipse.milo.opcua.sdk.server.model.objects.CertificateGroupTypeNode
 import org.eclipse.milo.opcua.sdk.server.model.objects.ServerConfigurationType
 import org.eclipse.milo.opcua.sdk.server.model.objects.ServerConfigurationTypeNode

@@ -2,8 +2,8 @@ package com.digitalpetri.opcua.server.namespaces.demo
 
 import com.digitalpetri.opcua.milo.extensions.inverseReferenceTo
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
+import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
-import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceComposite
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType

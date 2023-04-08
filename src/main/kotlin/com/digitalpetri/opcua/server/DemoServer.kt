@@ -9,9 +9,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
 import org.eclipse.milo.opcua.sdk.client.DiscoveryClient
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
+import org.eclipse.milo.opcua.sdk.server.EndpointConfig
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
-import org.eclipse.milo.opcua.sdk.server.api.config.EndpointConfig
-import org.eclipse.milo.opcua.sdk.server.api.config.OpcUaServerConfig
+import org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator
 import org.eclipse.milo.opcua.sdk.server.model.objects.ServerConfigurationTypeNode
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil

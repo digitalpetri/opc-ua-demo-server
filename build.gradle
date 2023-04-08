@@ -105,9 +105,9 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4'
 
-    implementation "org.eclipse.milo:sdk-client:$miloVersion"
-    implementation "org.eclipse.milo:sdk-server:$miloVersion"
-    implementation "org.eclipse.milo:dtd-manager:$miloVersion"
+    implementation "org.eclipse.milo:milo-sdk-client:$miloVersion"
+    implementation "org.eclipse.milo:milo-sdk-server:$miloVersion"
+    implementation "org.eclipse.milo:milo-dtd-manager:$miloVersion"
 
     implementation "com.google.guava:guava:31.1-jre"
 

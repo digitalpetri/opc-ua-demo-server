@@ -1,7 +1,7 @@
 package com.digitalpetri.opcua.server.namespaces.demo
 
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
-import org.eclipse.milo.opcua.sdk.server.api.DataItem
+import org.eclipse.milo.opcua.sdk.server.items.DataItem
 import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
 import org.eclipse.milo.opcua.sdk.server.nodes.AttributeObserver
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode

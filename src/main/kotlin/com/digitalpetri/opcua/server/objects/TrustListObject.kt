@@ -3,8 +3,8 @@ package com.digitalpetri.opcua.server.objects
 import com.digitalpetri.opcua.server.namespaces.filters.ExecutableByAdminFilter
 import org.bouncycastle.util.encoders.Hex
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
-import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
-import org.eclipse.milo.opcua.sdk.server.api.methods.Out
+import org.eclipse.milo.opcua.sdk.server.methods.MethodInvocationHandler
+import org.eclipse.milo.opcua.sdk.server.methods.Out
 import org.eclipse.milo.opcua.sdk.server.model.objects.TrustListType
 import org.eclipse.milo.opcua.sdk.server.model.objects.TrustListTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode

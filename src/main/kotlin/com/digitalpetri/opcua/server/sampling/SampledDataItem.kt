@@ -3,7 +3,7 @@ package com.digitalpetri.opcua.server.sampling
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
-import org.eclipse.milo.opcua.sdk.server.api.DataItem
+import org.eclipse.milo.opcua.sdk.server.items.DataItem
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
 import org.slf4j.LoggerFactory

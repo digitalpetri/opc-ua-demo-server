@@ -1,7 +1,7 @@
 package com.digitalpetri.opcua.server.methods
 
 import org.eclipse.milo.opcua.sdk.core.ValueRanks
-import org.eclipse.milo.opcua.sdk.server.api.methods.AbstractMethodInvocationHandler
+import org.eclipse.milo.opcua.sdk.server.methods.AbstractMethodInvocationHandler
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode
 import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText

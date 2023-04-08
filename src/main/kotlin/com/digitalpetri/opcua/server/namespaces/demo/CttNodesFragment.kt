@@ -5,9 +5,9 @@ import com.digitalpetri.opcua.server.namespaces.filters.EuRangeCheckFilter
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
 import org.eclipse.milo.opcua.sdk.core.ValueRank
 import org.eclipse.milo.opcua.sdk.core.ValueRanks
+import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
-import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceComposite
-import org.eclipse.milo.opcua.sdk.server.api.methods.AbstractMethodInvocationHandler
+import org.eclipse.milo.opcua.sdk.server.methods.AbstractMethodInvocationHandler
 import org.eclipse.milo.opcua.sdk.server.model.variables.AnalogItemTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode

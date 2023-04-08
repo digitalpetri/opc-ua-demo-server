@@ -2,8 +2,9 @@ package com.digitalpetri.opcua.server.namespaces.demo
 
 import com.google.common.collect.Maps
 import kotlinx.coroutines.*
-import org.eclipse.milo.opcua.sdk.server.OpcUaServer
-import org.eclipse.milo.opcua.sdk.server.api.*
+import org.eclipse.milo.opcua.sdk.server.*
+import org.eclipse.milo.opcua.sdk.server.items.DataItem
+import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
 import java.util.concurrent.ConcurrentMap

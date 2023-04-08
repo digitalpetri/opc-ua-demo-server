@@ -3,8 +3,8 @@ package com.digitalpetri.opcua.server.namespaces.demo
 import com.digitalpetri.opcua.milo.extensions.inverseReferenceTo
 import com.digitalpetri.opcua.server.DemoServer
 import com.digitalpetri.opcua.server.objects.FileObject
+import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer
-import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceComposite
 import org.eclipse.milo.opcua.sdk.server.model.objects.FileTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.factories.NodeFactory

@@ -3,8 +3,8 @@ package com.digitalpetri.opcua.server.objects
 import com.google.common.collect.HashBasedTable
 import com.google.common.collect.Table
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
-import org.eclipse.milo.opcua.sdk.server.api.methods.MethodInvocationHandler
-import org.eclipse.milo.opcua.sdk.server.api.methods.Out
+import org.eclipse.milo.opcua.sdk.server.methods.MethodInvocationHandler
+import org.eclipse.milo.opcua.sdk.server.methods.Out
 import org.eclipse.milo.opcua.sdk.server.model.objects.FileType
 import org.eclipse.milo.opcua.sdk.server.model.objects.FileTypeNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode

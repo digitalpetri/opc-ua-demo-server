@@ -5,12 +5,7 @@ import com.digitalpetri.opcua.milo.extensions.referenceTo
 import com.digitalpetri.opcua.server.DemoServer
 import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.core.nodes.ObjectNodeProperties
-import org.eclipse.milo.opcua.sdk.server.OpcUaServer
-import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceComposite
-import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceFilter
-import org.eclipse.milo.opcua.sdk.server.api.SimpleAddressSpaceFilter
-import org.eclipse.milo.opcua.sdk.server.api.services.AttributeServices
-import org.eclipse.milo.opcua.sdk.server.api.services.ViewServices
+import org.eclipse.milo.opcua.sdk.server.*
 import org.eclipse.milo.opcua.sdk.server.nodes.*
 import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.StatusCodes
@@ -48,7 +43,7 @@ class TurtleNodesFragment(
         return filter
     }
 
-    override fun browse(context: ViewServices.BrowseContext, viewDescription: ViewDescription, nodeId: NodeId) {
+    override fun browse(context: AddressSpace.BrowseContext, viewDescription: ViewDescription, nodeId: NodeId) {
         val node: UaNode? = nodeManager[nodeId]
 
         val references: List<Reference>? = node?.references ?: maybeTurtleReferences(nodeId)
@@ -61,7 +56,7 @@ class TurtleNodesFragment(
     }
 
     override fun getReferences(
-        context: ViewServices.BrowseContext,
+        context: AddressSpace.BrowseContext,
         viewDescription: ViewDescription,
         sourceNodeId: NodeId
     ) {
@@ -74,7 +69,7 @@ class TurtleNodesFragment(
     }
 
     override fun read(
-        context: AttributeServices.ReadContext,
+        context: AddressSpace.ReadContext,
         maxAge: Double,
         timestamps: TimestampsToReturn,
         readValueIds: List<ReadValueId>
