@@ -231,7 +231,7 @@ class ServerConfigurationObject(
                 CertificateUtil.decodeCertificate(it.bytesOrEmpty())
             }
 
-            val keyPair: KeyPair = if (privateKey == null || privateKey.isNull) {
+            val keyPair: KeyPair = if (privateKey == null || privateKey.isNullOrEmpty) {
                 // Use current PrivateKey + new certificates
                 val oldKeyPair = certificateManager.getKeyPair(thumbprint).orElseThrow()
 
