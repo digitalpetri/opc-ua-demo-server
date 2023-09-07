@@ -36,8 +36,8 @@ class CustomStructType @JvmOverloads constructor(
         if (other == null || javaClass != other.javaClass) return false
         val that = other as CustomStructType
         return isBaz == that.isBaz &&
-                Objects.equal(foo, that.foo) &&
-                Objects.equal(bar, that.bar)
+            Objects.equal(foo, that.foo) &&
+            Objects.equal(bar, that.bar)
     }
 
     override fun hashCode(): Int {

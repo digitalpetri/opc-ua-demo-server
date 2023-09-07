@@ -14,6 +14,7 @@ object ExecutableByAdminFilter : AttributeFilter {
 
                 return user == "admin"
             }
+
             else -> ctx.getAttribute(attributeId)
         }
     }
