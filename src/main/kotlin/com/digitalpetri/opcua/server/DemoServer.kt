@@ -2,6 +2,7 @@ package com.digitalpetri.opcua.server
 
 import com.digitalpetri.opcua.server.namespaces.demo.*
 import com.digitalpetri.opcua.server.objects.ServerConfigurationObject
+import com.digitalpetri.opcua.server.util.cartesianProduct
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.json.toJson
 import kotlinx.coroutines.*
@@ -14,20 +15,12 @@ import org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig
 import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator
 import org.eclipse.milo.opcua.sdk.server.model.objects.ServerConfigurationTypeNode
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil
-import org.eclipse.milo.opcua.stack.core.NamespaceTable
 import org.eclipse.milo.opcua.stack.core.NodeIds
-import org.eclipse.milo.opcua.stack.core.ServerTable
-import org.eclipse.milo.opcua.stack.core.channel.EncodingLimits
-import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext
-import org.eclipse.milo.opcua.stack.core.encoding.EncodingManager
-import org.eclipse.milo.opcua.stack.core.encoding.OpcUaEncodingManager
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager
 import org.eclipse.milo.opcua.stack.core.security.KeyStoreCertificateStore
 import org.eclipse.milo.opcua.stack.core.security.RsaSha256CertificateFactory
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile
-import org.eclipse.milo.opcua.stack.core.types.DataTypeManager
-import org.eclipse.milo.opcua.stack.core.types.OpcUaDataTypeManager
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
@@ -400,74 +393,63 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
             it.parseHostnames(includeLoopback = true)
         }
 
-        for (bindAddress in bindAddresses) {
-            for (hostname in endpointAddresses) {
-                val builder = EndpointConfig.newBuilder()
-                    .setTransportProfile(TransportProfile.TCP_UASC_UABINARY)
-                    .setBindAddress(bindAddress)
-                    .setBindPort(config[ServerConfig.bindPort])
-                    .setHostname(hostname)
-                    .setPath("milo")
-                    .setCertificate {
-                        certificateManager.defaultApplicationGroup.get()
-                            .getCertificateChain(NodeIds.RsaSha256ApplicationCertificateType).get()[0]
-                    }
-                    .addTokenPolicies(*userTokenPolicies.toTypedArray())
+        val certificates: List<() -> X509Certificate> = listOf {
+            certificateManager.defaultApplicationGroup.get()
+                .getCertificateChain(NodeIds.RsaSha256ApplicationCertificateType).get()[0]
+        }
 
-                val securityPolicies = config[ServerConfig.securityPolicyList].mapNotNull {
-                    try {
-                        SecurityPolicy.valueOf(it)
-                    } catch (t: Throwable) {
-                        null
-                    }
-                }
+        cartesianProduct(bindAddresses, endpointAddresses, certificates).forEach {
+            val bindAddress: String = it.first
+            val endpointAddress: String = it.second
+            val getCertificate: () -> X509Certificate = it.third
 
-                if (securityPolicies.isEmpty()) {
-                    throw RuntimeException("no security policies configured")
-                }
+            val builder = EndpointConfig.newBuilder()
+                .setTransportProfile(TransportProfile.TCP_UASC_UABINARY)
+                .setBindAddress(bindAddress)
+                .setBindPort(config[ServerConfig.bindPort])
+                .setHostname(endpointAddress)
+                .setPath("milo")
+                .setCertificate { getCertificate() }
+                .addTokenPolicies(*userTokenPolicies.toTypedArray())
 
-                for (securityPolicy in securityPolicies) {
-                    if (securityPolicy == SecurityPolicy.None) {
-                        endpointConfigurations.add(
-                            builder.copy()
-                                .setSecurityPolicy(SecurityPolicy.None)
-                                .setSecurityMode(MessageSecurityMode.None)
-                                .build()
-                        )
-                    } else {
-                        endpointConfigurations.add(
-                            builder.copy()
-                                .setSecurityPolicy(securityPolicy)
-                                .setSecurityMode(MessageSecurityMode.Sign)
-                                .build()
-                        )
-                        endpointConfigurations.add(
-                            builder.copy()
-                                .setSecurityPolicy(securityPolicy)
-                                .setSecurityMode(MessageSecurityMode.SignAndEncrypt)
-                                .build()
-                        )
-                    }
-                }
-
-                /*
-                 * It's good practice to provide a discovery-specific endpoint with no security.
-                 *
-                 * Usage of the  "/discovery" suffix is defined by OPC UA Part 6:
-                 *
-                 * Each OPC UA Server Application implements the Discovery Service Set.
-                 *
-                 * If the OPC UA Server requires a different address for this Endpoint it shall
-                 * create the address by appending the path "/discovery" to its base address.
-                 */
-
-                val discoveryBuilder = builder.copy()
-                    .setPath("/milo/discovery")
-                    .setSecurityPolicy(SecurityPolicy.None)
-                    .setSecurityMode(MessageSecurityMode.None)
-
-                endpointConfigurations.add(discoveryBuilder.build())
+            val securityPolicies = config[ServerConfig.securityPolicyList].mapNotNull {
+                runCatching { SecurityPolicy.valueOf(it) }.getOrNull()
             }
+
+            if (securityPolicies.isEmpty()) {
+                throw RuntimeException("no security policies configured")
+            }
+
+            for (securityPolicy in securityPolicies) {
+                if (securityPolicy == SecurityPolicy.None) {
+                    endpointConfigurations.add(
+                        builder.copy()
+                            .setSecurityPolicy(SecurityPolicy.None)
+                            .setSecurityMode(MessageSecurityMode.None)
+                            .build()
+                    )
+                } else {
+                    endpointConfigurations.add(
+                        builder.copy()
+                            .setSecurityPolicy(securityPolicy)
+                            .setSecurityMode(MessageSecurityMode.Sign)
+                            .build()
+                    )
+                    endpointConfigurations.add(
+                        builder.copy()
+                            .setSecurityPolicy(securityPolicy)
+                            .setSecurityMode(MessageSecurityMode.SignAndEncrypt)
+                            .build()
+                    )
+                }
+            }
+
+            val discoveryBuilder = builder.copy()
+                .setPath("/milo/discovery")
+                .setSecurityPolicy(SecurityPolicy.None)
+                .setSecurityMode(MessageSecurityMode.None)
+
+            endpointConfigurations.add(discoveryBuilder.build())
         }
 
         return endpointConfigurations
@@ -485,33 +467,6 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
         } else {
             setOf(this)
         }
-    }
-
-    private class DefaultEncodingContext : EncodingContext {
-
-        private val namespaceTable = NamespaceTable()
-        private val serverTable = ServerTable()
-
-        override fun getDataTypeManager(): DataTypeManager {
-            return OpcUaDataTypeManager.getInstance()
-        }
-
-        override fun getEncodingManager(): EncodingManager {
-            return OpcUaEncodingManager.getInstance()
-        }
-
-        override fun getEncodingLimits(): EncodingLimits {
-            return EncodingLimits.DEFAULT
-        }
-
-        override fun getNamespaceTable(): NamespaceTable {
-            return namespaceTable
-        }
-
-        override fun getServerTable(): ServerTable {
-            return serverTable
-        }
-
     }
 
 }
