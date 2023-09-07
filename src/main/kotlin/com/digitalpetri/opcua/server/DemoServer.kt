@@ -2,7 +2,6 @@ package com.digitalpetri.opcua.server
 
 import com.digitalpetri.opcua.server.namespaces.demo.*
 import com.digitalpetri.opcua.server.objects.ServerConfigurationObject
-import com.digitalpetri.opcua.server.util.KeyStoreManager
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.json.toJson
 import kotlinx.coroutines.*
@@ -23,8 +22,8 @@ import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingManager
 import org.eclipse.milo.opcua.stack.core.encoding.OpcUaEncodingManager
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager
-import org.eclipse.milo.opcua.stack.core.security.DefaultServerCertificateValidator
-import org.eclipse.milo.opcua.stack.core.security.DefaultTrustListManager
+import org.eclipse.milo.opcua.stack.core.security.KeyStoreCertificateStore
+import org.eclipse.milo.opcua.stack.core.security.RsaSha256CertificateFactory
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile
 import org.eclipse.milo.opcua.stack.core.types.DataTypeManager
@@ -39,7 +38,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription
 import org.eclipse.milo.opcua.stack.core.types.structured.RegisteredServer
 import org.eclipse.milo.opcua.stack.core.types.structured.UserTokenPolicy
 import org.eclipse.milo.opcua.stack.core.util.ManifestUtil
-import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck
+import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateBuilder
 import org.eclipse.milo.opcua.stack.transport.client.tcp.OpcTcpClientTransport
 import org.eclipse.milo.opcua.stack.transport.client.tcp.OpcTcpClientTransportConfigBuilder
 import org.eclipse.milo.opcua.stack.transport.server.OpcServerTransport
@@ -49,8 +48,11 @@ import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransportCo
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
+import java.security.KeyPair
+import java.security.cert.X509Certificate
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.regex.Pattern
 
 class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
 
@@ -80,12 +82,10 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
         adminValid || user1Valid || user2Valid
     }
 
-    private val server: OpcUaServer
-    private val serverConfigurationObject: ServerConfigurationObject
-
     private val config: Config
-
+    private val server: OpcUaServer
     private val demoNamespace: DemoNamespace
+    private val serverConfigurationObject: ServerConfigurationObject
 
     init {
         config = readConfig(configDir)
@@ -112,25 +112,44 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
             .resolve("pki")
             .toFile().also { it.mkdirs() }
 
-        val keyStore = ServerKeyStore(
-            KeyStoreManager.Settings(
-                keyStoreFile = securityDir.toPath()
-                    .resolve("certificates.pfx").toFile(),
-                keyStorePassword = "password"
-            ),
-            applicationUuid
-        ) { certificateHostnames() }
-
-        val trustListManager = DefaultTrustListManager(pkiDir)
-
-        val certificateManager = DefaultCertificateManager(
-            keyStore.getDefaultKeyPair(),
-            keyStore.getDefaultCertificateChain()?.toTypedArray()
+        val certificateStore = KeyStoreCertificateStore.createAndInitialize(
+            KeyStoreCertificateStore.Settings(
+                securityDir.toPath().resolve("certificates.pfx"),
+                { "password".toCharArray() },
+                { _ -> "password".toCharArray() }
+            )
         )
+        val certificateManager = DefaultCertificateManager.createWithDefaultApplicationGroup(
+            pkiDir.toPath(),
+            certificateStore,
+            object : RsaSha256CertificateFactory() {
+                private val IP_ADDR_PATTERN = Pattern.compile(
+                    "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$"
+                )
 
-        val certificateValidator = DefaultServerCertificateValidator(
-            trustListManager,
-            ValidationCheck.ALL_OPTIONAL_CHECKS
+                override fun createRsaSha256CertificateChain(keyPair: KeyPair): Array<X509Certificate> {
+                    val applicationUri = "urn:eclipse:milo:opcua:server:$applicationUuid"
+
+                    val builder = SelfSignedCertificateBuilder(keyPair)
+                        .setCommonName("Eclipse Milo OPC UA Demo Server")
+                        .setOrganization("digitalpetri")
+                        .setOrganizationalUnit("dev")
+                        .setLocalityName("Folsom")
+                        .setStateName("CA")
+                        .setCountryCode("US")
+                        .setApplicationUri(applicationUri)
+
+                    for (hostname in certificateHostnames()) {
+                        if (IP_ADDR_PATTERN.matcher(hostname).matches()) {
+                            builder.addIpAddress(hostname)
+                        } else {
+                            builder.addDnsName(hostname)
+                        }
+                    }
+
+                    return arrayOf(builder.build())
+                }
+            }
         )
 
         val endpoints = createEndpointConfigurations(
@@ -143,9 +162,7 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
             .setApplicationUri("$APPLICATION_URI:$applicationUuid")
             .setApplicationName(LocalizedText.english("Eclipse Milo OPC UA Demo Server"))
             .setBuildInfo(buildInfo())
-            .setTrustListManager(trustListManager)
             .setCertificateManager(certificateManager)
-            .setCertificateValidator(certificateValidator)
             .setIdentityValidator(identityValidator)
             .setEndpoints(endpoints)
             .setLimits(ServerLimits)
@@ -233,9 +250,7 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
 
         serverConfigurationObject = ServerConfigurationObject(
             server,
-            serverConfigurationNode,
-            keyStore,
-            trustListManager
+            serverConfigurationNode
         )
     }
 
@@ -310,7 +325,7 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
             val transport = OpcTcpClientTransport(OpcTcpClientTransportConfigBuilder().build())
 
             val discoveryClient = DiscoveryClient(endpointDescription, transport)
-            discoveryClient.connect().await()
+            discoveryClient.connectAsync().await()
 
             val discoveryUrls: List<String> = server.applicationContext
                 .endpointDescriptions
@@ -394,7 +409,8 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
                     .setHostname(hostname)
                     .setPath("milo")
                     .setCertificate {
-                        certificateManager.certificates.first()
+                        certificateManager.defaultApplicationGroup.get()
+                            .getCertificateChain(NodeIds.RsaSha256ApplicationCertificateType).get()[0]
                     }
                     .addTokenPolicies(*userTokenPolicies.toTypedArray())
 

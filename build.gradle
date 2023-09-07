@@ -109,6 +109,8 @@ dependencies {
     implementation "org.eclipse.milo:milo-sdk-server:$miloVersion"
     implementation "org.eclipse.milo:milo-dtd-manager:$miloVersion"
 
+    implementation "com.digitalpetri.opcua:milo-object-impls:1.0.0-SNAPSHOT"
+
     implementation "com.google.guava:guava:31.1-jre"
 
     implementation 'com.uchuhimo:konf-core:1.1.2'
