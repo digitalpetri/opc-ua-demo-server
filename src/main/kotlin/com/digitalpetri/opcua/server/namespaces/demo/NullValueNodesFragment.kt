@@ -35,7 +35,7 @@ class NullValueNodesFragment(
             NodeIds.HasComponent
         )
 
-        val dataTypes = BuiltinDataType.values().filter {
+        val dataTypes = BuiltinDataType.entries.filter {
             it != BuiltinDataType.DataValue && it != BuiltinDataType.Variant && it != BuiltinDataType.DiagnosticInfo
         }
 

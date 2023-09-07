@@ -11,7 +11,6 @@ import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn
@@ -137,8 +136,8 @@ class TurtleNodesFragment(
             QualifiedName(namespaceIndex, "TurtleType"),
             LocalizedText("TurtleType"),
             LocalizedText("It's a Turtle."),
-            Unsigned.uint(0),
-            Unsigned.uint(0),
+            uint(0),
+            uint(0),
             false
         )
 

@@ -12,7 +12,7 @@ object ServerLimits : OpcUaServerConfigLimits {
     }
 
     override fun getMaxSessionTimeout(): Double {
-        return 30_000.0;
+        return 30_000.0
     }
 
     override fun getMinPublishingInterval(): Double {
@@ -20,11 +20,11 @@ object ServerLimits : OpcUaServerConfigLimits {
     }
 
     override fun getMaxPublishingInterval(): Double {
-        return 15_0000.0;
+        return 15_0000.0
     }
 
     override fun getMaxSubscriptionLifetime(): Double {
-        return 30_000.0;
+        return 30_000.0
     }
 
     override fun getDefaultPublishingInterval(): Double {

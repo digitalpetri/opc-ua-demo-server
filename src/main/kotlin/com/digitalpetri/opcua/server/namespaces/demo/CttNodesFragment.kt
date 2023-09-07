@@ -69,7 +69,7 @@ class CttNodesFragment(
     private fun addScalarNodes(parentNodeId: NodeId) {
         val scalarFolder = nodeContext.addFolderNode(parentNodeId, "Scalar")
 
-        val scalarDataTypes = BuiltinDataType.values().filterNot {
+        val scalarDataTypes = BuiltinDataType.entries.filterNot {
             it == BuiltinDataType.Variant ||
                 it == BuiltinDataType.DataValue ||
                 it == BuiltinDataType.DiagnosticInfo
@@ -100,7 +100,7 @@ class CttNodesFragment(
     private fun addArrayNodes(parentNodeId: NodeId) {
         val arrayFolder = nodeContext.addFolderNode(parentNodeId, "Array")
 
-        val arrayDataTypes = BuiltinDataType.values().filterNot {
+        val arrayDataTypes = BuiltinDataType.entries.filterNot {
             it == BuiltinDataType.Variant ||
                 it == BuiltinDataType.DataValue ||
                 it == BuiltinDataType.DiagnosticInfo
@@ -119,7 +119,7 @@ class CttNodesFragment(
     private fun addArray2dNodes(parentNodeId: NodeId) {
         val arrayFolder = nodeContext.addFolderNode(parentNodeId, "Array2d")
 
-        val arrayDataTypes = BuiltinDataType.values().filterNot {
+        val arrayDataTypes = BuiltinDataType.entries.filterNot {
             it == BuiltinDataType.Variant ||
                 it == BuiltinDataType.DataValue ||
                 it == BuiltinDataType.DiagnosticInfo
@@ -203,7 +203,6 @@ class CttNodesFragment(
         nodeContext.addVariableNode(folderNode.nodeId, "Component1")
         nodeContext.addVariableNode(folderNode.nodeId, "Component2")
         nodeContext.addVariableNode(folderNode.nodeId, "Component3")
-
     }
 
     private fun addSecurityAccessNodes(parentNodeId: NodeId) {

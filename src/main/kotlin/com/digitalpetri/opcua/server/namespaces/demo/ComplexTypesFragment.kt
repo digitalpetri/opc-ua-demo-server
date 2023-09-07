@@ -226,12 +226,10 @@ class ComplexTypesFragment(
 
         // This Enum is zero-based and naturally incrementing, so we set the EnumStrings property.
         // If it were more complex the EnumValues property would be used instead.
-        dataTypeNode.setEnumStrings(
-            arrayOf(
-                LocalizedText.english("Field0"),
-                LocalizedText.english("Field1"),
-                LocalizedText.english("Field2")
-            )
+        dataTypeNode.enumStrings = arrayOf(
+            LocalizedText.english("Field0"),
+            LocalizedText.english("Field1"),
+            LocalizedText.english("Field2")
         )
 
         // Legacy DataTypeDictionary support
