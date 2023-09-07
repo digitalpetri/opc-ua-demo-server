@@ -80,7 +80,7 @@ runtime {
 
     def platformSuffix = ""
 
-    if (project.hasProperty("platform"))
+    if (project.hasProperty("platform")) {
         platformSuffix = "-$platform"
     }
 
