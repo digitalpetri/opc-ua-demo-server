@@ -6,7 +6,10 @@ import com.digitalpetri.opcua.server.DemoServer
 import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.core.nodes.ObjectNodeProperties
 import org.eclipse.milo.opcua.sdk.server.*
-import org.eclipse.milo.opcua.sdk.server.nodes.*
+import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
+import org.eclipse.milo.opcua.sdk.server.nodes.UaNode
+import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode
+import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectTypeNode
 import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.StatusCodes
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
@@ -78,7 +81,7 @@ class TurtleNodesFragment(
             val node: UaNode? = nodeManager[readValueId.nodeId] ?: maybeTurtleNode(readValueId.nodeId)
 
             val value: DataValue? = node?.readAttribute(
-                AttributeContext(context),
+                context,
                 readValueId.attributeId,
                 timestamps,
                 readValueId.indexRange,

@@ -2,11 +2,11 @@ package com.digitalpetri.opcua.server.namespaces.demo
 
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
 import org.eclipse.milo.opcua.sdk.server.items.DataItem
-import org.eclipse.milo.opcua.sdk.server.nodes.AttributeContext
 import org.eclipse.milo.opcua.sdk.server.nodes.AttributeObserver
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode
 import org.eclipse.milo.opcua.stack.core.AttributeId
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
+import java.util.*
 
 class SubscribedNode(
     private val item: DataItem,
@@ -26,7 +26,7 @@ class SubscribedNode(
     }
 
     override fun onStartup() {
-        item.setValue(node.getAttribute(AttributeContext(item.session.server), targetAttributeId))
+        item.setValue(node.getAttribute({ Optional.ofNullable(item.session) }, targetAttributeId))
 
         node.addAttributeObserver(attributeObserver)
     }
