@@ -1,12 +1,13 @@
 package com.digitalpetri.opcua.server.namespaces.demo
 
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle
+import org.eclipse.milo.opcua.sdk.server.AccessContext
 import org.eclipse.milo.opcua.sdk.server.items.DataItem
 import org.eclipse.milo.opcua.sdk.server.nodes.AttributeObserver
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode
 import org.eclipse.milo.opcua.stack.core.AttributeId
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
-import java.util.*
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant
 
 class SubscribedNode(
     private val item: DataItem,
@@ -21,12 +22,22 @@ class SubscribedNode(
 
     private val attributeObserver = AttributeObserver { _, attributeId, value ->
         if (samplingEnabled && attributeId == targetAttributeId) {
-            item.setValue(value as DataValue)
+            if (value is DataValue) {
+                item.setValue(value)
+            } else {
+                item.setValue(DataValue(Variant((value))))
+            }
         }
     }
 
     override fun onStartup() {
-        item.setValue(node.getAttribute({ Optional.ofNullable(item.session) }, targetAttributeId))
+        val value: Any? = node.getAttribute(AccessContext.INTERNAL, targetAttributeId)
+
+        if (value is DataValue) {
+            item.setValue(value)
+        } else {
+            item.setValue(DataValue(Variant((value))))
+        }
 
         node.addAttributeObserver(attributeObserver)
     }

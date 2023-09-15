@@ -80,15 +80,18 @@ class TurtleNodesFragment(
         val values = readValueIds.map { readValueId ->
             val node: UaNode? = nodeManager[readValueId.nodeId] ?: maybeTurtleNode(readValueId.nodeId)
 
-            val value: DataValue? = node?.readAttribute(
-                context,
-                readValueId.attributeId,
-                timestamps,
-                readValueId.indexRange,
-                readValueId.dataEncoding
-            )
-
-            value ?: DataValue(StatusCodes.Bad_NodeIdUnknown)
+            if (node != null) {
+                AttributeReader.readAttribute(
+                    context,
+                    node,
+                    readValueId.attributeId,
+                    timestamps,
+                    readValueId.indexRange,
+                    readValueId.dataEncoding,
+                )
+            } else {
+                DataValue(StatusCodes.Bad_NodeIdUnknown)
+            }
         }
 
         context.success(values)
