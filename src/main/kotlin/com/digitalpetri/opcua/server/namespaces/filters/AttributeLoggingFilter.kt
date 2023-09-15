@@ -12,7 +12,7 @@ class AttributeLoggingFilter @JvmOverloads constructor(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     override fun getAttribute(
-        ctx: AttributeFilterContext.GetAttributeContext,
+        ctx: AttributeFilterContext,
         attributeId: AttributeId
     ): Any? {
 
@@ -30,7 +30,7 @@ class AttributeLoggingFilter @JvmOverloads constructor(
     }
 
     override fun setAttribute(
-        ctx: AttributeFilterContext.SetAttributeContext,
+        ctx: AttributeFilterContext,
         attributeId: AttributeId,
         value: Any?
     ) {

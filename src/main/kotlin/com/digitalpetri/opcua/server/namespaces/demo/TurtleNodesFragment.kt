@@ -179,32 +179,36 @@ class TurtleNodesFragment(
             val prevTurtle = turtleNumber - 1
             val nextTurtle = turtleNumber + 1
 
-            val references = mutableListOf<Reference>()
-
-            if (prevTurtle >= 0) {
-                references += Reference(
-                    nodeId,
-                    NodeIds.Organizes,
-                    NodeId(namespaceIndex, "[turtles]$prevTurtle").expanded(),
-                    Reference.Direction.INVERSE
-                )
-            }
-
-            if (nextTurtle < MAX_TURTLES) {
-                references += listOf(
-                    Reference(
-                        nodeId,
-                        NodeIds.Organizes,
-                        NodeId(namespaceIndex, "[turtles]$nextTurtle").expanded(),
-                        Reference.Direction.FORWARD
-                    ),
-                    Reference(
-                        nodeId,
-                        NodeIds.HasTypeDefinition,
-                        NodeId(namespaceIndex, "TurtleType").expanded(),
-                        Reference.Direction.FORWARD
+            val references: List<Reference> = buildList {
+                if (prevTurtle >= 0) {
+                    add(
+                        Reference(
+                            nodeId,
+                            NodeIds.Organizes,
+                            NodeId(namespaceIndex, "[turtles]$prevTurtle").expanded(),
+                            Reference.Direction.INVERSE
+                        )
                     )
-                )
+                }
+
+                if (nextTurtle < MAX_TURTLES) {
+                    add(
+                        Reference(
+                            nodeId,
+                            NodeIds.Organizes,
+                            NodeId(namespaceIndex, "[turtles]$nextTurtle").expanded(),
+                            Reference.Direction.FORWARD
+                        )
+                    )
+                    add(
+                        Reference(
+                            nodeId,
+                            NodeIds.HasTypeDefinition,
+                            NodeId(namespaceIndex, "TurtleType").expanded(),
+                            Reference.Direction.FORWARD
+                        )
+                    )
+                }
             }
 
             references
