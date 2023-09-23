@@ -27,18 +27,13 @@ fun main() {
     val directories = ProjectDirectories.from(
         "com",
         "digitalpetri",
-        "Milo Demo Server"
+        "MiloDemoServer"
     )
 
-    val configDirPath = System.getProperty("configDir", directories.configDir)
+    // Use the system property "configDir" if it is set, otherwise use the default.
+    // note: intentionally using `directories.dataDir` here, not `directories.configDir`
+    val configDirPath = System.getProperty("configDir", directories.dataDir)
     val configDir = File(configDirPath).apply {
-        if (!exists()) {
-            assert(mkdirs())
-        }
-    }
-
-    val dataDirPath = System.getProperty("dataDir", directories.dataDir)
-    val dataDir = File(dataDirPath).apply {
         if (!exists()) {
             assert(mkdirs())
         }
@@ -63,7 +58,7 @@ fun main() {
 
     Stack.ConnectionLimits.RATE_LIMIT_ENABLED = true
 
-    val demoServer = DemoServer(configDir, dataDir).also { it.startup() }
+    val demoServer = DemoServer(configDir).also { it.startup() }
 
     val startupTimeMillis = TimeUnit.MILLISECONDS.convert(
         System.nanoTime() - startNanos,
@@ -72,8 +67,7 @@ fun main() {
 
     LoggerFactory.getLogger(DemoServer::class.java).apply {
         info("Eclipse Milo Demo Server started in ${startupTimeMillis}ms")
-        info("\tconfig dir:\t$configDir")
-        info("\tdata dir:\t$dataDir")
+        info("  config dir: $configDir")
     }
 
     val future = CompletableFuture<Unit>()

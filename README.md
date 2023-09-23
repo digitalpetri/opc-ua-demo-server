@@ -33,9 +33,8 @@ The packaged distribution includes everything needed to run the demo server, inc
 .
 . (logging snipped for brevity)
 .
-[main] INFO  c.d.opcua.server.DemoServer - Eclipse Milo Demo Server started in 2400ms
-[main] INFO  c.d.opcua.server.DemoServer - 	config dir:	/Users/kevin/Library/Preferences/com.digitalpetri.Milo-Demo-Server
-[main] INFO  c.d.opcua.server.DemoServer - 	data dir:	/Users/kevin/Library/Application Support/com.digitalpetri.Milo-Demo-Server
+[main] INFO  c.d.opcua.server.DemoServer - Eclipse Milo Demo Server started in 1262ms
+[main] INFO  c.d.opcua.server.DemoServer -   config dir: /Users/kevin/Library/Application Support/com.digitalpetri.MiloDemoServer
 ```
 
 When the server starts it will log the endpoint URLs it can be reached at and then finally the location of the config and data directories being used. These will vary by platform.
@@ -44,45 +43,43 @@ When the server starts it will log the endpoint URLs it can be reached at and th
 
 ### Server
 
-The server can be configured by modifying the JSON file at `$configDir/server.json`:
+The server can be configured by modifying the JSON file at `$configDir/config.json`:
 ```json
 {
-  "serverConfig": {
-    "bindAddressList": [
-      "0.0.0.0"
-    ],
-    "bindPort": 62541,
-    "endpointAddressList": [
-      "<hostname>",
-      "<localhost>"
-    ],
-    "securityPolicyList": [
-      "None",
-      "Basic128Rsa15",
-      "Basic256",
-      "Basic256Sha256",
-      "Aes128_Sha256_RsaOaep",
-      "Aes256_Sha256_RsaPss"
-    ],
-    "certificateHostnameList": [
-      "<0.0.0.0>"
-    ],
-    "gdsPushEnabled": false,
-    "registration": {
-      "enabled": false,
-      "frequency": 60000,
-      "endpointUrl": "opc.tcp://localhost:4840/UADiscovery"
-    }
+  "bindAddressList": [
+    "0.0.0.0"
+  ],
+  "bindPort": 62541,
+  "endpointAddressList": [
+    "<hostname>",
+    "<localhost>"
+  ],
+  "securityPolicyList": [
+    "None",
+    "Basic128Rsa15",
+    "Basic256",
+    "Basic256Sha256",
+    "Aes128_Sha256_RsaOaep",
+    "Aes256_Sha256_RsaPss"
+  ],
+  "certificateHostnameList": [
+    "<0.0.0.0>"
+  ],
+  "gdsPushEnabled": false,
+  "registration": {
+    "enabled": false,
+    "frequency": 60000,
+    "endpointUrl": "opc.tcp://localhost:4840/UADiscovery"
   }
 }
 ```
 
 ### Security
 
-The server's application instance certificate is stored in the KeyStore at `$dataDir/security/certificates.pfx`. If the server starts and this file doesn't exist it will generate a new one.
+The server's application instance certificate is stored in the KeyStore at `$configDir/security/certificates.pfx`. If the server starts and this file doesn't exist it will generate a new one.
 
-Issuer and trusted certificates are managed using the standard OPC UA PKI layout found at `$dataDir/security/pki`.
+Issuer and trusted certificates are managed using the standard OPC UA PKI layout found at `$configDir/security/pki`.
 
-Certificates from untrusted clients can be found at `$dataDir/security/pki/rejected` after they have attempted to connect at least once. Moving a client certificate to `$dataDir/security/pki/trusted/certs` will mark it "trusted" and allow the client to connect with security enabled. 
+Certificates from untrusted clients can be found at `$configDir/security/pki/rejected/certs` after they have attempted to connect at least once. Moving a client certificate to `$configDir/security/pki/trusted/certs` will mark it "trusted" and allow the client to connect with security enabled. 
 
 These directories are monitored by the server and changes will be picked up automatically.

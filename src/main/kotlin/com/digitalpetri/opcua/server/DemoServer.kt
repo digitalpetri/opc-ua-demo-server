@@ -3,8 +3,10 @@ package com.digitalpetri.opcua.server
 import com.digitalpetri.opcua.server.namespaces.demo.*
 import com.digitalpetri.opcua.server.objects.ServerConfigurationObject
 import com.digitalpetri.opcua.server.util.cartesianProduct
-import com.uchuhimo.konf.Config
-import com.uchuhimo.konf.source.json.toJson
+import com.sksamuel.hoplite.ConfigLoaderBuilder
+import com.sksamuel.hoplite.ExperimentalHoplite
+import com.sksamuel.hoplite.addResourceOrFileSource
+import com.sksamuel.hoplite.addResourceSource
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
 import org.eclipse.milo.opcua.sdk.client.DiscoveryClient
@@ -47,7 +49,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.regex.Pattern
 
-class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
+class DemoServer(configDir: File) : AbstractLifecycle() {
 
     companion object {
         const val APPLICATION_URI = "urn:eclipse:milo:opcua:server"
@@ -83,9 +85,9 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
     init {
         config = readConfig(configDir)
 
-        logger.info("config: \n${config.toJson.toText()}")
+        logger.info("config: $config")
 
-        val applicationUuid = dataDir.resolve(".uuid").let { file ->
+        val applicationUuid = configDir.resolve(".uuid").let { file ->
             if (file.exists()) {
                 try {
                     UUID.fromString(file.readText())
@@ -99,7 +101,7 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
             }
         }
 
-        val securityDir = dataDir.resolve("security")
+        val securityDir = configDir.resolve("security")
 
         val pkiDir = securityDir.toPath()
             .resolve("pki")
@@ -248,27 +250,25 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
     }
 
     override fun onStartup() {
-        if (config[ServerConfig.gdsPushEnabled]) {
+        if (config.gdsPushEnabled) {
             serverConfigurationObject.startup()
         }
 
         server.startup().get()
 
-        if (config[ServerConfig.Registration.enabled]) {
-            val frequency = config[ServerConfig.Registration.frequency]
-
+        if (config.registration.enabled) {
             coroutineScope.launch {
                 while (true) {
                     registerWithLds()
 
-                    delay(frequency)
+                    delay(config.registration.frequency)
                 }
             }
         }
     }
 
     override fun onShutdown() {
-        if (config[ServerConfig.gdsPushEnabled]) {
+        if (config.gdsPushEnabled) {
             serverConfigurationObject.shutdown()
         }
 
@@ -277,32 +277,33 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
         server.shutdown().get()
     }
 
+    @OptIn(ExperimentalHoplite::class)
     private fun readConfig(configDir: File): Config {
-        return with(Config()) {
-            addSpec(ServerConfig)
+        val configFile = configDir.resolve("config.json")
 
-            val configFile = configDir
-                .resolve("server.json")
-
-            configFile.apply {
-                if (!exists()) {
-                    Files.copy(
-                        DemoServer::class.java
-                            .classLoader
-                            .getResourceAsStream("default-server.json")!!,
-                        this.toPath()
-                    )
-                }
-                assert(exists())
+        configFile.apply {
+            if (!exists()) {
+                Files.copy(
+                    DemoServer::class.java
+                        .classLoader
+                        .getResourceAsStream("default-config.json")!!,
+                    this.toPath()
+                )
             }
-
-            from.json.file(configFile)
+            assert(exists())
         }
+
+        return ConfigLoaderBuilder.default()
+            .addResourceOrFileSource(configFile.absolutePath)
+            .addResourceSource("/default-config.json")
+            .withExplicitSealedTypes()
+            .build()
+            .loadConfigOrThrow<Config>()
     }
 
     private suspend fun registerWithLds() {
         try {
-            val endpointUrl: String = config[ServerConfig.Registration.endpointUrl]
+            val endpointUrl: String = config.registration.endpointUrl
 
             val endpointDescription = EndpointDescription(
                 endpointUrl,
@@ -370,7 +371,7 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
     }
 
     private fun certificateHostnames(): List<String> {
-        return config[ServerConfig.certificateHostnameList].flatMap {
+        return config.certificateHostnameList.flatMap {
             it.parseHostnames(includeLoopback = false)
         }
     }
@@ -387,9 +388,9 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
             add(OpcUaServerConfig.USER_TOKEN_POLICY_USERNAME)
         }
 
-        val bindAddresses: List<String> = config[ServerConfig.bindAddressList]
+        val bindAddresses: List<String> = config.bindAddressList
 
-        val endpointAddresses: List<String> = config[ServerConfig.endpointAddressList].flatMap {
+        val endpointAddresses: List<String> = config.endpointAddressList.flatMap {
             it.parseHostnames(includeLoopback = true)
         }
 
@@ -406,13 +407,13 @@ class DemoServer(configDir: File, dataDir: File) : AbstractLifecycle() {
             val builder = EndpointConfig.newBuilder()
                 .setTransportProfile(TransportProfile.TCP_UASC_UABINARY)
                 .setBindAddress(bindAddress)
-                .setBindPort(config[ServerConfig.bindPort])
                 .setHostname(endpointAddress)
+                .setBindPort(config.bindPort)
                 .setPath("milo")
                 .setCertificate { getCertificate() }
                 .addTokenPolicies(*userTokenPolicies.toTypedArray())
 
-            val securityPolicies = config[ServerConfig.securityPolicyList].mapNotNull {
+            val securityPolicies = config.securityPolicyList.mapNotNull {
                 runCatching { SecurityPolicy.valueOf(it) }.getOrNull()
             }
 

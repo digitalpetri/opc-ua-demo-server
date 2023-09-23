@@ -48,6 +48,7 @@ tasks.shadowJar {
 
     minimize {
         exclude(dependency("ch.qos.logback:logback-classic"))
+        exclude(dependency("com.sksamuel.hoplite:.*:.*"))
         exclude(dependency("org.bouncycastle:.*:.*"))
         exclude(dependency("org.jetbrains.kotlin:kotlin-reflect:.*"))
         exclude(dependency("org.glassfish.jaxb:.*:.*"))
@@ -88,7 +89,8 @@ dependencies {
 
     implementation("ch.qos.logback:logback-classic:1.4.11")
 
-    implementation("com.uchuhimo:konf-core:1.1.2")
+    implementation("com.sksamuel.hoplite:hoplite-core:2.8.0.RC3")
+    implementation("com.sksamuel.hoplite:hoplite-json:2.8.0.RC3")
     implementation("io.github.soc:directories:12")
 }
 
