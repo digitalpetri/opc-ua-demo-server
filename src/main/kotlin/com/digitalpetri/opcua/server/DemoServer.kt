@@ -323,7 +323,7 @@ class DemoServer(configDir: File) : AbstractLifecycle() {
 
             val discoveryUrls: List<String> = server.applicationContext
                 .endpointDescriptions
-                .flatMap { it.server.discoveryUrls.toList() }
+                .flatMap { it.server.discoveryUrls?.toList() ?: listOf() }
 
             val registeredServer = RegisteredServer(
                 server.config.applicationUri,
