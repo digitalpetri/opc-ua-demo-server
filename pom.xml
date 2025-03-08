@@ -50,6 +50,7 @@
     <uanodeset.version>0.2-SNAPSHOT</uanodeset.version>
 
     <!-- Plugin Dependencies -->
+    <buildnumber-maven-plugin.version>3.2.1</buildnumber-maven-plugin.version>
     <checkstyle.version>10.21.4</checkstyle.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
@@ -58,6 +59,23 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <version>${buildnumber-maven-plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <timestampFormat>yyyy-MM-dd'T'HH:mm:ss'Z'</timestampFormat>
+          <timezone>UTC</timezone>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
@@ -125,6 +143,9 @@
                   implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <manifestEntries>
                     <Main-Class>com.digitalpetri.opcua.server.OpcUaDemoServer</Main-Class>
+                    <X-Server-Build-Date>${timestamp}</X-Server-Build-Date>
+                    <X-Server-Build-Number>${buildNumber}</X-Server-Build-Number>
+                    <X-Server-Software-Version>${project.version}</X-Server-Software-Version>
                     <X-Stack-Version>${milo.version}</X-Stack-Version>
                     <X-SDK-Version>${milo.version}</X-SDK-Version>
                   </manifestEntries>
