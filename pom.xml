@@ -44,15 +44,16 @@
     <!-- Dependencies -->
     <jakarta.xml.bind-api.version>4.0.2</jakarta.xml.bind-api.version>
     <jetbrains-annotations.version>24.1.0</jetbrains-annotations.version>
-    <logback.version>1.5.3</logback.version>
+    <logback.version>1.5.17</logback.version>
     <milo.version>1.0.0-SNAPSHOT</milo.version>
     <typesafe-config.version>1.4.3</typesafe-config.version>
     <uanodeset.version>0.2-SNAPSHOT</uanodeset.version>
 
     <!-- Plugin Dependencies -->
-    <checkstyle.version>10.14.0</checkstyle.version>
-    <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
-    <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
+    <checkstyle.version>10.21.4</checkstyle.version>
+    <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+    <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+    <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
   </properties>
 
   <build>
@@ -109,7 +110,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.4.1</version>
+        <version>${maven-shade-plugin.version}</version>
         <executions>
           <execution>
             <phase>package</phase>
