@@ -76,6 +76,12 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
       lifecycleManager.addLifecycle(dataTypeTestFragment);
     }
 
+    boolean dynamicNodesEnabled = config.getBoolean("address-space.dynamic.enabled");
+    if (dynamicNodesEnabled) {
+      var dynamicFragment = new DynamicNodesFragment(server, this);
+      lifecycleManager.addLifecycle(dynamicFragment);
+    }
+
     boolean nullNodesEnabled = config.getBoolean("address-space.null.enabled");
     if (nullNodesEnabled) {
       var nullFragment = new NullNodesFragment(server, this);
