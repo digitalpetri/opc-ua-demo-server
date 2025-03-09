@@ -98,8 +98,6 @@ public class RbacNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle 
             new QualifiedName(namespace.getNamespaceIndex(), site),
             new LocalizedText(site));
 
-    siteFolder.getFilterChain().addLast(new AccessControlFilter(namespace.getConfig(), key));
-
     getNodeManager().addNode(siteFolder);
 
     siteFolder.addReference(
