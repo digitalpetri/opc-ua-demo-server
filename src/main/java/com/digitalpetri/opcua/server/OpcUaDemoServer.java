@@ -6,7 +6,7 @@ import static org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig.USER_TOKEN_POL
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
-import ch.qos.logback.core.util.StatusPrinter;
+import ch.qos.logback.core.util.StatusPrinter2;
 import com.digitalpetri.opcua.server.namespace.DemoNamespace;
 import com.digitalpetri.opcua.server.objects.ServerConfigurationObject;
 import com.typesafe.config.Config;
@@ -533,7 +533,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
       throw new RuntimeException(e);
     }
 
-    StatusPrinter.printInCaseOfErrorsOrWarnings(context);
+    new StatusPrinter2().printInCaseOfErrorsOrWarnings(context);
   }
 
   // endregion
