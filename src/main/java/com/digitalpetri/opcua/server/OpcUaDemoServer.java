@@ -236,12 +236,13 @@ public class OpcUaDemoServer extends AbstractLifecycle {
           String username = authenticationChallenge.getUsername();
           String password = authenticationChallenge.getPassword();
 
+          var validUser = "User".equals(username) && "password".equals(password);
           var validUserA = "UserA".equals(username) && "password".equals(password);
           var validUserB = "UserB".equals(username) && "password".equals(password);
           var validSiteAdmin = "SiteAdmin".equals(username) && "password".equals(password);
           var validSecurityAdmin = "SecurityAdmin".equals(username) && "password".equals(password);
 
-          return validUserA || validUserB || validSiteAdmin || validSecurityAdmin;
+          return validUser || validUserA || validUserB || validSiteAdmin || validSecurityAdmin;
         });
   }
 
@@ -431,6 +432,8 @@ public class OpcUaDemoServer extends AbstractLifecycle {
       } else if (identity instanceof UsernameIdentity ui) {
         return switch (ui.getUsername()) {
           case "SecurityAdmin" -> List.of(NodeIds.WellKnownRole_SecurityAdmin);
+
+          case "User" -> List.of(NodeIds.WellKnownRole_AuthenticatedUser);
 
           case "UserA" -> List.of(ROLE_SITE_A_READ, ROLE_SITE_A_WRITE);
 
