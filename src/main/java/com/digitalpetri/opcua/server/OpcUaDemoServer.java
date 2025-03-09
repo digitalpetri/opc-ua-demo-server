@@ -431,8 +431,6 @@ public class OpcUaDemoServer extends AbstractLifecycle {
         return List.of(NodeIds.WellKnownRole_Anonymous);
       } else if (identity instanceof UsernameIdentity ui) {
         return switch (ui.getUsername()) {
-          case "SecurityAdmin" -> List.of(NodeIds.WellKnownRole_SecurityAdmin);
-
           case "User" -> List.of(NodeIds.WellKnownRole_AuthenticatedUser);
 
           case "UserA" -> List.of(ROLE_SITE_A_READ, ROLE_SITE_A_WRITE);
@@ -440,6 +438,8 @@ public class OpcUaDemoServer extends AbstractLifecycle {
           case "UserB" -> List.of(ROLE_SITE_B_READ, ROLE_SITE_B_WRITE);
 
           case "SiteAdmin" -> List.of(ROLE_SITE_ADMIN);
+
+          case "SecurityAdmin" -> List.of(NodeIds.WellKnownRole_SecurityAdmin);
 
           case null, default -> List.of();
         };

@@ -11,9 +11,16 @@ your client's DER-encoded X509 certificate using the form at http://milo.digital
 
 Authenticate anonymously or with one of the following credential pairs:
 
-- `user1` / `password`
-- `user2` / `password`
-- `admin` / `password`
+- `User` / `password`
+    - roles: `WellKnownRole_AuthenticatedUser`
+- `UserA` / `password`
+    - roles: `SiteA_Read`, `SiteA_Write`
+- `UserB` / `password`
+    - roles: `SiteB_Read`, `SiteB_Write`
+- `SiteAdmin` / `password`
+    - roles: `SiteA_Read`, `SiteB_Read`
+- `SecurityAdmin` / `password`
+    - roles: `WellKnownRole_SecurityAdmin`
 
 ## Building
 
