@@ -236,11 +236,12 @@ public class OpcUaDemoServer extends AbstractLifecycle {
           String username = authenticationChallenge.getUsername();
           String password = authenticationChallenge.getPassword();
 
-          var validAdmin = "admin".equals(username) && "password".equals(password);
-          var validUser1 = "user1".equals(username) && "password".equals(password);
-          var validUser2 = "user2".equals(username) && "password".equals(password);
+          var validUserA = "UserA".equals(username) && "password".equals(password);
+          var validUserB = "UserB".equals(username) && "password".equals(password);
+          var validSiteAdmin = "SiteAdmin".equals(username) && "password".equals(password);
+          var validSecurityAdmin = "SecurityAdmin".equals(username) && "password".equals(password);
 
-          return validAdmin || validUser1 || validUser2;
+          return validUserA || validUserB || validSiteAdmin || validSecurityAdmin;
         });
   }
 
@@ -417,19 +418,26 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
   private static class DemoRoleMapper implements RoleMapper {
 
+    public static final NodeId ROLE_SITE_A_READ = NodeId.parse("ns=1;s=SiteA_Read");
+    public static final NodeId ROLE_SITE_A_WRITE = NodeId.parse("ns=1;s=SiteA_Write");
+    public static final NodeId ROLE_SITE_B_READ = NodeId.parse("ns=1;s=SiteB_Read");
+    public static final NodeId ROLE_SITE_B_WRITE = NodeId.parse("ns=1;s=SiteB_Write");
+    public static final NodeId ROLE_SITE_ADMIN = NodeId.parse("ns=1;s=SiteAdmin");
+
     @Override
     public List<NodeId> getRoleIds(Identity identity) {
       if (identity instanceof AnonymousIdentity) {
         return List.of(NodeIds.WellKnownRole_Anonymous);
       } else if (identity instanceof UsernameIdentity ui) {
         return switch (ui.getUsername()) {
-          case "admin" ->
-              List.of(
-                  NodeIds.WellKnownRole_Operator,
-                  NodeIds.WellKnownRole_ConfigureAdmin,
-                  NodeIds.WellKnownRole_SecurityAdmin);
-          case "user1" -> List.of(NodeIds.WellKnownRole_Observer);
-          case "user2" -> List.of(NodeIds.WellKnownRole_Operator);
+          case "SecurityAdmin" -> List.of(NodeIds.WellKnownRole_SecurityAdmin);
+
+          case "UserA" -> List.of(ROLE_SITE_A_READ, ROLE_SITE_A_WRITE);
+
+          case "UserB" -> List.of(ROLE_SITE_B_READ, ROLE_SITE_B_WRITE);
+
+          case "SiteAdmin" -> List.of(ROLE_SITE_ADMIN);
+
           case null, default -> List.of();
         };
       } else {

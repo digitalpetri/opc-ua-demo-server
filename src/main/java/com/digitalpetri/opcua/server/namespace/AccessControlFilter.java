@@ -19,11 +19,9 @@ public class AccessControlFilter implements AttributeFilter {
 
   private final List<RolePermissionType> rolePermissions;
 
-  public AccessControlFilter(Config config) {
-    var rolePermissionsList = config.getConfigList("role-permissions");
-
+  public AccessControlFilter(Config config, String key) {
     this.rolePermissions =
-        rolePermissionsList.stream()
+        config.getConfigList(key).stream()
             .map(
                 roleConfig -> {
                   String roleIdString = roleConfig.getString("role-id");

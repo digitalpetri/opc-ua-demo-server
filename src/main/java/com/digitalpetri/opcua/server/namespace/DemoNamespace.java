@@ -93,6 +93,9 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
       var turtleFragment = new TurtleNodesFragment(server, this);
       lifecycleManager.addLifecycle(turtleFragment);
     }
+
+    var rbacFragment = new RbacNodesFragment(server, this);
+    lifecycleManager.addLifecycle(rbacFragment);
   }
 
   @Override
