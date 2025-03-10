@@ -72,6 +72,7 @@ import org.eclipse.milo.opcua.stack.transport.server.OpcServerTransportFactory;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransport;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransportConfig;
 import org.eclipse.milo.opcua.test.DataTypeTestNamespace;
+import org.eclipse.milo.opcua.test.DataTypeTestVariablesNamespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -194,9 +195,13 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     server.getNamespaceTable().set(2, DemoNamespace.NAMESPACE_URI);
     server.getNamespaceTable().set(3, DataTypeTestNamespace.NAMESPACE_URI);
+    server.getNamespaceTable().set(4, DataTypeTestVariablesNamespace.NAMESPACE_URI);
 
     var dataTypeTestNamespace = DataTypeTestNamespace.create(server);
     dataTypeTestNamespace.startup();
+
+    var dataTypeTestVariablesNamespace = new DataTypeTestVariablesNamespace(server);
+    dataTypeTestVariablesNamespace.startup();
 
     var demoNamespace = new DemoNamespace(server, config);
     demoNamespace.startup();

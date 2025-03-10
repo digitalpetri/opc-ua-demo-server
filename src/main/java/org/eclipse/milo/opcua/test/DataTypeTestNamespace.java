@@ -2,6 +2,7 @@ package org.eclipse.milo.opcua.test;
 
 import com.digitalpetri.opcua.uanodeset.namespace.NodeSetNamespace;
 import java.io.InputStream;
+import java.util.List;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 
@@ -19,8 +20,11 @@ public class DataTypeTestNamespace extends NodeSetNamespace {
   }
 
   @Override
-  protected InputStream getNodeSetInputStream() {
-    return DataTypeTestNamespace.class.getResourceAsStream("/DataTypeTest.xml");
+  protected List<InputStream> getNodeSetInputStreams() {
+    InputStream inputStream = DataTypeTestNamespace.class.getResourceAsStream("/datatypetest.xml");
+    assert inputStream != null;
+
+    return List.of(inputStream);
   }
 
   public static DataTypeTestNamespace create(OpcUaServer server) {
