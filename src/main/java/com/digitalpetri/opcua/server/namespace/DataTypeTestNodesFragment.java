@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
+import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
@@ -132,6 +133,8 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
             Direction.INVERSE));
 
     addTestEnumType(dataTypeTestFolder.getNodeId());
+    addTestEnumTypeArray(dataTypeTestFolder.getNodeId());
+    addTestEnumTypeMatrix(dataTypeTestFolder.getNodeId());
 
     addAbstractTestType(dataTypeTestFolder.getNodeId());
     addConcreteTestType(dataTypeTestFolder.getNodeId());
@@ -177,6 +180,73 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
 
     var value = TestEnumType.A;
     builder.setValue(new DataValue(Variant.ofEnum(value)));
+
+    UaVariableNode variableNode = builder.build();
+
+    getNodeManager().addNode(variableNode);
+
+    variableNode.addReference(
+        new Reference(
+            variableNode.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+  }
+
+  private void addTestEnumTypeArray(NodeId parentNodeId) {
+    var builder = new UaVariableNodeBuilder(getNodeContext());
+    builder
+        .setNodeId(deriveChildNodeId(parentNodeId, "TestEnumTypeArray"))
+        .setBrowseName(new QualifiedName(namespaceIndex, "TestEnumTypeArray"))
+        .setDisplayName(LocalizedText.english("TestEnumTypeArray"))
+        .setDescription(LocalizedText.english("TestEnumTypeArray"))
+        .setDataType(
+            DataTypeTestNodeIds.TestEnumType.toNodeId(getNodeContext().getNamespaceTable())
+                .orElseThrow())
+        .setValueRank(ValueRanks.OneDimension)
+        .setArrayDimensions(new UInteger[] {uint(0)})
+        .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setMinimumSamplingInterval(0.0);
+
+    var value = new TestEnumType[] {TestEnumType.A, TestEnumType.B};
+    builder.setValue(new DataValue(Variant.of(value)));
+
+    UaVariableNode variableNode = builder.build();
+
+    getNodeManager().addNode(variableNode);
+
+    variableNode.addReference(
+        new Reference(
+            variableNode.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+  }
+
+  private void addTestEnumTypeMatrix(NodeId parentNodeId) {
+    var builder = new UaVariableNodeBuilder(getNodeContext());
+    builder
+        .setNodeId(deriveChildNodeId(parentNodeId, "TestEnumTypeMatrix"))
+        .setBrowseName(new QualifiedName(namespaceIndex, "TestEnumTypeMatrix"))
+        .setDisplayName(LocalizedText.english("TestEnumTypeMatrix"))
+        .setDescription(LocalizedText.english("TestEnumTypeMatrix"))
+        .setDataType(
+            DataTypeTestNodeIds.TestEnumType.toNodeId(getNodeContext().getNamespaceTable())
+                .orElseThrow())
+        .setValueRank(2)
+        .setArrayDimensions(new UInteger[] {uint(0), uint(0)})
+        .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setMinimumSamplingInterval(0.0);
+
+    var value =
+        Matrix.ofEnum(
+            new TestEnumType[][] {
+              {TestEnumType.A, TestEnumType.B, TestEnumType.C},
+              {TestEnumType.C, TestEnumType.B, TestEnumType.A}
+            });
+    builder.setValue(new DataValue(Variant.of(value)));
 
     UaVariableNode variableNode = builder.build();
 
