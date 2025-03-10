@@ -1,19 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <UANodeSet
   xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd"
+  xmlns:ua="http://unifiedautomation.com/Configuration/NodeSet.xsd"
   xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd"
-  xmlns:ua="http://unifiedautomation.com/Configuration/NodeSet.xsd">
+>
   <NamespaceUris>
     <Uri>https://github.com/eclipse/milo/DataTypeTestVariables</Uri>
     <Uri>https://github.com/eclipse/milo/DataTypeTest</Uri>
   </NamespaceUris>
   <Models>
-    <Model ModelUri="https://github.com/eclipse/milo/DataTypeTestVariables"
-      PublicationDate="2025-03-09T20:27:23Z" Version="1.0.0">
-      <RequiredModel ModelUri="http://opcfoundation.org/UA/" PublicationDate="2024-12-01T00:00:00Z"
+    <Model PublicationDate="2025-03-09T20:27:23Z"
+      ModelUri="https://github.com/eclipse/milo/DataTypeTestVariables" Version="1.0.0">
+      <RequiredModel PublicationDate="2024-12-01T00:00:00Z" ModelUri="http://opcfoundation.org/UA/"
         Version="1.05.04"/>
-      <RequiredModel ModelUri="https://github.com/eclipse/milo/DataTypeTest"
-        PublicationDate="2024-03-17T23:02:11Z" Version="1.0.0"/>
+      <RequiredModel PublicationDate="2024-03-17T23:02:11Z"
+        ModelUri="https://github.com/eclipse/milo/DataTypeTest" Version="1.0.0"/>
     </Model>
   </Models>
   <Aliases>
@@ -53,7 +54,7 @@
   </Aliases>
   <Extensions>
     <Extension>
-      <ua:ModelInfo Tool="UaModeler" Hash="7ZXfI3yDqdhVptigkqF82w==" Version="1.7.0"/>
+      <ua:ModelInfo Tool="UaModeler" Version="1.7.0" Hash="bFVk34d6GwCCNdkpP70e+Q=="/>
     </Extension>
   </Extensions>
   <UAObjectType NodeId="ns=1;i=1003" BrowseName="1:DataTypeTestType">
@@ -86,21 +87,21 @@
       <Reference ReferenceType="HasComponent">ns=1;i=6046</Reference>
     </References>
   </UAObjectType>
-  <UAVariable DataType="AbstractTestType" NodeId="ns=1;i=6014" BrowseName="1:AbstractTestType"
-    AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="AbstractTestType"
+    NodeId="ns=1;i=6014" BrowseName="1:AbstractTestType">
     <DisplayName>AbstractTestType</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
   </UAVariable>
-  <UAVariable DataType="ConcreteTestType" NodeId="ns=1;i=6015" BrowseName="1:ConcreteTestType"
-    AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="ConcreteTestType"
+    NodeId="ns=1;i=6015" BrowseName="1:ConcreteTestType">
     <DisplayName>ConcreteTestType</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
     <Value>
@@ -119,12 +120,12 @@
       </uax:ExtensionObject>
     </Value>
   </UAVariable>
-  <UAVariable DataType="ConcreteTestTypeEx" NodeId="ns=1;i=6016" BrowseName="1:ConcreteTestTypeEx"
-    AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="ConcreteTestTypeEx"
+    NodeId="ns=1;i=6016" BrowseName="1:ConcreteTestTypeEx">
     <DisplayName>ConcreteTestTypeEx</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
     <Value>
@@ -144,30 +145,60 @@
       </uax:ExtensionObject>
     </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithAbstractArrayFields" NodeId="ns=1;i=6018"
-    BrowseName="1:StructWithAbstractArrayFields" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithAbstractArrayFields"
+    NodeId="ns=1;i=6018" BrowseName="1:StructWithAbstractArrayFields">
     <DisplayName>StructWithAbstractArrayFields</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5024</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithAbstractArrayFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Number/>
+            <ATT1/>
+            <ATT2/>
+          </StructWithAbstractArrayFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithAbstractMatrixFields" NodeId="ns=1;i=6019"
-    BrowseName="1:StructWithAbstractMatrixFields" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithAbstractMatrixFields"
+    NodeId="ns=1;i=6019" BrowseName="1:StructWithAbstractMatrixFields">
     <DisplayName>StructWithAbstractMatrixFields</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5048</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithAbstractMatrixFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Number/>
+            <ATT1/>
+            <ATT2/>
+          </StructWithAbstractMatrixFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithAbstractScalarFields" NodeId="ns=1;i=6001"
-    BrowseName="1:StructWithAbstractScalarFields" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithAbstractScalarFields"
+    NodeId="ns=1;i=6001" BrowseName="1:StructWithAbstractScalarFields">
     <DisplayName>StructWithAbstractScalarFields</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
     <Value>
@@ -215,48 +246,208 @@
       </uax:ExtensionObject>
     </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithBuiltinArrayFields" NodeId="ns=1;i=6020"
-    BrowseName="1:StructWithBuiltinArrayFields" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithBuiltinArrayFields"
+    NodeId="ns=1;i=6020" BrowseName="1:StructWithBuiltinArrayFields">
     <DisplayName>StructWithBuiltinArrayFields</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5015</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithBuiltinArrayFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Boolean/>
+            <SByte/>
+            <Byte/>
+            <Int16/>
+            <UInt16/>
+            <Int32/>
+            <UInt32/>
+            <Int64/>
+            <UInt64/>
+            <Float/>
+            <Double/>
+            <String>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></String>
+            </String>
+            <DateTime/>
+            <Guid/>
+            <ByteString/>
+            <NodeId/>
+            <StatusCode/>
+            <QualifiedName/>
+            <LocalizedText/>
+            <Variant/>
+          </StructWithBuiltinArrayFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithBuiltinArrayFieldsEx" NodeId="ns=1;i=6021"
-    BrowseName="1:StructWithBuiltinArrayFieldsEx" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithBuiltinArrayFieldsEx"
+    NodeId="ns=1;i=6021" BrowseName="1:StructWithBuiltinArrayFieldsEx">
     <DisplayName>StructWithBuiltinArrayFieldsEx</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5036</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithBuiltinArrayFieldsEx
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Boolean/>
+            <SByte/>
+            <Byte/>
+            <Int16/>
+            <UInt16/>
+            <Int32/>
+            <UInt32/>
+            <Int64/>
+            <UInt64/>
+            <Float/>
+            <Double/>
+            <String>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></String>
+            </String>
+            <DateTime/>
+            <Guid/>
+            <ByteString/>
+            <NodeId/>
+            <StatusCode/>
+            <QualifiedName/>
+            <LocalizedText/>
+            <Variant/>
+            <Duration/>
+            <ApplicationType/>
+            <TestEnumType/>
+            <XVType/>
+            <ConcreteTestType/>
+            <UnionOfScalar/>
+            <UnionOfArray/>
+            <OptionSetUI8/>
+            <OptionSetUI16/>
+            <OptionSetUI32/>
+            <OptionSetUI64/>
+          </StructWithBuiltinArrayFieldsEx>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithBuiltinMatrixFields" NodeId="ns=1;i=6026"
-    BrowseName="1:StructWithBuiltinMatrixFields" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithBuiltinMatrixFields"
+    NodeId="ns=1;i=6026" BrowseName="1:StructWithBuiltinMatrixFields">
     <DisplayName>StructWithBuiltinMatrixFields</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5042</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithBuiltinMatrixFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Boolean>
+              <Boolean xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">false</Boolean>
+            </Boolean>
+            <SByte/>
+            <Byte/>
+            <Int16/>
+            <UInt16/>
+            <Int32/>
+            <UInt32/>
+            <Int64/>
+            <UInt64/>
+            <Float/>
+            <Double/>
+            <String>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></String>
+            </String>
+            <DateTime/>
+            <Guid/>
+            <ByteString/>
+            <NodeId/>
+            <StatusCode/>
+            <QualifiedName/>
+            <LocalizedText/>
+            <Variant/>
+          </StructWithBuiltinMatrixFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithBuiltinMatrixFieldsEx" NodeId="ns=1;i=6027"
-    BrowseName="1:StructWithBuiltinMatrixFieldsEx" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithBuiltinMatrixFieldsEx"
+    NodeId="ns=1;i=6027" BrowseName="1:StructWithBuiltinMatrixFieldsEx">
     <DisplayName>StructWithBuiltinMatrixFieldsEx</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5045</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithBuiltinMatrixFieldsEx
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Boolean/>
+            <SByte/>
+            <Byte/>
+            <Int16/>
+            <UInt16/>
+            <Int32/>
+            <UInt32/>
+            <Int64/>
+            <UInt64/>
+            <Float/>
+            <Double/>
+            <String>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></String>
+            </String>
+            <DateTime/>
+            <Guid/>
+            <ByteString/>
+            <NodeId/>
+            <StatusCode/>
+            <QualifiedName/>
+            <LocalizedText/>
+            <Variant/>
+            <Duration/>
+            <ApplicationType/>
+            <TestEnumType/>
+            <XVType/>
+            <ConcreteTestType/>
+            <UnionOfScalar/>
+            <UnionOfArray/>
+            <OptionSetUI8/>
+            <OptionSetUI16/>
+            <OptionSetUI32/>
+            <OptionSetUI64/>
+          </StructWithBuiltinMatrixFieldsEx>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithBuiltinScalarFields" NodeId="ns=1;i=6002"
-    BrowseName="1:StructWithBuiltinScalarFields" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithBuiltinScalarFields"
+    NodeId="ns=1;i=6002" BrowseName="1:StructWithBuiltinScalarFields">
     <DisplayName>StructWithBuiltinScalarFields</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
     <Value>
@@ -308,126 +499,337 @@
       </uax:ExtensionObject>
     </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithBuiltinScalarFieldsEx" NodeId="ns=1;i=6030"
-    BrowseName="1:StructWithBuiltinScalarFieldsEx" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithBuiltinScalarFieldsEx"
+    NodeId="ns=1;i=6030" BrowseName="1:StructWithBuiltinScalarFieldsEx">
     <DisplayName>StructWithBuiltinScalarFieldsEx</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5027</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithBuiltinScalarFieldsEx
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Boolean>false</Boolean>
+            <SByte>0</SByte>
+            <Byte>0</Byte>
+            <Int16>0</Int16>
+            <UInt16>0</UInt16>
+            <Int32>0</Int32>
+            <UInt32>0</UInt32>
+            <Int64>0</Int64>
+            <UInt64>0</UInt64>
+            <Float>0</Float>
+            <Double>0</Double>
+            <String></String>
+            <DateTime>1900-01-01T00:00:00Z</DateTime>
+            <Guid>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
+                00000000-0000-0000-0000-000000000000
+              </String>
+            </Guid>
+            <ByteString></ByteString>
+            <NodeId>
+              <Identifier xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">i=0</Identifier>
+            </NodeId>
+            <StatusCode>
+              <Code xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">0</Code>
+            </StatusCode>
+            <QualifiedName>
+              <NamespaceIndex xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">0
+              </NamespaceIndex>
+              <Name xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></Name>
+            </QualifiedName>
+            <LocalizedText/>
+            <Variant>
+              <Value xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
+                <String></String>
+              </Value>
+            </Variant>
+            <Duration>0</Duration>
+            <ApplicationType>Server_0</ApplicationType>
+            <TestEnumType>A_0</TestEnumType>
+            <XVType>
+              <X xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">0</X>
+              <Value xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">0</Value>
+            </XVType>
+            <ConcreteTestType>
+              <Int16Field>0</Int16Field>
+              <DoubleField>0</DoubleField>
+              <StringField></StringField>
+              <BooleanField>false</BooleanField>
+            </ConcreteTestType>
+            <UnionOfScalar>
+              <SwitchField>0</SwitchField>
+            </UnionOfScalar>
+            <UnionOfArray>
+              <SwitchField>0</SwitchField>
+            </UnionOfArray>
+            <OptionSetUI8>0</OptionSetUI8>
+            <OptionSetUI16>0</OptionSetUI16>
+            <OptionSetUI32>0</OptionSetUI32>
+            <OptionSetUI64>0</OptionSetUI64>
+          </StructWithBuiltinScalarFieldsEx>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithOptionalArrayFields" NodeId="ns=1;i=6032"
-    BrowseName="1:StructWithOptionalArrayFields" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithOptionalArrayFields"
+    NodeId="ns=1;i=6032" BrowseName="1:StructWithOptionalArrayFields">
     <DisplayName>StructWithOptionalArrayFields</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5018</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithOptionalArrayFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <EncodingMask>0</EncodingMask>
+            <Int32/>
+            <String>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></String>
+            </String>
+            <Duration/>
+            <ConcreteTestType/>
+          </StructWithOptionalArrayFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithOptionalMatrixFields" NodeId="ns=1;i=6034"
-    BrowseName="1:StructWithOptionalMatrixFields" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithOptionalMatrixFields"
+    NodeId="ns=1;i=6034" BrowseName="1:StructWithOptionalMatrixFields">
     <DisplayName>StructWithOptionalMatrixFields</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5060</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithOptionalMatrixFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <EncodingMask>0</EncodingMask>
+            <Int32/>
+            <String>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></String>
+            </String>
+            <Duration/>
+            <ConcreteTestType/>
+          </StructWithOptionalMatrixFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithOptionalScalarFields" NodeId="ns=1;i=6033"
-    BrowseName="1:StructWithOptionalScalarFields" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithOptionalScalarFields"
+    NodeId="ns=1;i=6033" BrowseName="1:StructWithOptionalScalarFields">
     <DisplayName>StructWithOptionalScalarFields</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5012</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithOptionalScalarFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <EncodingMask>0</EncodingMask>
+            <String></String>
+            <Int32>0</Int32>
+            <Duration>0</Duration>
+            <ConcreteTestType>
+              <Int16Field>0</Int16Field>
+              <DoubleField>0</DoubleField>
+              <StringField></StringField>
+              <BooleanField>false</BooleanField>
+            </ConcreteTestType>
+          </StructWithOptionalScalarFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithStructureArrayFields" NodeId="ns=1;i=6038"
-    BrowseName="1:StructWithStructureArrayFields" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithStructureArrayFields"
+    NodeId="ns=1;i=6038" BrowseName="1:StructWithStructureArrayFields">
     <DisplayName>StructWithStructureArrayFields</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5054</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithStructureArrayFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Struct1/>
+            <Struct2/>
+            <Struct3/>
+          </StructWithStructureArrayFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithStructureMatrixFields" NodeId="ns=1;i=6039"
-    BrowseName="1:StructWithStructureMatrixFields" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithStructureMatrixFields"
+    NodeId="ns=1;i=6039" BrowseName="1:StructWithStructureMatrixFields">
     <DisplayName>StructWithStructureMatrixFields</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5057</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithStructureMatrixFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Struct1/>
+            <Struct2/>
+            <Struct3/>
+          </StructWithStructureMatrixFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithStructureScalarFields" NodeId="ns=1;i=6040"
-    BrowseName="1:StructWithStructureScalarFields" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="StructWithStructureScalarFields"
+    NodeId="ns=1;i=6040" BrowseName="1:StructWithStructureScalarFields">
     <DisplayName>StructWithStructureScalarFields</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5051</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithStructureScalarFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Struct1/>
+            <Struct2/>
+            <Struct3/>
+          </StructWithStructureScalarFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="TestEnumType" NodeId="ns=1;i=6050" BrowseName="1:TestEnumType"
-    AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="TestEnumType"
+    NodeId="ns=1;i=6050" BrowseName="1:TestEnumType">
     <DisplayName>TestEnumType</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
     <Value>
       <uax:Int32>0</uax:Int32>
     </Value>
   </UAVariable>
-  <UAVariable ValueRank="1" DataType="TestEnumType" NodeId="ns=1;i=6051"
-    BrowseName="1:TestEnumTypeArray" ArrayDimensions="5" AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ArrayDimensions="5" ParentNodeId="ns=1;i=1003" AccessLevel="3" ValueRank="1"
+    DataType="TestEnumType" NodeId="ns=1;i=6051" BrowseName="1:TestEnumTypeArray">
     <DisplayName>TestEnumTypeArray</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
   </UAVariable>
-  <UAVariable ValueRank="2" DataType="TestEnumType" NodeId="ns=1;i=6054"
-    BrowseName="1:TestEnumTypeMatrix" ArrayDimensions="2,2" AccessLevel="3"
-    ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" ValueRank="2" DataType="TestEnumType"
+    NodeId="ns=1;i=6054" BrowseName="1:TestEnumTypeMatrix">
     <DisplayName>TestEnumTypeMatrix</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
   </UAVariable>
-  <UAVariable DataType="UnionOfArray" NodeId="ns=1;i=6044" BrowseName="1:UnionOfArray"
-    AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="UnionOfArray"
+    NodeId="ns=1;i=6044" BrowseName="1:UnionOfArray">
     <DisplayName>UnionOfArray</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5033</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <UnionOfArray xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <SwitchField>0</SwitchField>
+          </UnionOfArray>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="UnionOfMatrix" NodeId="ns=1;i=6045" BrowseName="1:UnionOfMatrix"
-    AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="UnionOfMatrix"
+    NodeId="ns=1;i=6045" BrowseName="1:UnionOfMatrix">
     <DisplayName>UnionOfMatrix</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5063</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <UnionOfMatrix xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <SwitchField>0</SwitchField>
+          </UnionOfMatrix>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="UnionOfScalar" NodeId="ns=1;i=6046" BrowseName="1:UnionOfScalar"
-    AccessLevel="3" ParentNodeId="ns=1;i=1003">
+  <UAVariable ParentNodeId="ns=1;i=1003" AccessLevel="3" DataType="UnionOfScalar"
+    NodeId="ns=1;i=6046" BrowseName="1:UnionOfScalar">
     <DisplayName>UnionOfScalar</DisplayName>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasModellingRule">i=78</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5030</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <UnionOfScalar xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <SwitchField>0</SwitchField>
+          </UnionOfScalar>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
   <UAObject NodeId="ns=1;i=5005" BrowseName="1:DataTypeTest">
     <DisplayName>DataTypeTest</DisplayName>
@@ -460,16 +862,16 @@
       <Reference ReferenceType="HasComponent">ns=1;i=6049</Reference>
     </References>
   </UAObject>
-  <UAVariable DataType="AbstractTestType" NodeId="ns=1;i=6003" BrowseName="1:AbstractTestType"
-    AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="AbstractTestType"
+    NodeId="ns=1;i=6003" BrowseName="1:AbstractTestType">
     <DisplayName>AbstractTestType</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
   </UAVariable>
-  <UAVariable DataType="ConcreteTestType" NodeId="ns=1;i=6006" BrowseName="1:ConcreteTestType"
-    AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="ConcreteTestType"
+    NodeId="ns=1;i=6006" BrowseName="1:ConcreteTestType">
     <DisplayName>ConcreteTestType</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
@@ -491,8 +893,8 @@
       </uax:ExtensionObject>
     </Value>
   </UAVariable>
-  <UAVariable DataType="ConcreteTestTypeEx" NodeId="ns=1;i=6017" BrowseName="1:ConcreteTestTypeEx"
-    AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="ConcreteTestTypeEx"
+    NodeId="ns=1;i=6017" BrowseName="1:ConcreteTestTypeEx">
     <DisplayName>ConcreteTestTypeEx</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
@@ -515,24 +917,54 @@
       </uax:ExtensionObject>
     </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithAbstractArrayFields" NodeId="ns=1;i=6022"
-    BrowseName="1:StructWithAbstractArrayFields" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithAbstractArrayFields"
+    NodeId="ns=1;i=6022" BrowseName="1:StructWithAbstractArrayFields">
     <DisplayName>StructWithAbstractArrayFields</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5024</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithAbstractArrayFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Number/>
+            <ATT1/>
+            <ATT2/>
+          </StructWithAbstractArrayFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithAbstractMatrixFields" NodeId="ns=1;i=6023"
-    BrowseName="1:StructWithAbstractMatrixFields" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithAbstractMatrixFields"
+    NodeId="ns=1;i=6023" BrowseName="1:StructWithAbstractMatrixFields">
     <DisplayName>StructWithAbstractMatrixFields</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5048</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithAbstractMatrixFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Number/>
+            <ATT1/>
+            <ATT2/>
+          </StructWithAbstractMatrixFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithAbstractScalarFields" NodeId="ns=1;i=6004"
-    BrowseName="1:StructWithAbstractScalarFields" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithAbstractScalarFields"
+    NodeId="ns=1;i=6004" BrowseName="1:StructWithAbstractScalarFields">
     <DisplayName>StructWithAbstractScalarFields</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
@@ -583,40 +1015,200 @@
       </uax:ExtensionObject>
     </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithBuiltinArrayFields" NodeId="ns=1;i=6024"
-    BrowseName="1:StructWithBuiltinArrayFields" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithBuiltinArrayFields"
+    NodeId="ns=1;i=6024" BrowseName="1:StructWithBuiltinArrayFields">
     <DisplayName>StructWithBuiltinArrayFields</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5015</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithBuiltinArrayFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Boolean/>
+            <SByte/>
+            <Byte/>
+            <Int16/>
+            <UInt16/>
+            <Int32/>
+            <UInt32/>
+            <Int64/>
+            <UInt64/>
+            <Float/>
+            <Double/>
+            <String>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></String>
+            </String>
+            <DateTime/>
+            <Guid/>
+            <ByteString/>
+            <NodeId/>
+            <StatusCode/>
+            <QualifiedName/>
+            <LocalizedText/>
+            <Variant/>
+          </StructWithBuiltinArrayFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithBuiltinArrayFieldsEx" NodeId="ns=1;i=6025"
-    BrowseName="1:StructWithBuiltinArrayFieldsEx" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithBuiltinArrayFieldsEx"
+    NodeId="ns=1;i=6025" BrowseName="1:StructWithBuiltinArrayFieldsEx">
     <DisplayName>StructWithBuiltinArrayFieldsEx</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5036</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithBuiltinArrayFieldsEx
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Boolean/>
+            <SByte/>
+            <Byte/>
+            <Int16/>
+            <UInt16/>
+            <Int32/>
+            <UInt32/>
+            <Int64/>
+            <UInt64/>
+            <Float/>
+            <Double/>
+            <String>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></String>
+            </String>
+            <DateTime/>
+            <Guid/>
+            <ByteString/>
+            <NodeId/>
+            <StatusCode/>
+            <QualifiedName/>
+            <LocalizedText/>
+            <Variant/>
+            <Duration/>
+            <ApplicationType/>
+            <TestEnumType/>
+            <XVType/>
+            <ConcreteTestType/>
+            <UnionOfScalar/>
+            <UnionOfArray/>
+            <OptionSetUI8/>
+            <OptionSetUI16/>
+            <OptionSetUI32/>
+            <OptionSetUI64/>
+          </StructWithBuiltinArrayFieldsEx>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithBuiltinMatrixFields" NodeId="ns=1;i=6028"
-    BrowseName="1:StructWithBuiltinMatrixFields" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithBuiltinMatrixFields"
+    NodeId="ns=1;i=6028" BrowseName="1:StructWithBuiltinMatrixFields">
     <DisplayName>StructWithBuiltinMatrixFields</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5042</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithBuiltinMatrixFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Boolean>
+              <Boolean xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">false</Boolean>
+            </Boolean>
+            <SByte/>
+            <Byte/>
+            <Int16/>
+            <UInt16/>
+            <Int32/>
+            <UInt32/>
+            <Int64/>
+            <UInt64/>
+            <Float/>
+            <Double/>
+            <String>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></String>
+            </String>
+            <DateTime/>
+            <Guid/>
+            <ByteString/>
+            <NodeId/>
+            <StatusCode/>
+            <QualifiedName/>
+            <LocalizedText/>
+            <Variant/>
+          </StructWithBuiltinMatrixFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithBuiltinMatrixFieldsEx" NodeId="ns=1;i=6029"
-    BrowseName="1:StructWithBuiltinMatrixFieldsEx" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithBuiltinMatrixFieldsEx"
+    NodeId="ns=1;i=6029" BrowseName="1:StructWithBuiltinMatrixFieldsEx">
     <DisplayName>StructWithBuiltinMatrixFieldsEx</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5045</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithBuiltinMatrixFieldsEx
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Boolean/>
+            <SByte/>
+            <Byte/>
+            <Int16/>
+            <UInt16/>
+            <Int32/>
+            <UInt32/>
+            <Int64/>
+            <UInt64/>
+            <Float/>
+            <Double/>
+            <String>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></String>
+            </String>
+            <DateTime/>
+            <Guid/>
+            <ByteString/>
+            <NodeId/>
+            <StatusCode/>
+            <QualifiedName/>
+            <LocalizedText/>
+            <Variant/>
+            <Duration/>
+            <ApplicationType/>
+            <TestEnumType/>
+            <XVType/>
+            <ConcreteTestType/>
+            <UnionOfScalar/>
+            <UnionOfArray/>
+            <OptionSetUI8/>
+            <OptionSetUI16/>
+            <OptionSetUI32/>
+            <OptionSetUI64/>
+          </StructWithBuiltinMatrixFieldsEx>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithBuiltinScalarFields" NodeId="ns=1;i=6005"
-    BrowseName="1:StructWithBuiltinScalarFields" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithBuiltinScalarFields"
+    NodeId="ns=1;i=6005" BrowseName="1:StructWithBuiltinScalarFields">
     <DisplayName>StructWithBuiltinScalarFields</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
@@ -671,64 +1263,240 @@
       </uax:ExtensionObject>
     </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithBuiltinScalarFieldsEx" NodeId="ns=1;i=6031"
-    BrowseName="1:StructWithBuiltinScalarFieldsEx" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithBuiltinScalarFieldsEx"
+    NodeId="ns=1;i=6031" BrowseName="1:StructWithBuiltinScalarFieldsEx">
     <DisplayName>StructWithBuiltinScalarFieldsEx</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5027</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithBuiltinScalarFieldsEx
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Boolean>false</Boolean>
+            <SByte>0</SByte>
+            <Byte>0</Byte>
+            <Int16>0</Int16>
+            <UInt16>0</UInt16>
+            <Int32>0</Int32>
+            <UInt32>0</UInt32>
+            <Int64>0</Int64>
+            <UInt64>0</UInt64>
+            <Float>0</Float>
+            <Double>0</Double>
+            <String></String>
+            <DateTime>1900-01-01T00:00:00Z</DateTime>
+            <Guid>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
+                00000000-0000-0000-0000-000000000000
+              </String>
+            </Guid>
+            <ByteString></ByteString>
+            <NodeId>
+              <Identifier xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">i=0</Identifier>
+            </NodeId>
+            <StatusCode>
+              <Code xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">0</Code>
+            </StatusCode>
+            <QualifiedName>
+              <NamespaceIndex xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">0
+              </NamespaceIndex>
+              <Name xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></Name>
+            </QualifiedName>
+            <LocalizedText/>
+            <Variant>
+              <Value xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">
+                <String></String>
+              </Value>
+            </Variant>
+            <Duration>0</Duration>
+            <ApplicationType>Server_0</ApplicationType>
+            <TestEnumType>A_0</TestEnumType>
+            <XVType>
+              <X xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">0</X>
+              <Value xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd">0</Value>
+            </XVType>
+            <ConcreteTestType>
+              <Int16Field>0</Int16Field>
+              <DoubleField>0</DoubleField>
+              <StringField></StringField>
+              <BooleanField>false</BooleanField>
+            </ConcreteTestType>
+            <UnionOfScalar>
+              <SwitchField>0</SwitchField>
+            </UnionOfScalar>
+            <UnionOfArray>
+              <SwitchField>0</SwitchField>
+            </UnionOfArray>
+            <OptionSetUI8>0</OptionSetUI8>
+            <OptionSetUI16>0</OptionSetUI16>
+            <OptionSetUI32>0</OptionSetUI32>
+            <OptionSetUI64>0</OptionSetUI64>
+          </StructWithBuiltinScalarFieldsEx>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithOptionalArrayFields" NodeId="ns=1;i=6035"
-    BrowseName="1:StructWithOptionalArrayFields" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithOptionalArrayFields"
+    NodeId="ns=1;i=6035" BrowseName="1:StructWithOptionalArrayFields">
     <DisplayName>StructWithOptionalArrayFields</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5018</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithOptionalArrayFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <EncodingMask>0</EncodingMask>
+            <Int32/>
+            <String>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></String>
+            </String>
+            <Duration/>
+            <ConcreteTestType/>
+          </StructWithOptionalArrayFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithOptionalMatrixFields" NodeId="ns=1;i=6037"
-    BrowseName="1:StructWithOptionalMatrixFields" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithOptionalMatrixFields"
+    NodeId="ns=1;i=6037" BrowseName="1:StructWithOptionalMatrixFields">
     <DisplayName>StructWithOptionalMatrixFields</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5060</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithOptionalMatrixFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <EncodingMask>0</EncodingMask>
+            <Int32/>
+            <String>
+              <String xmlns="http://opcfoundation.org/UA/2008/02/Types.xsd"></String>
+            </String>
+            <Duration/>
+            <ConcreteTestType/>
+          </StructWithOptionalMatrixFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithOptionalScalarFields" NodeId="ns=1;i=6036"
-    BrowseName="1:StructWithOptionalScalarFields" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithOptionalScalarFields"
+    NodeId="ns=1;i=6036" BrowseName="1:StructWithOptionalScalarFields">
     <DisplayName>StructWithOptionalScalarFields</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5012</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithOptionalScalarFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <EncodingMask>0</EncodingMask>
+            <String></String>
+            <Int32>0</Int32>
+            <Duration>0</Duration>
+            <ConcreteTestType>
+              <Int16Field>0</Int16Field>
+              <DoubleField>0</DoubleField>
+              <StringField></StringField>
+              <BooleanField>false</BooleanField>
+            </ConcreteTestType>
+          </StructWithOptionalScalarFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithStructureArrayFields" NodeId="ns=1;i=6041"
-    BrowseName="1:StructWithStructureArrayFields" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithStructureArrayFields"
+    NodeId="ns=1;i=6041" BrowseName="1:StructWithStructureArrayFields">
     <DisplayName>StructWithStructureArrayFields</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5054</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithStructureArrayFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Struct1/>
+            <Struct2/>
+            <Struct3/>
+          </StructWithStructureArrayFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithStructureMatrixFields" NodeId="ns=1;i=6042"
-    BrowseName="1:StructWithStructureMatrixFields" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithStructureMatrixFields"
+    NodeId="ns=1;i=6042" BrowseName="1:StructWithStructureMatrixFields">
     <DisplayName>StructWithStructureMatrixFields</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5057</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithStructureMatrixFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Struct1/>
+            <Struct2/>
+            <Struct3/>
+          </StructWithStructureMatrixFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="StructWithStructureScalarFields" NodeId="ns=1;i=6043"
-    BrowseName="1:StructWithStructureScalarFields" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="StructWithStructureScalarFields"
+    NodeId="ns=1;i=6043" BrowseName="1:StructWithStructureScalarFields">
     <DisplayName>StructWithStructureScalarFields</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5051</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <StructWithStructureScalarFields
+            xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <Struct1/>
+            <Struct2/>
+            <Struct3/>
+          </StructWithStructureScalarFields>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="TestEnumType" NodeId="ns=1;i=6052" BrowseName="1:TestEnumType"
-    AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="TestEnumType"
+    NodeId="ns=1;i=6052" BrowseName="1:TestEnumType">
     <DisplayName>TestEnumType</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
@@ -738,50 +1506,84 @@
       <uax:Int32>0</uax:Int32>
     </Value>
   </UAVariable>
-  <UAVariable ValueRank="1" DataType="TestEnumType" NodeId="ns=1;i=6053"
-    BrowseName="1:TestEnumTypeArray" ArrayDimensions="5" AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ArrayDimensions="5" ParentNodeId="ns=1;i=5005" AccessLevel="3" ValueRank="1"
+    DataType="TestEnumType" NodeId="ns=1;i=6053" BrowseName="1:TestEnumTypeArray">
     <DisplayName>TestEnumTypeArray</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
   </UAVariable>
-  <UAVariable ValueRank="2" DataType="TestEnumType" NodeId="ns=1;i=6055"
-    BrowseName="1:TestEnumTypeMatrix" ArrayDimensions="2,2" AccessLevel="3"
-    ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" ValueRank="2" DataType="TestEnumType"
+    NodeId="ns=1;i=6055" BrowseName="1:TestEnumTypeMatrix">
     <DisplayName>TestEnumTypeMatrix</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
   </UAVariable>
-  <UAVariable DataType="UnionOfArray" NodeId="ns=1;i=6047" BrowseName="1:UnionOfArray"
-    AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="UnionOfArray"
+    NodeId="ns=1;i=6047" BrowseName="1:UnionOfArray">
     <DisplayName>UnionOfArray</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5033</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <UnionOfArray xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <SwitchField>0</SwitchField>
+          </UnionOfArray>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="UnionOfMatrix" NodeId="ns=1;i=6048" BrowseName="1:UnionOfMatrix"
-    AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="UnionOfMatrix"
+    NodeId="ns=1;i=6048" BrowseName="1:UnionOfMatrix">
     <DisplayName>UnionOfMatrix</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5063</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <UnionOfMatrix xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <SwitchField>0</SwitchField>
+          </UnionOfMatrix>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAVariable DataType="UnionOfScalar" NodeId="ns=1;i=6049" BrowseName="1:UnionOfScalar"
-    AccessLevel="3" ParentNodeId="ns=1;i=5005">
+  <UAVariable ParentNodeId="ns=1;i=5005" AccessLevel="3" DataType="UnionOfScalar"
+    NodeId="ns=1;i=6049" BrowseName="1:UnionOfScalar">
     <DisplayName>UnionOfScalar</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5005</Reference>
     </References>
+    <Value>
+      <uax:ExtensionObject>
+        <uax:TypeId>
+          <uax:Identifier>ns=2;i=5030</uax:Identifier>
+        </uax:TypeId>
+        <uax:Body>
+          <UnionOfScalar xmlns="https://github.com/eclipse/milo/DataTypeTest/Types.xsd">
+            <SwitchField>0</SwitchField>
+          </UnionOfScalar>
+        </uax:Body>
+      </uax:ExtensionObject>
+    </Value>
   </UAVariable>
-  <UAObject NodeId="ns=1;i=5004"
-    BrowseName="1:https://github.com/eclipse/milo/DataTypeTestVariables"
-    SymbolicName="https___github_com_eclipse_milo_DataTypeTestVariables">
+  <UAObject SymbolicName="https___github_com_eclipse_milo_DataTypeTestVariables"
+    NodeId="ns=1;i=5004" BrowseName="1:https://github.com/eclipse/milo/DataTypeTestVariables">
     <DisplayName>https://github.com/eclipse/milo/DataTypeTestVariables</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=11616</Reference>
@@ -795,8 +1597,8 @@
       <Reference ReferenceType="HasProperty">ns=1;i=6013</Reference>
     </References>
   </UAObject>
-  <UAVariable DataType="Boolean" NodeId="ns=1;i=6007" BrowseName="IsNamespaceSubset"
-    ParentNodeId="ns=1;i=5004">
+  <UAVariable ParentNodeId="ns=1;i=5004" DataType="Boolean" NodeId="ns=1;i=6007"
+    BrowseName="IsNamespaceSubset">
     <DisplayName>IsNamespaceSubset</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
@@ -806,8 +1608,8 @@
       <uax:Boolean>false</uax:Boolean>
     </Value>
   </UAVariable>
-  <UAVariable DataType="DateTime" NodeId="ns=1;i=6008" BrowseName="NamespacePublicationDate"
-    ParentNodeId="ns=1;i=5004">
+  <UAVariable ParentNodeId="ns=1;i=5004" DataType="DateTime" NodeId="ns=1;i=6008"
+    BrowseName="NamespacePublicationDate">
     <DisplayName>NamespacePublicationDate</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
@@ -817,8 +1619,8 @@
       <uax:DateTime>2025-03-09T20:27:23Z</uax:DateTime>
     </Value>
   </UAVariable>
-  <UAVariable DataType="String" NodeId="ns=1;i=6009" BrowseName="NamespaceUri"
-    ParentNodeId="ns=1;i=5004">
+  <UAVariable ParentNodeId="ns=1;i=5004" DataType="String" NodeId="ns=1;i=6009"
+    BrowseName="NamespaceUri">
     <DisplayName>NamespaceUri</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
@@ -828,8 +1630,8 @@
       <uax:String>https://github.com/eclipse/milo/DataTypeTestVariables</uax:String>
     </Value>
   </UAVariable>
-  <UAVariable DataType="String" NodeId="ns=1;i=6010" BrowseName="NamespaceVersion"
-    ParentNodeId="ns=1;i=5004">
+  <UAVariable ParentNodeId="ns=1;i=5004" DataType="String" NodeId="ns=1;i=6010"
+    BrowseName="NamespaceVersion">
     <DisplayName>NamespaceVersion</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
@@ -839,24 +1641,24 @@
       <uax:String>1.0.0</uax:String>
     </Value>
   </UAVariable>
-  <UAVariable ValueRank="1" DataType="IdType" NodeId="ns=1;i=6011" BrowseName="StaticNodeIdTypes"
-    ArrayDimensions="0" ParentNodeId="ns=1;i=5004">
+  <UAVariable ArrayDimensions="0" ParentNodeId="ns=1;i=5004" ValueRank="1" DataType="IdType"
+    NodeId="ns=1;i=6011" BrowseName="StaticNodeIdTypes">
     <DisplayName>StaticNodeIdTypes</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5004</Reference>
     </References>
   </UAVariable>
-  <UAVariable ValueRank="1" DataType="NumericRange" NodeId="ns=1;i=6012"
-    BrowseName="StaticNumericNodeIdRange" ArrayDimensions="0" ParentNodeId="ns=1;i=5004">
+  <UAVariable ArrayDimensions="0" ParentNodeId="ns=1;i=5004" ValueRank="1" DataType="NumericRange"
+    NodeId="ns=1;i=6012" BrowseName="StaticNumericNodeIdRange">
     <DisplayName>StaticNumericNodeIdRange</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5004</Reference>
     </References>
   </UAVariable>
-  <UAVariable DataType="String" NodeId="ns=1;i=6013" BrowseName="StaticStringNodeIdPattern"
-    ParentNodeId="ns=1;i=5004">
+  <UAVariable ParentNodeId="ns=1;i=5004" DataType="String" NodeId="ns=1;i=6013"
+    BrowseName="StaticStringNodeIdPattern">
     <DisplayName>StaticStringNodeIdPattern</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
