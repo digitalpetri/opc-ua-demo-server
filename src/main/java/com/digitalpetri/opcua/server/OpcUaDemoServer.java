@@ -62,6 +62,7 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager;
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
@@ -223,6 +224,15 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     server.getAddressSpaceManager().getManagedNode(NodeIds.Aliases).ifPresent(UaNode::delete);
     server.getAddressSpaceManager().getManagedNode(NodeIds.Locations).ifPresent(UaNode::delete);
+
+    // Remove the "DataTypeTest" Object instance from the address space.
+    // UaModeler is currently too buggy to generate useful values in the UANodeSet XML.
+    server
+        .getAddressSpaceManager()
+        .getManagedNode(
+            ExpandedNodeId.parse(
+                "nsu=%s;i=5005".formatted(DataTypeTestVariablesNamespace.NAMESPACE_URI)))
+        .ifPresent(UaNode::delete);
   }
 
   @Override
