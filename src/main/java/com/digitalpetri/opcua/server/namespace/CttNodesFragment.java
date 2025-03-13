@@ -1013,7 +1013,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
       case StatusCode -> StatusCode.GOOD;
       case QualifiedName -> QualifiedName.NULL_VALUE;
       case LocalizedText -> LocalizedText.NULL_VALUE;
-      case ExtensionObject -> new ExtensionObject(ByteString.NULL_VALUE, NodeId.NULL_VALUE);
+      case ExtensionObject -> ExtensionObject.of(ByteString.NULL_VALUE, NodeId.NULL_VALUE);
       case DataValue -> new DataValue(Variant.NULL_VALUE);
       case Variant -> Variant.ofInt32(42);
       case DiagnosticInfo -> DiagnosticInfo.NULL_VALUE;

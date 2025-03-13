@@ -185,7 +185,7 @@ public class DynamicNodesFragment extends ManagedAddressSpaceFragmentWithLifecyc
           case ExtensionObject -> {
             byte[] bytes = new byte[8];
             new java.util.Random().nextBytes(bytes);
-            yield new ExtensionObject(ByteString.of(bytes), NodeId.NULL_VALUE);
+            yield ExtensionObject.of(ByteString.of(bytes), NodeId.NULL_VALUE);
           }
           case DataValue -> new DataValue(Variant.of(Math.random() * 100));
           case Variant -> Variant.of(Math.random() * 100);
