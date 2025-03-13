@@ -1,7 +1,11 @@
 package com.digitalpetri.opcua.server.namespace;
 
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
+
 import com.typesafe.config.Config;
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite;
@@ -14,18 +18,26 @@ import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.items.DataItem;
 import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
+import org.eclipse.milo.opcua.sdk.server.model.objects.BaseEventTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
 import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DemoNamespace extends AddressSpaceComposite implements Namespace, Lifecycle {
 
   public static final String NAMESPACE_URI =
       "urn:opc:eclipse:milo:opc-ua-demo-server:namespace:demo";
+
+  private final Logger logger = LoggerFactory.getLogger(DemoNamespace.class);
 
   private final LifecycleManager lifecycleManager = new LifecycleManager();
 
@@ -96,6 +108,8 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
 
     var rbacFragment = new RbacNodesFragment(server, this);
     lifecycleManager.addLifecycle(rbacFragment);
+
+    lifecycleManager.addLifecycle(new BogusEventNotifier());
   }
 
   @Override
@@ -124,6 +138,77 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
 
   public UaFolderNode getDemoFolder() {
     return demoFragment.getDemoFolder();
+  }
+
+  private class BogusEventNotifier implements Lifecycle {
+
+    private final Random random = new Random();
+
+    private volatile Thread eventThread;
+    private volatile boolean keepPostingEvents;
+
+    @Override
+    public void startup() {
+      keepPostingEvents = true;
+      eventThread = new Thread(this::fireEventLoop, "bogus-event-notifier");
+      eventThread.start();
+    }
+
+    private void fireEventLoop() {
+      while (keepPostingEvents) {
+        fireEvent();
+      }
+    }
+
+    private void fireEvent() {
+      try {
+        UaNode serverNode =
+            getServer().getAddressSpaceManager().getManagedNode(NodeIds.Server).orElseThrow();
+
+        BaseEventTypeNode eventNode =
+            getServer()
+                .getEventFactory()
+                .createEvent(new NodeId(namespaceIndex, UUID.randomUUID()), NodeIds.BaseEventType);
+
+        byte[] eventId = new byte[4];
+        random.nextBytes(eventId);
+
+        eventNode.setBrowseName(new QualifiedName(1, "foo"));
+        eventNode.setDisplayName(LocalizedText.english("foo"));
+        eventNode.setEventId(ByteString.of(eventId));
+        eventNode.setEventType(NodeIds.BaseEventType);
+        eventNode.setSourceNode(serverNode.getNodeId());
+        eventNode.setSourceName(serverNode.getDisplayName().text());
+        eventNode.setTime(DateTime.now());
+        eventNode.setReceiveTime(DateTime.NULL_VALUE);
+        eventNode.setMessage(LocalizedText.english("event message!"));
+        eventNode.setSeverity(ushort(random.nextInt(10)));
+
+        getServer().getEventNotifier().fire(eventNode);
+
+        eventNode.delete();
+      } catch (Throwable e) {
+        logger.error("Error creating EventNode: {}", e.getMessage(), e);
+      }
+
+      try {
+        Thread.sleep(2_000);
+      } catch (InterruptedException ignored) {
+      }
+    }
+
+    @Override
+    public void shutdown() {
+      keepPostingEvents = false;
+      if (eventThread != null) {
+        try {
+          eventThread.interrupt();
+          eventThread.join();
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
   }
 
   private static class DemoFragment extends ManagedAddressSpaceFragmentWithLifecycle {
