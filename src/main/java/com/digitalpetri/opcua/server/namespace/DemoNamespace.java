@@ -155,6 +155,11 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
     }
 
     private void fireEventLoop() {
+      try {
+        Thread.sleep(5000);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
       while (keepPostingEvents) {
         fireEvent();
       }
