@@ -22,6 +22,7 @@ import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode.UaVariableNodeBuilder;
 import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
@@ -132,13 +133,27 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
             namespace.getDemoFolder().getNodeId().expanded(),
             Direction.INVERSE));
 
+    addExtensionObject(dataTypeTestFolder.getNodeId());
+    addExtensionObjectArray(dataTypeTestFolder.getNodeId());
+    addExtensionObjectMatrix(dataTypeTestFolder.getNodeId());
+
+    addVariantOfInt32(dataTypeTestFolder.getNodeId());
+    addVariantOfStruct(dataTypeTestFolder.getNodeId());
+    addVariantOfVariantArray(dataTypeTestFolder.getNodeId());
+    addVariantOfVariantMatrix(dataTypeTestFolder.getNodeId());
+
     addTestEnumType(dataTypeTestFolder.getNodeId());
     addTestEnumTypeArray(dataTypeTestFolder.getNodeId());
     addTestEnumTypeMatrix(dataTypeTestFolder.getNodeId());
 
     addAbstractTestType(dataTypeTestFolder.getNodeId());
+
     addConcreteTestType(dataTypeTestFolder.getNodeId());
+    addConcreteTestTypeArray(dataTypeTestFolder.getNodeId());
+    addConcreteTestTypeMatrix(dataTypeTestFolder.getNodeId());
+
     addConcreteTestTypeEx(dataTypeTestFolder.getNodeId());
+
     addUnionOfScalar(dataTypeTestFolder.getNodeId());
     addUnionOfArray(dataTypeTestFolder.getNodeId());
     addUnionOfMatrix(dataTypeTestFolder.getNodeId());
@@ -162,6 +177,249 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
     addStructWithStructureScalarFields(dataTypeTestFolder.getNodeId());
     addStructWithStructureArrayFields(dataTypeTestFolder.getNodeId());
     addStructWithStructureMatrixFields(dataTypeTestFolder.getNodeId());
+  }
+
+  private void addExtensionObject(NodeId nodeId) {
+    var builder = new UaVariableNodeBuilder(getNodeContext());
+    builder
+        .setNodeId(deriveChildNodeId(nodeId, "ExtensionObject"))
+        .setBrowseName(new QualifiedName(namespaceIndex, "ExtensionObject"))
+        .setDisplayName(LocalizedText.english("ExtensionObject"))
+        .setDescription(LocalizedText.english("ExtensionObject"))
+        .setDataType(NodeIds.Structure)
+        .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setMinimumSamplingInterval(0.0);
+
+    ExtensionObject xo =
+        ExtensionObject.encode(
+            getServer().getStaticEncodingContext(),
+            new ConcreteTestType((short) 0, 0.0, "", false));
+
+    builder.setValue(new DataValue(Variant.ofExtensionObject(xo)));
+
+    UaVariableNode variableNode = builder.build();
+
+    getNodeManager().addNode(variableNode);
+
+    variableNode.addReference(
+        new Reference(
+            variableNode.getNodeId(),
+            ReferenceTypes.HasComponent,
+            nodeId.expanded(),
+            Direction.INVERSE));
+  }
+
+  private void addExtensionObjectArray(NodeId parentNodeId) {
+    var builder = new UaVariableNodeBuilder(getNodeContext());
+    builder
+        .setNodeId(deriveChildNodeId(parentNodeId, "ExtensionObjectArray"))
+        .setBrowseName(new QualifiedName(namespaceIndex, "ExtensionObjectArray"))
+        .setDisplayName(LocalizedText.english("ExtensionObjectArray"))
+        .setDescription(LocalizedText.english("ExtensionObjectArray"))
+        .setDataType(NodeIds.Structure)
+        .setValueRank(ValueRanks.OneDimension)
+        .setArrayDimensions(new UInteger[] {uint(0)})
+        .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setMinimumSamplingInterval(0.0);
+
+    ExtensionObject[] array =
+        new ExtensionObject[] {
+          ExtensionObject.encode(
+              getServer().getStaticEncodingContext(),
+              new ConcreteTestType((short) 0, 0.0, "", false)),
+          ExtensionObject.encode(
+              getServer().getStaticEncodingContext(),
+              new ConcreteTestTypeEx((short) 1, 1.0, "two", true, uint(42)))
+        };
+
+    builder.setValue(new DataValue(Variant.ofExtensionObjectArray(array)));
+
+    UaVariableNode variableNode = builder.build();
+
+    getNodeManager().addNode(variableNode);
+
+    variableNode.addReference(
+        new Reference(
+            variableNode.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+  }
+
+  private void addExtensionObjectMatrix(NodeId parentNodeId) {
+    var builder = new UaVariableNodeBuilder(getNodeContext());
+    builder
+        .setNodeId(deriveChildNodeId(parentNodeId, "ExtensionObjectMatrix"))
+        .setBrowseName(new QualifiedName(namespaceIndex, "ExtensionObjectMatrix"))
+        .setDisplayName(LocalizedText.english("ExtensionObjectMatrix"))
+        .setDescription(LocalizedText.english("ExtensionObjectMatrix"))
+        .setDataType(NodeIds.Structure)
+        .setValueRank(2)
+        .setArrayDimensions(new UInteger[] {uint(0), uint(0)})
+        .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setMinimumSamplingInterval(0.0);
+
+    Matrix matrix =
+        Matrix.ofExtensionObject(
+            new ExtensionObject[][] {
+              {
+                ExtensionObject.encode(
+                    getServer().getStaticEncodingContext(),
+                    new ConcreteTestType((short) 0, 2.0, "three", true)),
+                ExtensionObject.encode(
+                    getServer().getStaticEncodingContext(),
+                    new ConcreteTestTypeEx((short) 4, 5.0, "six", true, uint(42)))
+              },
+              {
+                ExtensionObject.encode(
+                    getServer().getStaticEncodingContext(),
+                    new ConcreteTestType((short) 7, 8.0, "nine", true)),
+                ExtensionObject.encode(
+                    getServer().getStaticEncodingContext(),
+                    new ConcreteTestTypeEx((short) 10, 11.0, "twelve", true, uint(42)))
+              }
+            });
+
+    builder.setValue(new DataValue(Variant.ofMatrix(matrix)));
+
+    UaVariableNode variableNode = builder.build();
+
+    getNodeManager().addNode(variableNode);
+
+    variableNode.addReference(
+        new Reference(
+            variableNode.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+  }
+
+  private void addVariantOfInt32(NodeId parentNodeId) {
+    var builder = new UaVariableNodeBuilder(getNodeContext());
+    builder
+        .setNodeId(deriveChildNodeId(parentNodeId, "VariantOfInt32"))
+        .setBrowseName(new QualifiedName(namespaceIndex, "VariantOfInt32"))
+        .setDisplayName(LocalizedText.english("VariantOfInt32"))
+        .setDescription(LocalizedText.english("VariantOfInt32"))
+        .setDataType(NodeIds.BaseDataType)
+        .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setMinimumSamplingInterval(0.0);
+
+    builder.setValue(new DataValue(Variant.ofInt32(42)));
+
+    UaVariableNode variableNode = builder.build();
+
+    getNodeManager().addNode(variableNode);
+
+    variableNode.addReference(
+        new Reference(
+            variableNode.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+  }
+
+  private void addVariantOfStruct(NodeId parentNodeId) {
+    var builder = new UaVariableNodeBuilder(getNodeContext());
+    builder
+        .setNodeId(deriveChildNodeId(parentNodeId, "VariantOfStruct"))
+        .setBrowseName(new QualifiedName(namespaceIndex, "VariantOfStruct"))
+        .setDisplayName(LocalizedText.english("VariantOfStruct"))
+        .setDescription(LocalizedText.english("VariantOfStruct"))
+        .setDataType(NodeIds.BaseDataType)
+        .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setMinimumSamplingInterval(0.0);
+
+    var struct = new ConcreteTestType((short) 0, 0.0, "", false);
+
+    builder.setValue(new DataValue(Variant.ofStruct(struct)));
+
+    UaVariableNode variableNode = builder.build();
+
+    getNodeManager().addNode(variableNode);
+
+    variableNode.addReference(
+        new Reference(
+            variableNode.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+  }
+
+  private void addVariantOfVariantArray(NodeId parentNodeId) {
+    var builder = new UaVariableNodeBuilder(getNodeContext());
+    builder
+        .setNodeId(deriveChildNodeId(parentNodeId, "VariantOfVariantArray"))
+        .setBrowseName(new QualifiedName(namespaceIndex, "VariantOfVariantArray"))
+        .setDisplayName(LocalizedText.english("VariantOfVariantArray"))
+        .setDescription(LocalizedText.english("VariantOfVariantArray"))
+        .setDataType(NodeIds.BaseDataType)
+        .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setMinimumSamplingInterval(0.0);
+
+    builder.setValue(
+        new DataValue(
+            Variant.ofVariantArray(
+                new Variant[] {
+                  Variant.ofStruct(new ConcreteTestType((short) 0, 2.0, "three", true)),
+                  Variant.ofStruct(new ConcreteTestType((short) 4, 5.0, "six", true))
+                })));
+
+    UaVariableNode variableNode = builder.build();
+
+    getNodeManager().addNode(variableNode);
+
+    variableNode.addReference(
+        new Reference(
+            variableNode.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+  }
+
+  private void addVariantOfVariantMatrix(NodeId parentNodeId) {
+    var builder = new UaVariableNodeBuilder(getNodeContext());
+    builder
+        .setNodeId(deriveChildNodeId(parentNodeId, "VariantOfVariantMatrix"))
+        .setBrowseName(new QualifiedName(namespaceIndex, "VariantOfVariantMatrix"))
+        .setDisplayName(LocalizedText.english("VariantOfVariantMatrix"))
+        .setDescription(LocalizedText.english("VariantOfVariantMatrix"))
+        .setDataType(NodeIds.BaseDataType)
+        .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setMinimumSamplingInterval(0.0);
+
+    Matrix matrix =
+        Matrix.ofVariant(
+            new Variant[][] {
+              {
+                Variant.ofStruct(new ConcreteTestType((short) 0, 2.0, "three", true)),
+                Variant.ofStruct(new ConcreteTestType((short) 4, 5.0, "six", true))
+              },
+              {
+                Variant.ofStruct(new ConcreteTestType((short) 7, 8.0, "nine", true)),
+                Variant.ofStruct(new ConcreteTestType((short) 10, 11.0, "twelve", true))
+              }
+            });
+
+    builder.setValue(new DataValue(Variant.ofMatrix(matrix)));
+
+    UaVariableNode variableNode = builder.build();
+
+    getNodeManager().addNode(variableNode);
+
+    variableNode.addReference(
+        new Reference(
+            variableNode.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
   }
 
   private void addTestEnumType(NodeId parentNodeId) {
@@ -411,6 +669,97 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
             Direction.INVERSE));
   }
 
+  private void addConcreteTestTypeArray(NodeId parentNodeId) {
+    var builder = new UaVariableNodeBuilder(getNodeContext());
+    builder
+        .setNodeId(deriveChildNodeId(parentNodeId, "ConcreteTestTypeArray"))
+        .setBrowseName(new QualifiedName(namespaceIndex, "ConcreteTestTypeArray"))
+        .setDisplayName(LocalizedText.english("ConcreteTestTypeArray"))
+        .setDescription(LocalizedText.english("ConcreteTestTypeArray"))
+        .setDataType(
+            DataTypeTestNodeIds.ConcreteTestType.toNodeId(getNodeContext().getNamespaceTable())
+                .orElseThrow())
+        .setValueRank(ValueRanks.OneDimension)
+        .setArrayDimensions(new UInteger[] {uint(0)})
+        .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setMinimumSamplingInterval(0.0);
+
+    ExtensionObject[] array =
+        new ExtensionObject[] {
+          ExtensionObject.encode(
+              getServer().getStaticEncodingContext(),
+              new ConcreteTestType((short) 0, 0.0, "", false)),
+          ExtensionObject.encode(
+              getServer().getStaticEncodingContext(),
+              new ConcreteTestType((short) 0, 0.0, "", false))
+        };
+
+    builder.setValue(new DataValue(Variant.ofExtensionObjectArray(array)));
+
+    UaVariableNode variableNode = builder.build();
+
+    getNodeManager().addNode(variableNode);
+
+    variableNode.addReference(
+        new Reference(
+            variableNode.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+  }
+
+  private void addConcreteTestTypeMatrix(NodeId parentNodeId) {
+    var builder = new UaVariableNodeBuilder(getNodeContext());
+    builder
+        .setNodeId(deriveChildNodeId(parentNodeId, "ConcreteTestTypeMatrix"))
+        .setBrowseName(new QualifiedName(namespaceIndex, "ConcreteTestTypeMatrix"))
+        .setDisplayName(LocalizedText.english("ConcreteTestTypeMatrix"))
+        .setDescription(LocalizedText.english("ConcreteTestTypeMatrix"))
+        .setDataType(
+            DataTypeTestNodeIds.ConcreteTestType.toNodeId(getNodeContext().getNamespaceTable())
+                .orElseThrow())
+        .setValueRank(2)
+        .setArrayDimensions(new UInteger[] {uint(0), uint(0)})
+        .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+        .setMinimumSamplingInterval(0.0);
+
+    Matrix matrix =
+        Matrix.ofExtensionObject(
+            new ExtensionObject[][] {
+              {
+                ExtensionObject.encode(
+                    getServer().getStaticEncodingContext(),
+                    new ConcreteTestType((short) 0, 2.0, "three", true)),
+                ExtensionObject.encode(
+                    getServer().getStaticEncodingContext(),
+                    new ConcreteTestType((short) 4, 5.0, "six", true))
+              },
+              {
+                ExtensionObject.encode(
+                    getServer().getStaticEncodingContext(),
+                    new ConcreteTestType((short) 7, 8.0, "nine", true)),
+                ExtensionObject.encode(
+                    getServer().getStaticEncodingContext(),
+                    new ConcreteTestType((short) 10, 11.0, "twelve", true))
+              }
+            });
+
+    builder.setValue(new DataValue(Variant.ofMatrix(matrix)));
+
+    UaVariableNode variableNode = builder.build();
+
+    getNodeManager().addNode(variableNode);
+
+    variableNode.addReference(
+        new Reference(
+            variableNode.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+  }
+
   private void addConcreteTestTypeEx(NodeId parentNodeId) {
     var builder = new UaVariableNodeBuilder(getNodeContext());
     builder
@@ -611,7 +960,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
             new QualifiedName(0, ""),
             LocalizedText.NULL_VALUE,
             new DataValue(new Variant(0)),
-            Variant.ofInt32(0));
+            Variant.ofStruct(new XVType(3.0, 4.0f)));
 
     builder.setValue(new DataValue(Variant.ofStruct(struct)));
 
@@ -838,7 +1187,10 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
             new QualifiedName(0, ""),
             LocalizedText.NULL_VALUE,
             new DataValue(new Variant(0)),
-            Variant.ofInt32(0),
+            Variant.ofVariantArray(
+                new Variant[] {
+                  Variant.ofStruct(new XVType(1.0, 2.0f)), Variant.ofStruct(new XVType(3.0, 4.0f))
+                }),
             0.0,
             ApplicationType.Server,
             TestEnumType.A,
