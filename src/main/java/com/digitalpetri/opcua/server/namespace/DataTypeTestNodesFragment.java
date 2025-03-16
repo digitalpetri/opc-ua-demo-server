@@ -334,7 +334,8 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setMinimumSamplingInterval(0.0);
 
-    var struct = UnionOfMatrix.ofBoolean(Matrix.ofBoolean(new Boolean[][] {{true, false}}));
+    var struct =
+        UnionOfMatrix.ofBoolean(Matrix.ofBoolean(new Boolean[][] {{true, false}, {false, true}}));
 
     builder.setValue(new DataValue(Variant.ofStruct(struct)));
 
