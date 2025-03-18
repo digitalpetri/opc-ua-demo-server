@@ -2,7 +2,7 @@ package com.digitalpetri.opcua.server.namespace;
 
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 
-class Util {
+public class Util {
 
   private Util() {}
 
@@ -17,7 +17,7 @@ class Util {
    * @param name the name to derive the child NodeId from.
    * @return the derived child NodeId.
    */
-  static NodeId deriveChildNodeId(NodeId parentNodeId, String name) {
+  public static NodeId deriveChildNodeId(NodeId parentNodeId, String name) {
     return new NodeId(
         parentNodeId.getNamespaceIndex(), "%s.%s".formatted(parentNodeId.getIdentifier(), name));
   }

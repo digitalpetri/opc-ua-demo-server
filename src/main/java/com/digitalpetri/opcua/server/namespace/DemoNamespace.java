@@ -2,6 +2,7 @@ package com.digitalpetri.opcua.server.namespace;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 
+import com.digitalpetri.opcua.server.namespace.debug.DebugNodesFragment;
 import com.typesafe.config.Config;
 import java.util.List;
 import java.util.Random;
@@ -108,6 +109,9 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
 
     var rbacFragment = new RbacNodesFragment(server, this);
     lifecycleManager.addLifecycle(rbacFragment);
+
+    var debugFragment = new DebugNodesFragment(server, this);
+    lifecycleManager.addLifecycle(debugFragment);
 
     lifecycleManager.addLifecycle(new BogusEventNotifier());
   }
