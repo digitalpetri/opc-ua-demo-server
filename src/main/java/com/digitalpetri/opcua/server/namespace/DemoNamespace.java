@@ -113,6 +113,9 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
     var debugFragment = new DebugNodesFragment(server, this);
     lifecycleManager.addLifecycle(debugFragment);
 
+    var variantFragment = new VariantNodesFragment(server, this);
+    lifecycleManager.addLifecycle(variantFragment);
+
     lifecycleManager.addLifecycle(new BogusEventNotifier());
   }
 

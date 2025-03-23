@@ -1,15 +1,9 @@
 package com.digitalpetri.opcua.server.namespace;
 
 import static com.digitalpetri.opcua.server.namespace.Util.deriveChildNodeId;
-import static org.eclipse.milo.opcua.stack.core.types.builtin.DateTime.*;
-import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
-import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ulong;
-import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 
-import java.lang.reflect.Array;
 import java.util.List;
-import java.util.UUID;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
@@ -38,18 +32,12 @@ import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
-import org.eclipse.milo.opcua.stack.core.types.builtin.DiagnosticInfo;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
-import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
-import org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
@@ -202,7 +190,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
           .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
           .setMinimumSamplingInterval(100.0);
 
-      Object value = getDefaultScalarValue(dataType);
+      Object value = Util.getDefaultScalarValue(dataType);
       if (value instanceof Variant v) {
         builder.setValue(new DataValue(v));
       } else {
@@ -306,7 +294,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
           .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
           .setMinimumSamplingInterval(100.0);
 
-      Object value = getDefaultArrayValue(dataType);
+      Object value = Util.getDefaultArrayValue(dataType);
       if (value instanceof Variant v) {
         builder.setValue(new DataValue(v));
       } else {
@@ -358,7 +346,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
           .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
           .setMinimumSamplingInterval(100.0);
 
-      Matrix value = getDefaultMatrixValue(dataType);
+      Matrix value = Util.getDefaultMatrixValue(dataType);
       builder.setValue(new DataValue(Variant.ofMatrix(value)));
 
       UaVariableNode variableNode = builder.build();
@@ -432,7 +420,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         analogItemNode.setMinimumSamplingInterval(100.0);
 
         analogItemNode.setEuRange(new Range(0.0, 100.0));
-        analogItemNode.setValue(new DataValue(Variant.of(getDefaultScalarValue(dataType))));
+        analogItemNode.setValue(new DataValue(Variant.of(Util.getDefaultScalarValue(dataType))));
 
         analogItemNode.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
 
@@ -989,58 +977,6 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
   }
 
   // endregion
-
-  private static Object getDefaultScalarValue(OpcUaDataType dataType) {
-    return switch (dataType) {
-      case Boolean -> Boolean.FALSE;
-      case SByte -> (byte) 0;
-      case Int16 -> (short) 0;
-      case Int32 -> 0;
-      case Int64 -> 0L;
-      case Byte -> ubyte(0);
-      case UInt16 -> ushort(0);
-      case UInt32 -> uint(0);
-      case UInt64 -> ulong(0);
-      case Float -> 0f;
-      case Double -> 0.0;
-      case String -> "";
-      case DateTime -> NULL_VALUE;
-      case Guid -> UUID.randomUUID();
-      case ByteString -> ByteString.NULL_VALUE;
-      case XmlElement -> new XmlElement(null);
-      case NodeId -> NodeId.NULL_VALUE;
-      case ExpandedNodeId -> ExpandedNodeId.NULL_VALUE;
-      case StatusCode -> StatusCode.GOOD;
-      case QualifiedName -> QualifiedName.NULL_VALUE;
-      case LocalizedText -> LocalizedText.NULL_VALUE;
-      case ExtensionObject -> ExtensionObject.of(ByteString.NULL_VALUE, NodeId.NULL_VALUE);
-      case DataValue -> new DataValue(Variant.NULL_VALUE);
-      case Variant -> Variant.ofInt32(42);
-      case DiagnosticInfo -> DiagnosticInfo.NULL_VALUE;
-    };
-  }
-
-  private static Object getDefaultArrayValue(OpcUaDataType dataType) {
-    Object value = getDefaultScalarValue(dataType);
-    Object array = Array.newInstance(value.getClass(), 5);
-    for (int i = 0; i < 5; i++) {
-      Array.set(array, i, value);
-    }
-    return array;
-  }
-
-  private static Matrix getDefaultMatrixValue(OpcUaDataType dataType) {
-    Object value = getDefaultScalarValue(dataType);
-    Object array = Array.newInstance(value.getClass(), 5, 5);
-    for (int i = 0; i < 5; i++) {
-      Object innerArray = Array.newInstance(value.getClass(), 5);
-      for (int j = 0; j < 5; j++) {
-        Array.set(innerArray, j, value);
-      }
-      Array.set(array, i, innerArray);
-    }
-    return new Matrix(array);
-  }
 
   private static class EuRangeCheckFilter implements AttributeFilter {
 
