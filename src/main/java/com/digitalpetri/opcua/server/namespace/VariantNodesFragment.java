@@ -4,6 +4,7 @@ import static com.digitalpetri.opcua.server.namespace.Util.deriveChildNodeId;
 import static com.digitalpetri.opcua.server.namespace.Util.getDefaultScalarValue;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
@@ -192,6 +193,41 @@ public class VariantNodesFragment extends ManagedAddressSpaceFragmentWithLifecyc
               arrayFolder.getNodeId().expanded(),
               Reference.Direction.INVERSE));
     }
+
+    // Add an array that contains Variant elements of each scalar type.
+    {
+      var builder = new UaVariableNodeBuilder(getNodeContext());
+      builder
+          .setNodeId(deriveChildNodeId(arrayFolder.getNodeId(), "Variant"))
+          .setBrowseName(new QualifiedName(namespace.getNamespaceIndex(), "Variant"))
+          .setDisplayName(new LocalizedText("Variant"))
+          .setDataType(OpcUaDataType.Variant.getNodeId())
+          .setValueRank(ValueRanks.OneDimension)
+          .setArrayDimensions(new UInteger[] {uint(0)})
+          .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+          .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+          .setMinimumSamplingInterval(100.0);
+
+      var variants = new ArrayList<Variant>();
+      for (OpcUaDataType dataType : OpcUaDataType.values()) {
+        if (dataType == OpcUaDataType.DiagnosticInfo || dataType == OpcUaDataType.Variant) {
+          continue;
+        }
+        variants.add(Variant.of(getDefaultScalarValue(dataType)));
+      }
+      builder.setValue(new DataValue(Variant.ofVariantArray(variants.toArray(new Variant[0]))));
+
+      var variableNode = builder.build();
+
+      getNodeManager().addNode(variableNode);
+
+      variableNode.addReference(
+          new Reference(
+              variableNode.getNodeId(),
+              ReferenceTypes.HasComponent,
+              arrayFolder.getNodeId().expanded(),
+              Reference.Direction.INVERSE));
+    }
   }
 
   private void addMatrixVariants(NodeId parentNodeId) {
@@ -237,6 +273,48 @@ public class VariantNodesFragment extends ManagedAddressSpaceFragmentWithLifecyc
       }
 
       builder.setValue(new DataValue(Variant.ofMatrix(Matrix.ofVariant(variants))));
+
+      var variableNode = builder.build();
+
+      getNodeManager().addNode(variableNode);
+
+      variableNode.addReference(
+          new Reference(
+              variableNode.getNodeId(),
+              ReferenceTypes.HasComponent,
+              matrixFolder.getNodeId().expanded(),
+              Reference.Direction.INVERSE));
+    }
+
+    // Add a Matrix that contains Variant elements of each scalar type.
+    {
+      var builder = new UaVariableNodeBuilder(getNodeContext());
+      builder
+          .setNodeId(deriveChildNodeId(matrixFolder.getNodeId(), "Variant"))
+          .setBrowseName(new QualifiedName(namespace.getNamespaceIndex(), "Variant"))
+          .setDisplayName(new LocalizedText("Variant"))
+          .setDataType(OpcUaDataType.Variant.getNodeId())
+          .setValueRank(2)
+          .setArrayDimensions(new UInteger[] {uint(0), uint(0)})
+          .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+          .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
+          .setMinimumSamplingInterval(100.0);
+
+      var variants = new ArrayList<Variant[]>();
+      for (OpcUaDataType dataType : OpcUaDataType.values()) {
+        if (dataType == OpcUaDataType.DiagnosticInfo || dataType == OpcUaDataType.Variant) {
+          continue;
+        }
+        variants.add(
+            new Variant[] {
+              Variant.of(getDefaultScalarValue(dataType)),
+              Variant.of(getDefaultScalarValue(dataType)),
+              Variant.of(getDefaultScalarValue(dataType)),
+              Variant.of(getDefaultScalarValue(dataType))
+            });
+      }
+      builder.setValue(
+          new DataValue(Variant.ofMatrix(Matrix.ofVariant(variants.toArray(new Variant[0][])))));
 
       var variableNode = builder.build();
 
