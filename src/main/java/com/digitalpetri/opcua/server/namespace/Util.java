@@ -63,8 +63,7 @@ public class Util {
       case ByteString -> ByteString.of(new byte[] {1, 2, 3, 4});
       case XmlElement -> new XmlElement("<xml></xml>");
       case NodeId -> new NodeId(1, "DoesNotExist");
-      case ExpandedNodeId ->
-          new ExpandedNodeId(ushort(1), DemoNamespace.NAMESPACE_URI, "DoesNotExist");
+      case ExpandedNodeId -> ExpandedNodeId.of(DemoNamespace.NAMESPACE_URI, "DoesNotExist");
       case StatusCode -> StatusCode.GOOD;
       case QualifiedName -> QualifiedName.parse("1:QualifiedName");
       case LocalizedText -> LocalizedText.english("hello");

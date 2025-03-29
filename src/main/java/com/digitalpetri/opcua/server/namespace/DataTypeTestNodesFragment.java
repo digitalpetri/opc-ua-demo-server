@@ -825,7 +825,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
             ByteString.of(new byte[] {0}),
             XmlElement.of(""),
             new NodeId(0, 0),
-            new ExpandedNodeId(ushort(0), null, uint(0)),
+            ExpandedNodeId.NULL_VALUE,
             StatusCode.GOOD,
             new QualifiedName(0, ""),
             LocalizedText.NULL_VALUE,
@@ -883,10 +883,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
             new ByteString[] {ByteString.of(new byte[] {0}), ByteString.of(new byte[] {0})},
             new XmlElement[] {XmlElement.of(""), XmlElement.of("")},
             new NodeId[] {new NodeId(0, 0), new NodeId(0, 0)},
-            new ExpandedNodeId[] {
-              new ExpandedNodeId(ushort(0), null, uint(0)),
-              new ExpandedNodeId(ushort(0), null, uint(0))
-            },
+            new ExpandedNodeId[] {ExpandedNodeId.NULL_VALUE, ExpandedNodeId.NULL_VALUE},
             new StatusCode[] {StatusCode.GOOD, StatusCode.GOOD},
             new QualifiedName[] {new QualifiedName(0, ""), new QualifiedName(0, "")},
             new LocalizedText[] {LocalizedText.NULL_VALUE, LocalizedText.NULL_VALUE},
@@ -969,14 +966,8 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 }),
             Matrix.ofExpandedNodeId(
                 new ExpandedNodeId[][] {
-                  {
-                    new ExpandedNodeId(ushort(0), null, uint(0)),
-                    new ExpandedNodeId(ushort(0), null, uint(0))
-                  },
-                  {
-                    new ExpandedNodeId(ushort(0), null, uint(0)),
-                    new ExpandedNodeId(ushort(0), null, uint(0))
-                  }
+                  {ExpandedNodeId.NULL_VALUE, ExpandedNodeId.NULL_VALUE},
+                  {ExpandedNodeId.NULL_VALUE, ExpandedNodeId.NULL_VALUE}
                 }),
             Matrix.ofStatusCode(
                 new StatusCode[][] {
@@ -1052,7 +1043,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
             ByteString.of(new byte[] {0}),
             XmlElement.of(""),
             new NodeId(0, 0),
-            new ExpandedNodeId(ushort(0), null, uint(0)),
+            ExpandedNodeId.NULL_VALUE,
             StatusCode.GOOD,
             new QualifiedName(0, ""),
             LocalizedText.NULL_VALUE,
@@ -1124,10 +1115,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
             new ByteString[] {ByteString.of(new byte[] {0}), ByteString.of(new byte[] {0})},
             new XmlElement[] {XmlElement.of(""), XmlElement.of("")},
             new NodeId[] {new NodeId(0, 0), new NodeId(0, 0)},
-            new ExpandedNodeId[] {
-              new ExpandedNodeId(ushort(0), null, uint(0)),
-              new ExpandedNodeId(ushort(0), null, uint(0))
-            },
+            new ExpandedNodeId[] {ExpandedNodeId.NULL_VALUE, ExpandedNodeId.NULL_VALUE},
             new StatusCode[] {StatusCode.GOOD, StatusCode.GOOD},
             new QualifiedName[] {new QualifiedName(0, ""), new QualifiedName(0, "")},
             new LocalizedText[] {LocalizedText.NULL_VALUE, LocalizedText.NULL_VALUE},
@@ -1227,14 +1215,8 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 }),
             Matrix.ofExpandedNodeId(
                 new ExpandedNodeId[][] {
-                  {
-                    new ExpandedNodeId(ushort(0), null, uint(0)),
-                    new ExpandedNodeId(ushort(0), null, uint(0))
-                  },
-                  {
-                    new ExpandedNodeId(ushort(0), null, uint(0)),
-                    new ExpandedNodeId(ushort(0), null, uint(0))
-                  }
+                  {ExpandedNodeId.NULL_VALUE, ExpandedNodeId.NULL_VALUE},
+                  {ExpandedNodeId.NULL_VALUE, ExpandedNodeId.NULL_VALUE}
                 }),
             Matrix.ofStatusCode(
                 new StatusCode[][] {
