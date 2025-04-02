@@ -195,14 +195,17 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     server = new OpcUaServer(serverConfigBuilder.build(), transportFactory);
 
     server.getNamespaceTable().set(2, DemoNamespace.NAMESPACE_URI);
-    server.getNamespaceTable().set(3, DataTypeTestNamespace.NAMESPACE_URI);
-    server.getNamespaceTable().set(4, DataTypeTestVariablesNamespace.NAMESPACE_URI);
 
+    server.getNamespaceTable().set(3, DataTypeTestNamespace.NAMESPACE_URI);
     var dataTypeTestNamespace = DataTypeTestNamespace.create(server);
     dataTypeTestNamespace.startup();
 
-    var dataTypeTestVariablesNamespace = new DataTypeTestVariablesNamespace(server);
-    dataTypeTestVariablesNamespace.startup();
+    if (config.getBoolean("address-space.data-type-test-nodesets.enabled")) {
+      server.getNamespaceTable().set(4, DataTypeTestVariablesNamespace.NAMESPACE_URI);
+
+      var dataTypeTestVariablesNamespace = new DataTypeTestVariablesNamespace(server);
+      dataTypeTestVariablesNamespace.startup();
+    }
 
     var demoNamespace = new DemoNamespace(server, config);
     demoNamespace.startup();
