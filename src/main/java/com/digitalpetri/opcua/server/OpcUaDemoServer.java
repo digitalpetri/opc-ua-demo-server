@@ -135,9 +135,30 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     TrustListManager trustListManager = FileBasedTrustListManager.createAndInitialize(pkiDirPath);
 
-    CertificateValidator certificateValidator =
-        new DefaultServerCertificateValidator(
-            trustListManager, ValidationCheck.ALL_OPTIONAL_CHECKS, certificateQuarantine);
+    final CertificateValidator certificateValidator;
+
+    if (config.getBoolean("trust-all-certificates")) {
+      certificateValidator =
+          (chain, uri, hostnames) -> {
+
+            // No validation, just accept all certificates.
+            LoggerFactory.getLogger(OpcUaDemoServer.class)
+                .info("Skipping validation for certificate chain:");
+
+            for (int i = 0; i < chain.size(); i++) {
+              X509Certificate certificate = chain.get(i);
+
+              trustListManager.addTrustedCertificate(certificate);
+
+              LoggerFactory.getLogger(OpcUaDemoServer.class)
+                  .info("  certificate[{}]: {}", i, certificate.getSubjectX500Principal());
+            }
+          };
+    } else {
+      certificateValidator =
+          new DefaultServerCertificateValidator(
+              trustListManager, ValidationCheck.ALL_OPTIONAL_CHECKS, certificateQuarantine);
+    }
 
     DefaultApplicationGroup defaultApplicationGroup =
         new DefaultApplicationGroup(
