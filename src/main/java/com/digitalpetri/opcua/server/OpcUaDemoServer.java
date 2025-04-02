@@ -14,6 +14,7 @@ import com.typesafe.config.ConfigFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -103,16 +104,24 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     Path configFilePath = dataDirPath.resolve("server.conf");
 
+    InputStream defaultConfigInputStream =
+        OpcUaDemoServer.class.getClassLoader().getResourceAsStream("default-server.conf");
+
+    assert defaultConfigInputStream != null;
+
     // If the config file doesn't exist, copy the default from the classpath.
     if (!configFilePath.toFile().exists()) {
-      InputStream inputStream =
-          OpcUaDemoServer.class.getClassLoader().getResourceAsStream("default-server.conf");
-      assert inputStream != null;
-
-      Files.copy(inputStream, configFilePath);
+      Files.copy(defaultConfigInputStream, configFilePath);
     }
 
-    Config config = ConfigFactory.parseFile(configFilePath.toFile());
+    Config defaultConfig =
+        ConfigFactory.parseReader(new InputStreamReader(defaultConfigInputStream));
+
+    Config userConfig = ConfigFactory.parseFile(configFilePath.toFile());
+
+    // Load the user config and merge it with the default config in case anything is missing.
+    // This also allows the user config to contain only override values.
+    Config config = userConfig.withFallback(defaultConfig);
 
     Stack.ConnectionLimits.RATE_LIMIT_ENABLED = config.getBoolean("rate-limit-enabled");
 
