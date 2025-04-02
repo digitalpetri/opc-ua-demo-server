@@ -6,8 +6,7 @@ using [Eclipse Milo](https://github.com/eclipse-milo/milo).
 An internet-facing instance of this demo server is accessible at
 `opc.tcp://milo.digitalpetri.com:62541/milo`.
 
-It accepts both unsecured and secured connections. Before connecting with security you must upload
-your client's DER-encoded X509 certificate using the form at http://milo.digitalpetri.com.
+It accepts both unsecured and secured connections. All incoming client certificates are automatically trusted.
 
 Authenticate anonymously or with one of the following credential pairs:
 
