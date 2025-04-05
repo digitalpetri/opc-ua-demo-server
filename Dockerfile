@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM maven:3.9-eclipse-temurin-21 AS builder
+FROM maven:3.9-eclipse-temurin-24 AS builder
 
 # Set working directory inside the container
 WORKDIR /app
@@ -19,7 +19,7 @@ ENV JAVA_TOOL_OPTIONS=$ENV_JTO
 RUN mvn clean package
 
 # Stage 2: Run the application using a minimal Java runtime image
-FROM bellsoft/liberica-openjdk-alpine:21 AS runtime
+FROM bellsoft/liberica-openjdk-alpine:24 AS runtime
 
 # Set working directory inside the container
 WORKDIR /app
@@ -33,7 +33,7 @@ ARG ENV_JTO=${TARGETPLATFORM/linux\/arm64/-XX:UseSVE=0}
 ARG ENV_JTO=${ENV_JTO/$TARGETPLATFORM/}
 
 RUN echo "ENV_JTO is set to: $ENV_JTO"
-ENV JAVA_TOOL_OPTIONS=$ENV_JTO
+ENV JAVA_TOOL_OPTIONS="-Dio.netty.tryUnsafe=false -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders $ENV_JTO"
 
 # Define the entry point to run server
 ENTRYPOINT ["java", "-jar", "opc-ua-demo-server.jar"]
