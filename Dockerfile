@@ -36,4 +36,4 @@ RUN echo "ENV_JTO is set to: $ENV_JTO"
 ENV JAVA_TOOL_OPTIONS="-Dio.netty.tryUnsafe=false -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders $ENV_JTO"
 
 # Define the entry point to run server
-ENTRYPOINT ["java", "-jar", "opc-ua-demo-server.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar opc-ua-demo-server.jar"]
