@@ -21,12 +21,14 @@ import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
-import org.eclipse.milo.opcua.stack.core.encoding.binary.OpcUaDefaultBinaryEncoding;
 import org.eclipse.milo.opcua.stack.core.security.CertificateQuarantine;
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager;
+import org.eclipse.milo.opcua.stack.core.types.UaStructuredType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
@@ -248,12 +250,14 @@ public class TrustListObject extends FileObject {
         byte[] bs = new byte[(int) file.length()];
         file.readFully(bs);
 
-        var decoded =
-            OpcUaDefaultBinaryEncoding.getInstance()
-                .decode(
-                    DefaultEncodingContext.INSTANCE,
-                    ByteString.of(bs),
-                    TrustListDataType.BINARY_ENCODING_ID);
+        NodeId encodingId =
+            TrustListDataType.BINARY_ENCODING_ID
+                .toNodeId(context.getServer().getNamespaceTable())
+                .orElseThrow();
+
+        ExtensionObject xo = ExtensionObject.of(ByteString.of(bs), encodingId);
+
+        UaStructuredType decoded = xo.decode(DefaultEncodingContext.INSTANCE);
 
         if (decoded instanceof TrustListDataType trustList) {
           int specifiedLists = trustList.getSpecifiedLists().intValue();
@@ -506,18 +510,14 @@ public class TrustListObject extends FileObject {
             issuerCertificates.toArray(new ByteString[0]),
             issuerCrls.toArray(new ByteString[0]));
 
-    ByteString encoded =
-        (ByteString)
-            OpcUaDefaultBinaryEncoding.getInstance()
-                .encode(
-                    DefaultEncodingContext.INSTANCE,
-                    trustList,
-                    TrustListDataType.BINARY_ENCODING_ID);
+    ExtensionObject encoded = ExtensionObject.encode(DefaultEncodingContext.INSTANCE, trustList);
+
+    ByteString encodedBytes = (ByteString) encoded.getBody();
 
     File file = File.createTempFile("TrustListDataType", ".bin");
 
     try (FileOutputStream fos = new FileOutputStream(file)) {
-      fos.write(encoded.bytesOrEmpty());
+      fos.write(encodedBytes.bytesOrEmpty());
     }
 
     return file;
