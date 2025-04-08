@@ -1,3 +1,5 @@
+![Docker Image Version (tag)](https://img.shields.io/docker/v/digitalpetri/opc-ua-demo-server/1.0.0-SNAPSHOT)
+
 # Eclipse Milo OPC UA Demo Server
 
 This is a standalone OPC UA demo server built
