@@ -1,5 +1,6 @@
-package org.eclipse.milo.opcua.test;
+package com.digitalpetri.opcua.server.namespace.test;
 
+import com.digitalpetri.opcua.test.DataTypeInitializer;
 import com.digitalpetri.opcua.uanodeset.namespace.NodeSetNamespace;
 import java.io.InputStream;
 import java.util.List;
@@ -32,8 +33,6 @@ public class DataTypeTestNamespace extends NodeSetNamespace {
 
     new DataTypeInitializer()
         .initialize(server.getNamespaceTable(), server.getStaticDataTypeManager());
-    ObjectTypeInitializer.initialize(server.getNamespaceTable(), server.getObjectTypeManager());
-    VariableTypeInitializer.initialize(server.getNamespaceTable(), server.getVariableTypeManager());
 
     return namespace;
   }

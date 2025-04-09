@@ -1,4 +1,4 @@
-package com.digitalpetri.opcua.server.namespace;
+package com.digitalpetri.opcua.server.namespace.demo;
 
 import com.typesafe.config.Config;
 import java.util.Collections;

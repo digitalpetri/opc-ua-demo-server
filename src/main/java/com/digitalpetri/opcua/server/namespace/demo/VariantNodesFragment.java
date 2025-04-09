@@ -1,7 +1,7 @@
-package com.digitalpetri.opcua.server.namespace;
+package com.digitalpetri.opcua.server.namespace.demo;
 
-import static com.digitalpetri.opcua.server.namespace.Util.deriveChildNodeId;
-import static com.digitalpetri.opcua.server.namespace.Util.getDefaultScalarValue;
+import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
+import static com.digitalpetri.opcua.server.namespace.demo.Util.getDefaultScalarValue;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 import java.util.ArrayList;

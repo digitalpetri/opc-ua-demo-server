@@ -1,4 +1,4 @@
-package com.digitalpetri.opcua.server.namespace.debug;
+package com.digitalpetri.opcua.server.namespace.demo.debug;
 
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.Session;

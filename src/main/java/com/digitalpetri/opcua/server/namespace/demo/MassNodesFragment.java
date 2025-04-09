@@ -1,6 +1,6 @@
-package com.digitalpetri.opcua.server.namespace;
+package com.digitalpetri.opcua.server.namespace.demo;
 
-import static com.digitalpetri.opcua.server.namespace.Util.deriveChildNodeId;
+import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
 
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.core.Reference;
