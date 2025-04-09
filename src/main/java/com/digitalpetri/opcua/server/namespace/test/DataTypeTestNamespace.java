@@ -9,7 +9,7 @@ import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 
 public class DataTypeTestNamespace extends NodeSetNamespace {
 
-  public static final String NAMESPACE_URI = "https://github.com/eclipse/milo/DataTypeTest";
+  public static final String NAMESPACE_URI = "https://github.com/digitalpetri/DataTypeTest";
 
   public DataTypeTestNamespace(OpcUaServer server) {
     super(server, NAMESPACE_URI);
@@ -22,7 +22,8 @@ public class DataTypeTestNamespace extends NodeSetNamespace {
 
   @Override
   protected List<InputStream> getNodeSetInputStreams() {
-    InputStream inputStream = DataTypeTestNamespace.class.getResourceAsStream("/datatypetest.xml");
+    InputStream inputStream =
+        DataTypeTestNamespace.class.getResourceAsStream("/DataTypeTest.NodeSet.xml");
     assert inputStream != null;
 
     return List.of(inputStream);
