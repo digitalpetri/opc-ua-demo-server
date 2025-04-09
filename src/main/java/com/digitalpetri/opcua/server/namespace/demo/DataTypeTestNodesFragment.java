@@ -1,11 +1,33 @@
-package com.digitalpetri.opcua.server.namespace;
+package com.digitalpetri.opcua.server.namespace.demo;
 
-import static com.digitalpetri.opcua.server.namespace.Util.deriveChildNodeId;
+import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ulong;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 
+import com.digitalpetri.opcua.test.DataTypeTestNodeIds;
+import com.digitalpetri.opcua.test.types.ConcreteTestType;
+import com.digitalpetri.opcua.test.types.ConcreteTestTypeEx;
+import com.digitalpetri.opcua.test.types.StructWithAbstractArrayFields;
+import com.digitalpetri.opcua.test.types.StructWithAbstractMatrixFields;
+import com.digitalpetri.opcua.test.types.StructWithAbstractScalarFields;
+import com.digitalpetri.opcua.test.types.StructWithBuiltinArrayFields;
+import com.digitalpetri.opcua.test.types.StructWithBuiltinArrayFieldsEx;
+import com.digitalpetri.opcua.test.types.StructWithBuiltinMatrixFields;
+import com.digitalpetri.opcua.test.types.StructWithBuiltinMatrixFieldsEx;
+import com.digitalpetri.opcua.test.types.StructWithBuiltinScalarFields;
+import com.digitalpetri.opcua.test.types.StructWithBuiltinScalarFieldsEx;
+import com.digitalpetri.opcua.test.types.StructWithOptionalArrayFields;
+import com.digitalpetri.opcua.test.types.StructWithOptionalMatrixFields;
+import com.digitalpetri.opcua.test.types.StructWithOptionalScalarFields;
+import com.digitalpetri.opcua.test.types.StructWithStructureArrayFields;
+import com.digitalpetri.opcua.test.types.StructWithStructureMatrixFields;
+import com.digitalpetri.opcua.test.types.StructWithStructureScalarFields;
+import com.digitalpetri.opcua.test.types.TestEnumType;
+import com.digitalpetri.opcua.test.types.UnionOfArray;
+import com.digitalpetri.opcua.test.types.UnionOfMatrix;
+import com.digitalpetri.opcua.test.types.UnionOfScalar;
 import java.util.List;
 import java.util.UUID;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
@@ -46,28 +68,6 @@ import org.eclipse.milo.opcua.stack.core.types.structured.AccessLevelExType;
 import org.eclipse.milo.opcua.stack.core.types.structured.AccessLevelType;
 import org.eclipse.milo.opcua.stack.core.types.structured.AccessRestrictionType;
 import org.eclipse.milo.opcua.stack.core.types.structured.XVType;
-import org.eclipse.milo.opcua.test.DataTypeTestNodeIds;
-import org.eclipse.milo.opcua.test.types.ConcreteTestType;
-import org.eclipse.milo.opcua.test.types.ConcreteTestTypeEx;
-import org.eclipse.milo.opcua.test.types.StructWithAbstractArrayFields;
-import org.eclipse.milo.opcua.test.types.StructWithAbstractMatrixFields;
-import org.eclipse.milo.opcua.test.types.StructWithAbstractScalarFields;
-import org.eclipse.milo.opcua.test.types.StructWithBuiltinArrayFields;
-import org.eclipse.milo.opcua.test.types.StructWithBuiltinArrayFieldsEx;
-import org.eclipse.milo.opcua.test.types.StructWithBuiltinMatrixFields;
-import org.eclipse.milo.opcua.test.types.StructWithBuiltinMatrixFieldsEx;
-import org.eclipse.milo.opcua.test.types.StructWithBuiltinScalarFields;
-import org.eclipse.milo.opcua.test.types.StructWithBuiltinScalarFieldsEx;
-import org.eclipse.milo.opcua.test.types.StructWithOptionalArrayFields;
-import org.eclipse.milo.opcua.test.types.StructWithOptionalMatrixFields;
-import org.eclipse.milo.opcua.test.types.StructWithOptionalScalarFields;
-import org.eclipse.milo.opcua.test.types.StructWithStructureArrayFields;
-import org.eclipse.milo.opcua.test.types.StructWithStructureMatrixFields;
-import org.eclipse.milo.opcua.test.types.StructWithStructureScalarFields;
-import org.eclipse.milo.opcua.test.types.TestEnumType;
-import org.eclipse.milo.opcua.test.types.UnionOfArray;
-import org.eclipse.milo.opcua.test.types.UnionOfMatrix;
-import org.eclipse.milo.opcua.test.types.UnionOfScalar;
 
 public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
 

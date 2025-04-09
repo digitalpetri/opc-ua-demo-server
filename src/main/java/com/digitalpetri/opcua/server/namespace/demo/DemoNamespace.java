@@ -1,8 +1,8 @@
-package com.digitalpetri.opcua.server.namespace;
+package com.digitalpetri.opcua.server.namespace.demo;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 
-import com.digitalpetri.opcua.server.namespace.debug.DebugNodesFragment;
+import com.digitalpetri.opcua.server.namespace.demo.debug.DebugNodesFragment;
 import com.typesafe.config.Config;
 import java.util.List;
 import java.util.Random;

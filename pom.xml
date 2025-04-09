@@ -209,6 +209,11 @@
       <artifactId>uanodeset-namespace</artifactId>
       <version>${uanodeset.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.digitalpetri.opcua</groupId>
+      <artifactId>data-type-test</artifactId>
+      <version>0.2</version>
+    </dependency>
   </dependencies>
 
   <repositories>

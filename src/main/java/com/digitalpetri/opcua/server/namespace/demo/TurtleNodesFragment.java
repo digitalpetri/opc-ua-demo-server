@@ -1,4 +1,4 @@
-package com.digitalpetri.opcua.server.namespace;
+package com.digitalpetri.opcua.server.namespace.demo;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;

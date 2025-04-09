@@ -1,10 +1,10 @@
-package com.digitalpetri.opcua.server.namespace.debug;
+package com.digitalpetri.opcua.server.namespace.demo.debug;
 
-import static com.digitalpetri.opcua.server.namespace.Util.deriveChildNodeId;
+import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-import com.digitalpetri.opcua.server.namespace.DemoNamespace;
+import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;

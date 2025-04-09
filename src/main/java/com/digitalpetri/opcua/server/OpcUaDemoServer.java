@@ -7,7 +7,8 @@ import static org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig.USER_TOKEN_POL
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.util.StatusPrinter2;
-import com.digitalpetri.opcua.server.namespace.DemoNamespace;
+import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
+import com.digitalpetri.opcua.server.namespace.test.DataTypeTestNamespace;
 import com.digitalpetri.opcua.server.objects.ServerConfigurationObject;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -63,7 +64,6 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager;
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
@@ -73,8 +73,6 @@ import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck;
 import org.eclipse.milo.opcua.stack.transport.server.OpcServerTransportFactory;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransport;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransportConfig;
-import org.eclipse.milo.opcua.test.DataTypeTestNamespace;
-import org.eclipse.milo.opcua.test.DataTypeTestVariablesNamespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -230,13 +228,6 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     var dataTypeTestNamespace = DataTypeTestNamespace.create(server);
     dataTypeTestNamespace.startup();
 
-    if (config.getBoolean("address-space.data-type-test-nodesets.enabled")) {
-      server.getNamespaceTable().set(4, DataTypeTestVariablesNamespace.NAMESPACE_URI);
-
-      var dataTypeTestVariablesNamespace = new DataTypeTestVariablesNamespace(server);
-      dataTypeTestVariablesNamespace.startup();
-    }
-
     var demoNamespace = new DemoNamespace(server, config);
     demoNamespace.startup();
 
@@ -257,15 +248,6 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     server.getAddressSpaceManager().getManagedNode(NodeIds.Aliases).ifPresent(UaNode::delete);
     server.getAddressSpaceManager().getManagedNode(NodeIds.Locations).ifPresent(UaNode::delete);
-
-    // Remove the "DataTypeTest" Object instance from the address space.
-    // UaModeler is currently too buggy to generate useful values in the UANodeSet XML.
-    server
-        .getAddressSpaceManager()
-        .getManagedNode(
-            ExpandedNodeId.parse(
-                "nsu=%s;i=5005".formatted(DataTypeTestVariablesNamespace.NAMESPACE_URI)))
-        .ifPresent(UaNode::delete);
   }
 
   @Override
