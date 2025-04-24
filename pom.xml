@@ -45,9 +45,9 @@
     <jakarta.xml.bind-api.version>4.0.2</jakarta.xml.bind-api.version>
     <jetbrains-annotations.version>24.1.0</jetbrains-annotations.version>
     <logback.version>1.5.17</logback.version>
-    <milo.version>1.0.0-SNAPSHOT</milo.version>
+    <milo.version>1.0.0-M1</milo.version>
     <typesafe-config.version>1.4.3</typesafe-config.version>
-    <uanodeset.version>0.2-SNAPSHOT</uanodeset.version>
+    <uanodeset.version>0.3-M1</uanodeset.version>
 
     <!-- Plugin Dependencies -->
     <buildnumber-maven-plugin.version>3.2.1</buildnumber-maven-plugin.version>
