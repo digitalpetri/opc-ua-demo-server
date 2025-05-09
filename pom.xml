@@ -45,7 +45,7 @@
     <jakarta.xml.bind-api.version>4.0.2</jakarta.xml.bind-api.version>
     <jetbrains-annotations.version>24.1.0</jetbrains-annotations.version>
     <logback.version>1.5.17</logback.version>
-    <milo.version>1.0.0-M1</milo.version>
+    <milo.version>1.0.0-M2</milo.version>
     <typesafe-config.version>1.4.3</typesafe-config.version>
     <uanodeset.version>0.3-M1</uanodeset.version>
 
@@ -180,11 +180,6 @@
       <version>${milo.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.milo</groupId>
-      <artifactId>milo-encoding-xml</artifactId>
-      <version>${milo.version}</version>
-    </dependency>
-    <dependency>
       <groupId>com.typesafe</groupId>
       <artifactId>config</artifactId>
       <version>${typesafe-config.version}</version>
@@ -193,11 +188,6 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>${logback.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>jakarta.xml.bind</groupId>
-      <artifactId>jakarta.xml.bind-api</artifactId>
-      <version>${jakarta.xml.bind-api.version}</version>
     </dependency>
     <dependency>
       <groupId>com.digitalpetri.opcua</groupId>
