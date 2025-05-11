@@ -483,9 +483,11 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
   public static void main(String[] args) throws Exception {
     // start running this static initializer ASAP, it measurably affects startup time.
+    var initializerLatch = new CountDownLatch(1);
     new Thread(
             () -> {
               var ignored = NodeIds.Boolean;
+              initializerLatch.countDown();
             })
         .start();
 
@@ -530,7 +532,17 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     logger.info("security dir: {}", dataDirPath.resolve("security"));
     logger.info("security pki dir: {}", dataDirPath.resolve("security").resolve("pki"));
 
-    waitForShutdownHook(server);
+    initializerLatch.await();
+
+    if (args.length >= 1 && args[0].equalsIgnoreCase("exit")) {
+      // Shut down the server and exit. This is used by the AOT cache training run, which is
+      // targeting startup and static initialization time.
+      Thread.sleep(5000);
+      server.shutdown();
+      System.exit(0);
+    } else {
+      waitForShutdownHook(server);
+    }
   }
 
   private static void waitForShutdownHook(OpcUaDemoServer server) throws InterruptedException {
