@@ -394,8 +394,17 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     for (String hostname : config.getStringList("endpoint-address-list")) {
       if (hostname.startsWith("<") && hostname.endsWith(">")) {
-        hostnames.addAll(
-            HostnameUtil.getHostnames(hostname.substring(1, hostname.length() - 1), true, false));
+        String name = hostname.substring(1, hostname.length() - 1);
+
+        hostnames.addAll(HostnameUtil.getHostnames(name, true, false));
+
+        if (name.equals("localhost")) {
+          // Make sure "localhost" appears in whatever hostname list we end up with for
+          // "<localhost>".
+          // On Windows `HostnameUtil.getHostnames` tends not to return "localhost", just
+          // "127.0.0.1".
+          hostnames.add("localhost");
+        }
       } else {
         hostnames.add(hostname);
       }
