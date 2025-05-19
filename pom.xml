@@ -47,7 +47,7 @@
     <logback.version>1.5.17</logback.version>
     <milo.version>1.0.0</milo.version>
     <typesafe-config.version>1.4.3</typesafe-config.version>
-    <uanodeset.version>0.3-M2</uanodeset.version>
+    <uanodeset.version>0.3</uanodeset.version>
 
     <!-- Plugin Dependencies -->
     <buildnumber-maven-plugin.version>3.2.1</buildnumber-maven-plugin.version>
