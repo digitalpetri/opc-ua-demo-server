@@ -33,7 +33,7 @@ ARG ENV_JTO=${TARGETPLATFORM/linux\/arm64/-XX:UseSVE=0}
 ARG ENV_JTO=${ENV_JTO/$TARGETPLATFORM/}
 
 RUN echo "ENV_JTO is set to: $ENV_JTO"
-ENV JAVA_TOOL_OPTIONS="-Dio.netty.tryUnsafe=false -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders $ENV_JTO"
+ENV JAVA_TOOL_OPTIONS="-XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders $ENV_JTO"
 
 # Define the entry point to run server
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar opc-ua-demo-server.jar"]
