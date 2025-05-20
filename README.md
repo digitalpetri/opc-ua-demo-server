@@ -47,9 +47,9 @@ volume mapped to the container's `/app/data` directory:
 docker run --rm -it -p 4840:4840 -v /tmp/opc-ua-demo-server-data:/app/data opc-ua-demo-server
 ```
 
-### Maven + JDK 21+
+### Maven + JDK 24
 
-**Using JDK 21+**, run `mvn clean package` in the root directory.
+**Using JDK 24**, run `mvn clean package` in the root directory.
 
 An executable JAR file will be created in the `target` directory. This JAR file can be run with
 `java -jar target/opc-ua-demo-server.jar`.
