@@ -42,6 +42,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <!-- Dependencies -->
+    <data-type-test.version>0.3</data-type-test.version>
     <jakarta.xml.bind-api.version>4.0.2</jakarta.xml.bind-api.version>
     <jetbrains-annotations.version>24.1.0</jetbrains-annotations.version>
     <logback.version>1.5.17</logback.version>
@@ -202,7 +203,7 @@
     <dependency>
       <groupId>com.digitalpetri.opcua</groupId>
       <artifactId>data-type-test</artifactId>
-      <version>0.2</version>
+      <version>${data-type-test.version}</version>
     </dependency>
   </dependencies>
 
