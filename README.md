@@ -1,5 +1,5 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/digitalpetri/opc-ua-demo-server)
- ![Docker Image Version (tag)](https://img.shields.io/docker/v/digitalpetri/opc-ua-demo-server/1.0.0-M1)
+ ![Docker Image Version (tag)](https://img.shields.io/docker/v/digitalpetri/opc-ua-demo-server/1.0.0)
 
 # Eclipse Milo OPC UA Demo Server
 
