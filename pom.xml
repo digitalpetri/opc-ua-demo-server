@@ -46,7 +46,7 @@
     <jakarta.xml.bind-api.version>4.0.2</jakarta.xml.bind-api.version>
     <jetbrains-annotations.version>24.1.0</jetbrains-annotations.version>
     <logback.version>1.5.17</logback.version>
-    <milo.version>1.0.0</milo.version>
+    <milo.version>1.0.2</milo.version>
     <typesafe-config.version>1.4.3</typesafe-config.version>
     <uanodeset.version>0.3</uanodeset.version>
 
@@ -178,7 +178,6 @@
     <dependency>
       <groupId>org.eclipse.milo</groupId>
       <artifactId>milo-sdk-server</artifactId>
-      <version>${milo.version}</version>
     </dependency>
     <dependency>
       <groupId>com.typesafe</groupId>
@@ -206,6 +205,18 @@
       <version>${data-type-test.version}</version>
     </dependency>
   </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.eclipse.milo</groupId>
+        <artifactId>milo-bom</artifactId>
+        <version>${milo.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <repositories>
     <repository>
