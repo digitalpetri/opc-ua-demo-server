@@ -6,7 +6,7 @@
 
   <groupId>com.digitalpetri.opcua</groupId>
   <artifactId>opc-ua-demo-server</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.2-SNAPSHOT</version>
 
   <name>Eclipse Milo OPC UA Demo Server</name>
   <description>Support for working with UANodeSet XML files.</description>
