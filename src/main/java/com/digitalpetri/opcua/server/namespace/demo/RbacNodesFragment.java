@@ -2,6 +2,7 @@ package com.digitalpetri.opcua.server.namespace.demo;
 
 import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
 
+import com.typesafe.config.Config;
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
@@ -23,6 +24,9 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.structured.PermissionType;
+import org.eclipse.milo.opcua.stack.core.types.structured.PermissionType.Field;
+import org.eclipse.milo.opcua.stack.core.types.structured.RolePermissionType;
 
 public class RbacNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
 
@@ -91,6 +95,8 @@ public class RbacNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle 
   }
 
   private void addSiteNode(NodeId parentNodeId, String site, String key) {
+    var accessControlFilter = createAccessControlFilter(namespace.getConfig(), key);
+
     var siteFolder =
         new UaFolderNode(
             getNodeContext(),
@@ -121,7 +127,7 @@ public class RbacNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle 
 
       UaVariableNode variableNode = builder.build();
 
-      variableNode.getFilterChain().addLast(new AccessControlFilter(namespace.getConfig(), key));
+      variableNode.getFilterChain().addLast(accessControlFilter);
 
       getNodeManager().addNode(variableNode);
 
@@ -132,5 +138,24 @@ public class RbacNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle 
               siteFolder.getNodeId().expanded(),
               Direction.INVERSE));
     }
+  }
+
+  private static AccessControlFilter createAccessControlFilter(Config config, String key) {
+    RolePermissionType[] rolePermissions =
+        config.getConfigList(key).stream()
+            .map(
+                roleConfig -> {
+                  String roleIdString = roleConfig.getString("role-id");
+                  List<String> permissionsString = roleConfig.getStringList("permissions");
+
+                  NodeId roleId = NodeId.parse(roleIdString);
+                  Field[] permissions =
+                      permissionsString.stream().map(Field::valueOf).toArray(Field[]::new);
+
+                  return new RolePermissionType(roleId, PermissionType.of(permissions));
+                })
+            .toArray(RolePermissionType[]::new);
+
+    return new AccessControlFilter(rolePermissions);
   }
 }
