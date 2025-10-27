@@ -385,6 +385,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
 
     try {
       addAnalogItemTypeNodes(dataAccessFolder.getNodeId());
+      addAnalogItemTypeArrayNodes(dataAccessFolder.getNodeId());
     } catch (UaException e) {
       throw new RuntimeException(e);
     }
@@ -431,6 +432,73 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
                 analogItemNode.getNodeId(),
                 ReferenceTypes.HasComponent,
                 parentNodeId.expanded(),
+                Direction.INVERSE));
+      }
+    }
+  }
+
+  private void addAnalogItemTypeArrayNodes(NodeId parentNodeId) throws UaException {
+    var arrayFolder =
+        new UaFolderNode(
+            getNodeContext(),
+            deriveChildNodeId(parentNodeId, "Array"),
+            new QualifiedName(namespaceIndex, "Array"),
+            new LocalizedText("Array"));
+
+    getNodeManager().addNode(arrayFolder);
+
+    arrayFolder.addReference(
+        new Reference(
+            arrayFolder.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+
+    var analogTypes =
+        List.of(
+            OpcUaDataType.Double,
+            OpcUaDataType.Float,
+            OpcUaDataType.Int16,
+            OpcUaDataType.UInt16,
+            OpcUaDataType.Int32,
+            OpcUaDataType.UInt32);
+
+    for (OpcUaDataType dataType : analogTypes) {
+      UaNode node =
+          getNodeFactory()
+              .createNode(
+                  deriveChildNodeId(arrayFolder.getNodeId(), dataType.name() + "ArrayAnalog"),
+                  NodeIds.AnalogItemType);
+
+      if (node instanceof AnalogItemTypeNode analogItemNode) {
+        analogItemNode.setBrowseName(
+            new QualifiedName(namespaceIndex, dataType.name() + "ArrayAnalog"));
+        analogItemNode.setDisplayName(new LocalizedText(dataType.name() + "ArrayAnalog"));
+        analogItemNode.setDataType(dataType.getNodeId());
+        analogItemNode.setValueRank(ValueRanks.OneDimension);
+        analogItemNode.setArrayDimensions(new UInteger[] {uint(0)});
+        analogItemNode.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        analogItemNode.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        analogItemNode.setMinimumSamplingInterval(100.0);
+
+        analogItemNode.setEuRange(new Range(0.0, 100.0));
+
+        Object arrayValue = Util.getDefaultArrayValue(dataType);
+        if (arrayValue instanceof Variant v) {
+          analogItemNode.setValue(new DataValue(v));
+        } else {
+          analogItemNode.setValue(new DataValue(Variant.of(arrayValue)));
+        }
+
+        // analogItemNode.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
+
+        getNodeManager().addNode(analogItemNode);
+
+        analogItemNode.addReference(
+            new Reference(
+                analogItemNode.getNodeId(),
+                ReferenceTypes.HasComponent,
+                arrayFolder.getNodeId().expanded(),
                 Direction.INVERSE));
       }
     }
@@ -978,7 +1046,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
 
   // endregion
 
-  private static class EuRangeCheckFilter implements AttributeFilter {
+  static class EuRangeCheckFilter implements AttributeFilter {
 
     private static final EuRangeCheckFilter INSTANCE = new EuRangeCheckFilter();
 
@@ -992,24 +1060,72 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
       if (attributeId == AttributeId.Value && node instanceof AnalogItemType analogItem) {
         if (value instanceof DataValue dataValue) {
           Object v = dataValue.getValue().getValue();
+          Double low = analogItem.getEuRange().getLow();
+          Double high = analogItem.getEuRange().getHigh();
 
-          if (v instanceof Number n) {
-            Double low = analogItem.getEuRange().getLow();
-            Double high = analogItem.getEuRange().getHigh();
-
-            if (n.doubleValue() < low || n.doubleValue() > high) {
-              throw new UaException(
-                  StatusCodes.Bad_OutOfRange,
-                  "value %s is out of range [%s, %s]".formatted(n, low, high));
-            }
-          } else {
-            throw new UaException(
-                StatusCodes.Bad_TypeMismatch, "value %s is not a number".formatted(v));
+          switch (v) {
+            case Number n -> validateScalarValue(n, low, high);
+            case Object[] array -> validateArrayValue(array, low, high);
+            case Matrix matrix -> validateMatrixValue(matrix, low, high);
+            case null, default ->
+                throw new UaException(
+                    StatusCodes.Bad_TypeMismatch,
+                    "value %s is not a number, array, or matrix".formatted(v));
           }
         }
       }
 
       ctx.writeAttribute(attributeId, value);
+    }
+
+    static void validateScalarValue(Number n, Double low, Double high) throws UaException {
+      if (n.doubleValue() < low || n.doubleValue() > high) {
+        throw new UaException(
+            StatusCodes.Bad_OutOfRange,
+            "value %s is out of range [%s, %s]".formatted(n, low, high));
+      }
+    }
+
+    static void validateArrayValue(Object[] array, Double low, Double high) throws UaException {
+      for (int i = 0; i < array.length; i++) {
+        Object element = array[i];
+        if (element instanceof Number n) {
+          if (n.doubleValue() < low || n.doubleValue() > high) {
+            throw new UaException(
+                StatusCodes.Bad_OutOfRange,
+                "array element [%d] value %s is out of range [%s, %s]".formatted(i, n, low, high));
+          }
+        } else {
+          throw new UaException(
+              StatusCodes.Bad_TypeMismatch,
+              "array element [%d] value %s is not a number".formatted(i, element));
+        }
+      }
+    }
+
+    static void validateMatrixValue(Matrix matrix, Double low, Double high) throws UaException {
+      Object elements = matrix.getElements();
+      if (elements instanceof Object[] array) {
+        for (int i = 0; i < array.length; i++) {
+          Object element = array[i];
+          if (element instanceof Number n) {
+            if (n.doubleValue() < low || n.doubleValue() > high) {
+              throw new UaException(
+                  StatusCodes.Bad_OutOfRange,
+                  "matrix element [%d] value %s is out of range [%s, %s]"
+                      .formatted(i, n, low, high));
+            }
+          } else {
+            throw new UaException(
+                StatusCodes.Bad_TypeMismatch,
+                "matrix element [%d] value %s is not a number".formatted(i, element));
+          }
+        }
+      } else {
+        throw new UaException(
+            StatusCodes.Bad_TypeMismatch,
+            "matrix elements are not an array: %s".formatted(elements));
+      }
     }
   }
 }
