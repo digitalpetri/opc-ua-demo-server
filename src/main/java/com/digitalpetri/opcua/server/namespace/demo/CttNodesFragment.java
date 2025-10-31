@@ -15,8 +15,9 @@ import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.items.DataItem;
 import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.methods.AbstractMethodInvocationHandler;
-import org.eclipse.milo.opcua.sdk.server.model.variables.AnalogItemType;
 import org.eclipse.milo.opcua.sdk.server.model.variables.AnalogItemTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.variables.ArrayItemType;
+import org.eclipse.milo.opcua.sdk.server.model.variables.BaseAnalogType;
 import org.eclipse.milo.opcua.sdk.server.model.variables.CubeItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.ImageItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.NDimensionArrayItemTypeNode;
@@ -51,6 +52,8 @@ import org.eclipse.milo.opcua.stack.core.types.structured.AxisInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.EUInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.Range;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
 
@@ -1370,6 +1373,8 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
 
   static class EuRangeCheckFilter implements AttributeFilter {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(EuRangeCheckFilter.class);
+
     private static final EuRangeCheckFilter INSTANCE = new EuRangeCheckFilter();
 
     @Override
@@ -1379,11 +1384,28 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
 
       UaNode node = ctx.getNode();
 
-      if (attributeId == AttributeId.Value && node instanceof AnalogItemType analogItem) {
-        if (value instanceof DataValue dataValue) {
+      if (attributeId == AttributeId.Value && value instanceof DataValue dataValue) {
+        Range euRange = null;
+
+        if (node instanceof BaseAnalogType baseAnalog) {
+          euRange = baseAnalog.getEuRange();
+        } else if (node instanceof ArrayItemType arrayItem) {
+          euRange = arrayItem.getEuRange();
+        }
+
+        if (euRange != null) {
           Object v = dataValue.getValue().getValue();
-          Double low = analogItem.getEuRange().getLow();
-          Double high = analogItem.getEuRange().getHigh();
+          Double low = euRange.getLow();
+          Double high = euRange.getHigh();
+
+          if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(
+                "Validating EU Range: node={}, value={}, low={}, high={}",
+                node.getNodeId().toParseableString(),
+                v,
+                low,
+                high);
+          }
 
           switch (v) {
             case Number n -> validateScalarValue(n, low, high);
