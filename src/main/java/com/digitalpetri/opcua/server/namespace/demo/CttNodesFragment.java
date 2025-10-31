@@ -566,21 +566,21 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
                 new Range(0.0, 10.0),
                 new LocalizedText("X Axis"),
                 AxisScaleEnumeration.Linear,
-                new Double[] {0.0, 5.0, 10.0}));
+                new Double[] {0.0, 10.0}));
         cubeItem.setYAxisDefinition(
             new AxisInformation(
                 new EUInformation("", -1, new LocalizedText(""), new LocalizedText("mm")),
                 new Range(0.0, 10.0),
                 new LocalizedText("Y Axis"),
                 AxisScaleEnumeration.Linear,
-                new Double[] {0.0, 5.0, 10.0}));
+                new Double[] {0.0, 10.0}));
         cubeItem.setZAxisDefinition(
             new AxisInformation(
                 new EUInformation("", -1, new LocalizedText(""), new LocalizedText("mm")),
                 new Range(0.0, 10.0),
                 new LocalizedText("Z Axis"),
                 AxisScaleEnumeration.Linear,
-                new Double[] {0.0, 5.0, 10.0}));
+                new Double[] {0.0, 10.0}));
 
         getNodeManager().addNode(cubeItem);
 
@@ -626,17 +626,17 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         imageItem.setXAxisDefinition(
             new AxisInformation(
                 new EUInformation("", -1, new LocalizedText(""), new LocalizedText("pixels")),
-                new Range(0.0, 640.0),
+                new Range(0.0, 2.0),
                 new LocalizedText("X Axis"),
                 AxisScaleEnumeration.Linear,
-                new Double[] {0.0, 320.0, 640.0}));
+                new Double[] {0.0, 1.0, 2.0}));
         imageItem.setYAxisDefinition(
             new AxisInformation(
                 new EUInformation("", -1, new LocalizedText(""), new LocalizedText("pixels")),
-                new Range(0.0, 480.0),
+                new Range(0.0, 2.0),
                 new LocalizedText("Y Axis"),
                 AxisScaleEnumeration.Linear,
-                new Double[] {0.0, 240.0, 480.0}));
+                new Double[] {0.0, 1.0, 2.0}));
 
         getNodeManager().addNode(imageItem);
 
@@ -683,17 +683,17 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         axisDefinitions[0] =
             new AxisInformation(
                 new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")),
-                new Range(0.0, 10.0),
+                new Range(0.0, 1.0),
                 new LocalizedText("Axis 0"),
                 AxisScaleEnumeration.Linear,
-                new Double[] {0.0, 5.0, 10.0});
+                new Double[] {0.0, 1.0});
         axisDefinitions[1] =
             new AxisInformation(
                 new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")),
-                new Range(0.0, 15.0),
+                new Range(0.0, 2.0),
                 new LocalizedText("Axis 1"),
                 AxisScaleEnumeration.Linear,
-                new Double[] {0.0, 7.5, 15.0});
+                new Double[] {0.0, 1.0, 2.0});
         nDimensionArrayItem.setAxisDefinition(axisDefinitions);
 
         getNodeManager().addNode(nDimensionArrayItem);
@@ -740,10 +740,10 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         xyArrayItem.setXAxisDefinition(
             new AxisInformation(
                 new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")),
-                new Range(0.0, 10.0),
+                new Range(0.0, 5.0),
                 new LocalizedText("X Axis"),
                 AxisScaleEnumeration.Linear,
-                new Double[] {0.0, 2.0, 4.0, 6.0, 8.0, 10.0}));
+                new Double[] {0.0, 1.0, 2.0, 3.0, 4.0, 5.0}));
 
         getNodeManager().addNode(xyArrayItem);
 
@@ -789,10 +789,10 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         yArrayItem.setXAxisDefinition(
             new AxisInformation(
                 new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")),
-                new Range(0.0, 10.0),
+                new Range(0.0, 5.0),
                 new LocalizedText("X Axis"),
                 AxisScaleEnumeration.Linear,
-                new Double[] {0.0, 2.0, 4.0, 6.0, 8.0, 10.0}));
+                new Double[] {0.0, 1.0, 2.0, 3.0, 4.0, 5.0}));
 
         getNodeManager().addNode(yArrayItem);
 
