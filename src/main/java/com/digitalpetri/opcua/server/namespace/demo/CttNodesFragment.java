@@ -16,8 +16,6 @@ import org.eclipse.milo.opcua.sdk.server.items.DataItem;
 import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.methods.AbstractMethodInvocationHandler;
 import org.eclipse.milo.opcua.sdk.server.model.variables.AnalogItemTypeNode;
-import org.eclipse.milo.opcua.sdk.server.model.variables.ArrayItemType;
-import org.eclipse.milo.opcua.sdk.server.model.variables.BaseAnalogType;
 import org.eclipse.milo.opcua.sdk.server.model.variables.CubeItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.DataItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.ImageItemTypeNode;
@@ -33,14 +31,10 @@ import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode.UaMethodNodeBuilder;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode.UaVariableNodeBuilder;
-import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilter;
-import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilterContext;
 import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
-import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
-import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
@@ -56,9 +50,6 @@ import org.eclipse.milo.opcua.stack.core.types.structured.AxisInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.EUInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.EnumValueType;
 import org.eclipse.milo.opcua.stack.core.types.structured.Range;
-import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
 

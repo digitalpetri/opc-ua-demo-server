@@ -69,8 +69,7 @@ public class EuRangeCheckFilter implements AttributeFilter {
   static void validateScalarValue(Number n, Double low, Double high) throws UaException {
     if (n.doubleValue() < low || n.doubleValue() > high) {
       throw new UaException(
-          StatusCodes.Bad_OutOfRange,
-          "value %s is out of range [%s, %s]".formatted(n, low, high));
+          StatusCodes.Bad_OutOfRange, "value %s is out of range [%s, %s]".formatted(n, low, high));
     }
   }
 
@@ -100,8 +99,7 @@ public class EuRangeCheckFilter implements AttributeFilter {
           if (n.doubleValue() < low || n.doubleValue() > high) {
             throw new UaException(
                 StatusCodes.Bad_OutOfRange,
-                "matrix element [%d] value %s is out of range [%s, %s]"
-                    .formatted(i, n, low, high));
+                "matrix element [%d] value %s is out of range [%s, %s]".formatted(i, n, low, high));
           }
         } else {
           throw new UaException(
@@ -111,8 +109,7 @@ public class EuRangeCheckFilter implements AttributeFilter {
       }
     } else {
       throw new UaException(
-          StatusCodes.Bad_TypeMismatch,
-          "matrix elements are not an array: %s".formatted(elements));
+          StatusCodes.Bad_TypeMismatch, "matrix elements are not an array: %s".formatted(elements));
     }
   }
 }
