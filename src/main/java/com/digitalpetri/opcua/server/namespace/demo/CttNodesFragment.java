@@ -530,9 +530,6 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
             parentNodeId.expanded(),
             Direction.INVERSE));
 
-    // Create sample data for the array item types
-    Double[] sampleData = new Double[] {1.0, 2.0, 3.0, 4.0, 5.0};
-
     // Add CubeItemType instance
     {
       NodeId cubeItemTypeId = new NodeId(UShort.valueOf(0), 12057);
@@ -550,7 +547,9 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         cubeItem.setArrayDimensions(new UInteger[] {uint(2), uint(2), uint(2)});
         cubeItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
         cubeItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
-        cubeItem.setValue(new DataValue(Variant.of(sampleData)));
+        // Create 3D array data: 2x2x2 = 8 elements
+        Double[] cubeData = new Double[] {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+        cubeItem.setValue(new DataValue(Variant.of(cubeData)));
 
         // Set ArrayItemType properties
         cubeItem.setInstrumentRange(new Range(0.0, 100.0));
@@ -611,7 +610,9 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         imageItem.setArrayDimensions(new UInteger[] {uint(3), uint(3)});
         imageItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
         imageItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
-        imageItem.setValue(new DataValue(Variant.of(sampleData)));
+        // Create 2D array data: 3x3 = 9 elements
+        Double[] imageData = new Double[] {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
+        imageItem.setValue(new DataValue(Variant.of(imageData)));
 
         // Set ArrayItemType properties
         imageItem.setInstrumentRange(new Range(0.0, 100.0));
@@ -665,7 +666,9 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         nDimensionArrayItem.setArrayDimensions(new UInteger[] {uint(2), uint(3)});
         nDimensionArrayItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
         nDimensionArrayItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
-        nDimensionArrayItem.setValue(new DataValue(Variant.of(sampleData)));
+        // Create 2D array data: 2x3 = 6 elements
+        Double[] nDimensionData = new Double[] {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+        nDimensionArrayItem.setValue(new DataValue(Variant.of(nDimensionData)));
 
         // Set ArrayItemType properties
         nDimensionArrayItem.setInstrumentRange(new Range(0.0, 100.0));
@@ -721,7 +724,9 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         xyArrayItem.setArrayDimensions(new UInteger[] {uint(0)});
         xyArrayItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
         xyArrayItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
-        xyArrayItem.setValue(new DataValue(Variant.of(sampleData)));
+        // Create 1D array data: 6 elements (3 X-Y pairs)
+        Double[] xyData = new Double[] {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+        xyArrayItem.setValue(new DataValue(Variant.of(xyData)));
 
         // Set ArrayItemType properties
         xyArrayItem.setInstrumentRange(new Range(0.0, 100.0));
@@ -768,7 +773,9 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         yArrayItem.setArrayDimensions(new UInteger[] {uint(0)});
         yArrayItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
         yArrayItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
-        yArrayItem.setValue(new DataValue(Variant.of(sampleData)));
+        // Create 1D array data: 6 Y values
+        Double[] yData = new Double[] {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+        yArrayItem.setValue(new DataValue(Variant.of(yData)));
 
         // Set ArrayItemType properties
         yArrayItem.setInstrumentRange(new Range(0.0, 100.0));
