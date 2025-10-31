@@ -9,3 +9,6 @@ target/*
 # Build artifacts #
 *.class
 org/
+
+# Server data #
+data/
