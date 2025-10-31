@@ -19,6 +19,7 @@ import org.eclipse.milo.opcua.sdk.server.model.variables.AnalogItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.ArrayItemType;
 import org.eclipse.milo.opcua.sdk.server.model.variables.BaseAnalogType;
 import org.eclipse.milo.opcua.sdk.server.model.variables.CubeItemTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.variables.DataItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.ImageItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.NDimensionArrayItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.XYArrayItemTypeNode;
@@ -398,6 +399,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
       addAnalogItemTypeNodes(dataAccessFolder.getNodeId());
       addAnalogItemTypeArrayNodes(dataAccessFolder.getNodeId());
       addArrayItemTypeNodes(dataAccessFolder.getNodeId());
+      addDataItemTypeNodes(dataAccessFolder.getNodeId());
     } catch (UaException e) {
       throw new RuntimeException(e);
     }
@@ -823,6 +825,72 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
                 yArrayItem.getNodeId(),
                 ReferenceTypes.HasComponent,
                 arrayItemFolder.getNodeId().expanded(),
+                Direction.INVERSE));
+      }
+    }
+  }
+
+  private void addDataItemTypeNodes(NodeId parentNodeId) throws UaException {
+    var dataTypeFolder =
+        new UaFolderNode(
+            getNodeContext(),
+            deriveChildNodeId(parentNodeId, "DataTypeType"),
+            new QualifiedName(namespaceIndex, "DataTypeType"),
+            new LocalizedText("DataTypeType"));
+
+    getNodeManager().addNode(dataTypeFolder);
+
+    dataTypeFolder.addReference(
+        new Reference(
+            dataTypeFolder.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+
+    var dataTypes =
+        List.of(
+            OpcUaDataType.Byte,
+            OpcUaDataType.DateTime,
+            OpcUaDataType.Double,
+            OpcUaDataType.Float,
+            OpcUaDataType.Int16,
+            OpcUaDataType.Int32,
+            OpcUaDataType.Int64,
+            OpcUaDataType.SByte,
+            OpcUaDataType.String,
+            OpcUaDataType.UInt16,
+            OpcUaDataType.UInt32,
+            OpcUaDataType.UInt64);
+
+    for (OpcUaDataType dataType : dataTypes) {
+      UaNode node =
+          getNodeFactory()
+              .createNode(
+                  deriveChildNodeId(dataTypeFolder.getNodeId(), dataType.name()),
+                  NodeIds.DataItemType);
+
+      if (node instanceof DataItemTypeNode dataItemNode) {
+        dataItemNode.setBrowseName(new QualifiedName(namespaceIndex, dataType.name()));
+        dataItemNode.setDisplayName(new LocalizedText(dataType.name()));
+        dataItemNode.setDataType(dataType.getNodeId());
+        dataItemNode.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        dataItemNode.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        dataItemNode.setMinimumSamplingInterval(100.0);
+
+        Object value = Util.getDefaultScalarValue(dataType);
+        if (value instanceof Variant v) {
+          dataItemNode.setValue(new DataValue(v));
+        } else {
+          dataItemNode.setValue(new DataValue(Variant.of(value)));
+        }
+
+        getNodeManager().addNode(dataItemNode);
+
+        dataItemNode.addReference(
+            new Reference(
+                dataItemNode.getNodeId(),
+                ReferenceTypes.HasComponent,
+                dataTypeFolder.getNodeId().expanded(),
                 Direction.INVERSE));
       }
     }
