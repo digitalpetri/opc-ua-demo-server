@@ -53,8 +53,8 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.AxisScaleEnumeration;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.eclipse.milo.opcua.stack.core.types.structured.AxisInformation;
-import org.eclipse.milo.opcua.stack.core.types.structured.EnumValueType;
 import org.eclipse.milo.opcua.stack.core.types.structured.EUInformation;
+import org.eclipse.milo.opcua.stack.core.types.structured.EnumValueType;
 import org.eclipse.milo.opcua.stack.core.types.structured.Range;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -1041,8 +1041,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
       UaNode node =
           getNodeFactory()
               .createNode(
-                  deriveChildNodeId(
-                      multiStateValueDiscreteTypeFolder.getNodeId(), dataType.name()),
+                  deriveChildNodeId(multiStateValueDiscreteTypeFolder.getNodeId(), dataType.name()),
                   NodeIds.MultiStateValueDiscreteType);
 
       if (node instanceof MultiStateValueDiscreteTypeNode multiStateValueNode) {

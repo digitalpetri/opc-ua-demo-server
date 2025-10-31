@@ -56,6 +56,7 @@
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
     <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
+    <spotless-maven-plugin.version>3.0.0</spotless-maven-plugin.version>
   </properties>
 
   <build>
@@ -76,6 +77,23 @@
           <timestampFormat>yyyy-MM-dd'T'HH:mm:ss'Z'</timestampFormat>
           <timezone>UTC</timezone>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless-maven-plugin.version}</version>
+        <configuration>
+          <java>
+            <googleJavaFormat />
+          </java>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

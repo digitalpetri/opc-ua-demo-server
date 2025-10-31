@@ -210,6 +210,20 @@ var callback = createHandler(); // What functional interface?
 
 For any coding practices not explicitly covered by these conventions, defer to established Java best practices and community standards.
 
+## Code Formatting
+
+This project uses Spotless with Google Java Format for code formatting.
+
+The `spotless:check` goal is bound to the `verify` phase and will fail the build if code is not properly formatted.
+
+If the build fails due to formatting issues, run:
+
+```bash
+mvn spotless:apply
+```
+
+This will automatically format all Java files according to Google Java Format standards.
+
 ## Git Workflow
 
 ### Commit Messages
