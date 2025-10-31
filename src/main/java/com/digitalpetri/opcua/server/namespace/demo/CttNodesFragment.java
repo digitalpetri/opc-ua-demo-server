@@ -539,8 +539,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
       UaNode node =
           getNodeFactory()
               .createNode(
-                  deriveChildNodeId(arrayItemFolder.getNodeId(), "CubeItem"),
-                  cubeItemTypeId);
+                  deriveChildNodeId(arrayItemFolder.getNodeId(), "CubeItem"), cubeItemTypeId);
 
       if (node instanceof CubeItemTypeNode cubeItem) {
         cubeItem.setBrowseName(new QualifiedName(namespaceIndex, "CubeItem"));
@@ -551,10 +550,11 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         cubeItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
         cubeItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
         // Create 3D array data: 2x2x2 = 8 elements
-        Double[][][] cubeData = new Double[][][] {
-          {{1.0, 2.0}, {3.0, 4.0}},
-          {{5.0, 6.0}, {7.0, 8.0}}
-        };
+        Double[][][] cubeData =
+            new Double[][][] {
+              {{1.0, 2.0}, {3.0, 4.0}},
+              {{5.0, 6.0}, {7.0, 8.0}}
+            };
         cubeItem.setValue(new DataValue(Variant.ofMatrix(new Matrix(cubeData))));
 
         // Set ArrayItemType properties
@@ -607,8 +607,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
       UaNode node =
           getNodeFactory()
               .createNode(
-                  deriveChildNodeId(arrayItemFolder.getNodeId(), "ImageItem"),
-                  imageItemTypeId);
+                  deriveChildNodeId(arrayItemFolder.getNodeId(), "ImageItem"), imageItemTypeId);
 
       if (node instanceof ImageItemTypeNode imageItem) {
         imageItem.setBrowseName(new QualifiedName(namespaceIndex, "ImageItem"));
@@ -619,11 +618,12 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         imageItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
         imageItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
         // Create 2D array data: 3x3 = 9 elements
-        Double[][] imageData = new Double[][] {
-          {1.0, 2.0, 3.0},
-          {4.0, 5.0, 6.0},
-          {7.0, 8.0, 9.0}
-        };
+        Double[][] imageData =
+            new Double[][] {
+              {1.0, 2.0, 3.0},
+              {4.0, 5.0, 6.0},
+              {7.0, 8.0, 9.0}
+            };
         imageItem.setValue(new DataValue(Variant.ofMatrix(new Matrix(imageData))));
 
         // Set ArrayItemType properties
@@ -681,10 +681,11 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
         nDimensionArrayItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
         nDimensionArrayItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
         // Create 2D array data: 2x3 = 6 elements
-        Double[][] nDimensionData = new Double[][] {
-          {1.0, 2.0, 3.0},
-          {4.0, 5.0, 6.0}
-        };
+        Double[][] nDimensionData =
+            new Double[][] {
+              {1.0, 2.0, 3.0},
+              {4.0, 5.0, 6.0}
+            };
         nDimensionArrayItem.setValue(new DataValue(Variant.ofMatrix(new Matrix(nDimensionData))));
 
         // Set ArrayItemType properties
@@ -732,8 +733,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
       UaNode node =
           getNodeFactory()
               .createNode(
-                  deriveChildNodeId(arrayItemFolder.getNodeId(), "XYArrayItem"),
-                  xyArrayItemTypeId);
+                  deriveChildNodeId(arrayItemFolder.getNodeId(), "XYArrayItem"), xyArrayItemTypeId);
 
       if (node instanceof XYArrayItemTypeNode xyArrayItem) {
         xyArrayItem.setBrowseName(new QualifiedName(namespaceIndex, "XYArrayItem"));
@@ -783,8 +783,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
       UaNode node =
           getNodeFactory()
               .createNode(
-                  deriveChildNodeId(arrayItemFolder.getNodeId(), "YArrayItem"),
-                  yArrayItemTypeId);
+                  deriveChildNodeId(arrayItemFolder.getNodeId(), "YArrayItem"), yArrayItemTypeId);
 
       if (node instanceof YArrayItemTypeNode yArrayItem) {
         yArrayItem.setBrowseName(new QualifiedName(namespaceIndex, "YArrayItem"));
