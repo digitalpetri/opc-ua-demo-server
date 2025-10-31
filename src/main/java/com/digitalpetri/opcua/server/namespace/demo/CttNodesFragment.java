@@ -938,12 +938,11 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
     // Add MultiStateDiscrete nodes (001-005)
     for (int i = 1; i <= 5; i++) {
       String nodeName = "MultiStateDiscrete%03d".formatted(i);
-      NodeId multiStateDiscreteTypeId = new NodeId(UShort.valueOf(0), 2376);
       UaNode node =
           getNodeFactory()
               .createNode(
                   deriveChildNodeId(discreteItemTypeFolder.getNodeId(), nodeName),
-                  multiStateDiscreteTypeId);
+                  NodeIds.MultiStateDiscreteType);
 
       if (node instanceof MultiStateDiscreteTypeNode multiStateNode) {
         multiStateNode.setBrowseName(new QualifiedName(namespaceIndex, nodeName));
@@ -978,12 +977,11 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
     // Add TwoStateDiscrete nodes (001-005)
     for (int i = 1; i <= 5; i++) {
       String nodeName = "TwoStateDiscrete%03d".formatted(i);
-      NodeId twoStateDiscreteTypeId = new NodeId(UShort.valueOf(0), 2373);
       UaNode node =
           getNodeFactory()
               .createNode(
                   deriveChildNodeId(discreteItemTypeFolder.getNodeId(), nodeName),
-                  twoStateDiscreteTypeId);
+                  NodeIds.TwoStateDiscreteType);
 
       if (node instanceof TwoStateDiscreteTypeNode twoStateNode) {
         twoStateNode.setBrowseName(new QualifiedName(namespaceIndex, nodeName));
@@ -1040,13 +1038,12 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
             OpcUaDataType.UInt64);
 
     for (OpcUaDataType dataType : dataTypes) {
-      NodeId multiStateValueDiscreteTypeId = new NodeId(UShort.valueOf(0), 11238);
       UaNode node =
           getNodeFactory()
               .createNode(
                   deriveChildNodeId(
                       multiStateValueDiscreteTypeFolder.getNodeId(), dataType.name()),
-                  multiStateValueDiscreteTypeId);
+                  NodeIds.MultiStateValueDiscreteType);
 
       if (node instanceof MultiStateValueDiscreteTypeNode multiStateValueNode) {
         multiStateValueNode.setBrowseName(new QualifiedName(namespaceIndex, dataType.name()));
