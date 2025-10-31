@@ -73,8 +73,8 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
 
     boolean cttEnabled = config.getBoolean("address-space.ctt.enabled");
     if (cttEnabled) {
-      var cttFragment = new CttNodesFragment(server, this);
-      lifecycleManager.addLifecycle(cttFragment);
+      var cttNodes = new com.digitalpetri.opcua.server.namespace.demo.ctt.CttNodes(server, this);
+      lifecycleManager.addLifecycle(cttNodes);
     }
 
     boolean massNodesEnabled = config.getBoolean("address-space.mass.enabled");
