@@ -850,9 +850,9 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
     var dataTypeFolder =
         new UaFolderNode(
             getNodeContext(),
-            deriveChildNodeId(parentNodeId, "DataTypeType"),
-            new QualifiedName(namespaceIndex, "DataTypeType"),
-            new LocalizedText("DataTypeType"));
+            deriveChildNodeId(parentNodeId, "DataItemType"),
+            new QualifiedName(namespaceIndex, "DataItemType"),
+            new LocalizedText("DataItemType"));
 
     getNodeManager().addNode(dataTypeFolder);
 
