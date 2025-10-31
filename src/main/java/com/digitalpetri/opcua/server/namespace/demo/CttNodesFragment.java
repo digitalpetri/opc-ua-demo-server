@@ -406,6 +406,22 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
   }
 
   private void addAnalogItemTypeNodes(NodeId parentNodeId) throws UaException {
+    var analogItemTypeFolder =
+        new UaFolderNode(
+            getNodeContext(),
+            deriveChildNodeId(parentNodeId, "AnalogItemType"),
+            new QualifiedName(namespaceIndex, "AnalogItemType"),
+            new LocalizedText("AnalogItemType"));
+
+    getNodeManager().addNode(analogItemTypeFolder);
+
+    analogItemTypeFolder.addReference(
+        new Reference(
+            analogItemTypeFolder.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+
     var analogTypes =
         List.of(
             OpcUaDataType.Byte,
@@ -423,7 +439,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
       UaNode node =
           getNodeFactory()
               .createNode(
-                  deriveChildNodeId(parentNodeId, dataType.name() + "Analog"),
+                  deriveChildNodeId(analogItemTypeFolder.getNodeId(), dataType.name() + "Analog"),
                   NodeIds.AnalogItemType);
 
       if (node instanceof AnalogItemTypeNode analogItemNode) {
@@ -445,7 +461,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
             new Reference(
                 analogItemNode.getNodeId(),
                 ReferenceTypes.HasComponent,
-                parentNodeId.expanded(),
+                analogItemTypeFolder.getNodeId().expanded(),
                 Direction.INVERSE));
       }
     }
@@ -455,9 +471,9 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
     var arrayFolder =
         new UaFolderNode(
             getNodeContext(),
-            deriveChildNodeId(parentNodeId, "Array"),
-            new QualifiedName(namespaceIndex, "Array"),
-            new LocalizedText("Array"));
+            deriveChildNodeId(parentNodeId, "AnalogItemTypeArrays"),
+            new QualifiedName(namespaceIndex, "AnalogItemTypeArrays"),
+            new LocalizedText("AnalogItemTypeArrays"));
 
     getNodeManager().addNode(arrayFolder);
 
@@ -834,9 +850,9 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
     var dataTypeFolder =
         new UaFolderNode(
             getNodeContext(),
-            deriveChildNodeId(parentNodeId, "DataTypeType"),
-            new QualifiedName(namespaceIndex, "DataTypeType"),
-            new LocalizedText("DataTypeType"));
+            deriveChildNodeId(parentNodeId, "DataItemType"),
+            new QualifiedName(namespaceIndex, "DataItemType"),
+            new LocalizedText("DataItemType"));
 
     getNodeManager().addNode(dataTypeFolder);
 
