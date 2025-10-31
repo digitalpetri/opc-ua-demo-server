@@ -938,7 +938,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
     // Add MultiStateDiscrete nodes (001-005)
     for (int i = 1; i <= 5; i++) {
       String nodeName = "MultiStateDiscrete%03d".formatted(i);
-      NodeId multiStateDiscreteTypeId = new NodeId(UShort.valueOf(0), 2373);
+      NodeId multiStateDiscreteTypeId = new NodeId(UShort.valueOf(0), 2376);
       UaNode node =
           getNodeFactory()
               .createNode(
@@ -978,7 +978,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
     // Add TwoStateDiscrete nodes (001-005)
     for (int i = 1; i <= 5; i++) {
       String nodeName = "TwoStateDiscrete%03d".formatted(i);
-      NodeId twoStateDiscreteTypeId = new NodeId(UShort.valueOf(0), 2372);
+      NodeId twoStateDiscreteTypeId = new NodeId(UShort.valueOf(0), 2373);
       UaNode node =
           getNodeFactory()
               .createNode(
