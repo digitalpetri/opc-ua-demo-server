@@ -15,8 +15,14 @@ import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.items.DataItem;
 import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.methods.AbstractMethodInvocationHandler;
-import org.eclipse.milo.opcua.sdk.server.model.variables.AnalogItemType;
 import org.eclipse.milo.opcua.sdk.server.model.variables.AnalogItemTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.variables.ArrayItemType;
+import org.eclipse.milo.opcua.sdk.server.model.variables.BaseAnalogType;
+import org.eclipse.milo.opcua.sdk.server.model.variables.CubeItemTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.variables.ImageItemTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.variables.NDimensionArrayItemTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.variables.XYArrayItemTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.variables.YArrayItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode.UaMethodNodeBuilder;
@@ -40,9 +46,14 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.AxisScaleEnumeration;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
+import org.eclipse.milo.opcua.stack.core.types.structured.AxisInformation;
+import org.eclipse.milo.opcua.stack.core.types.structured.EUInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.Range;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
 
@@ -386,6 +397,7 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
     try {
       addAnalogItemTypeNodes(dataAccessFolder.getNodeId());
       addAnalogItemTypeArrayNodes(dataAccessFolder.getNodeId());
+      addArrayItemTypeNodes(dataAccessFolder.getNodeId());
     } catch (UaException e) {
       throw new RuntimeException(e);
     }
@@ -499,6 +511,318 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
                 analogItemNode.getNodeId(),
                 ReferenceTypes.HasComponent,
                 arrayFolder.getNodeId().expanded(),
+                Direction.INVERSE));
+      }
+    }
+  }
+
+  private void addArrayItemTypeNodes(NodeId parentNodeId) throws UaException {
+    var arrayItemFolder =
+        new UaFolderNode(
+            getNodeContext(),
+            deriveChildNodeId(parentNodeId, "ArrayItemType"),
+            new QualifiedName(namespaceIndex, "ArrayItemType"),
+            new LocalizedText("ArrayItemType"));
+
+    getNodeManager().addNode(arrayItemFolder);
+
+    arrayItemFolder.addReference(
+        new Reference(
+            arrayItemFolder.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+
+    // Add CubeItemType instance
+    {
+      NodeId cubeItemTypeId = new NodeId(UShort.valueOf(0), 12057);
+      UaNode node =
+          getNodeFactory()
+              .createNode(
+                  deriveChildNodeId(arrayItemFolder.getNodeId(), "CubeItem"), cubeItemTypeId);
+
+      if (node instanceof CubeItemTypeNode cubeItem) {
+        cubeItem.setBrowseName(new QualifiedName(namespaceIndex, "CubeItem"));
+        cubeItem.setDisplayName(new LocalizedText("CubeItem"));
+        cubeItem.setDataType(NodeIds.Double);
+        cubeItem.setValueRank(3);
+        cubeItem.setArrayDimensions(new UInteger[] {uint(2), uint(2), uint(2)});
+        cubeItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        cubeItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        // Create 3D array data: 2x2x2 = 8 elements
+        Double[][][] cubeData =
+            new Double[][][] {
+              {{1.0, 2.0}, {3.0, 4.0}},
+              {{5.0, 6.0}, {7.0, 8.0}}
+            };
+        cubeItem.setValue(new DataValue(Variant.ofMatrix(new Matrix(cubeData))));
+
+        // Set ArrayItemType properties
+        cubeItem.setInstrumentRange(new Range(0.0, 100.0));
+        cubeItem.setEuRange(new Range(0.0, 100.0));
+        cubeItem.setEngineeringUnits(
+            new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")));
+        cubeItem.setTitle(new LocalizedText("Cube Item"));
+        cubeItem.setAxisScaleType(AxisScaleEnumeration.Linear);
+
+        // Set CubeItemType specific properties
+        cubeItem.setXAxisDefinition(
+            new AxisInformation(
+                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("mm")),
+                new Range(0.0, 10.0),
+                new LocalizedText("X Axis"),
+                AxisScaleEnumeration.Linear,
+                new Double[] {0.0, 10.0}));
+        cubeItem.setYAxisDefinition(
+            new AxisInformation(
+                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("mm")),
+                new Range(0.0, 10.0),
+                new LocalizedText("Y Axis"),
+                AxisScaleEnumeration.Linear,
+                new Double[] {0.0, 10.0}));
+        cubeItem.setZAxisDefinition(
+            new AxisInformation(
+                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("mm")),
+                new Range(0.0, 10.0),
+                new LocalizedText("Z Axis"),
+                AxisScaleEnumeration.Linear,
+                new Double[] {0.0, 10.0}));
+
+        cubeItem.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
+
+        getNodeManager().addNode(cubeItem);
+
+        cubeItem.addReference(
+            new Reference(
+                cubeItem.getNodeId(),
+                ReferenceTypes.HasComponent,
+                arrayItemFolder.getNodeId().expanded(),
+                Direction.INVERSE));
+      }
+    }
+
+    // Add ImageItemType instance
+    {
+      NodeId imageItemTypeId = new NodeId(UShort.valueOf(0), 12047);
+      UaNode node =
+          getNodeFactory()
+              .createNode(
+                  deriveChildNodeId(arrayItemFolder.getNodeId(), "ImageItem"), imageItemTypeId);
+
+      if (node instanceof ImageItemTypeNode imageItem) {
+        imageItem.setBrowseName(new QualifiedName(namespaceIndex, "ImageItem"));
+        imageItem.setDisplayName(new LocalizedText("ImageItem"));
+        imageItem.setDataType(NodeIds.Double);
+        imageItem.setValueRank(2);
+        imageItem.setArrayDimensions(new UInteger[] {uint(3), uint(3)});
+        imageItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        imageItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        // Create 2D array data: 3x3 = 9 elements
+        Double[][] imageData =
+            new Double[][] {
+              {1.0, 2.0, 3.0},
+              {4.0, 5.0, 6.0},
+              {7.0, 8.0, 9.0}
+            };
+        imageItem.setValue(new DataValue(Variant.ofMatrix(new Matrix(imageData))));
+
+        // Set ArrayItemType properties
+        imageItem.setInstrumentRange(new Range(0.0, 100.0));
+        imageItem.setEuRange(new Range(0.0, 100.0));
+        imageItem.setEngineeringUnits(
+            new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")));
+        imageItem.setTitle(new LocalizedText("Image Item"));
+        imageItem.setAxisScaleType(AxisScaleEnumeration.Linear);
+
+        // Set ImageItemType specific properties
+        imageItem.setXAxisDefinition(
+            new AxisInformation(
+                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("pixels")),
+                new Range(0.0, 2.0),
+                new LocalizedText("X Axis"),
+                AxisScaleEnumeration.Linear,
+                new Double[] {0.0, 1.0, 2.0}));
+        imageItem.setYAxisDefinition(
+            new AxisInformation(
+                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("pixels")),
+                new Range(0.0, 2.0),
+                new LocalizedText("Y Axis"),
+                AxisScaleEnumeration.Linear,
+                new Double[] {0.0, 1.0, 2.0}));
+
+        imageItem.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
+
+        getNodeManager().addNode(imageItem);
+
+        imageItem.addReference(
+            new Reference(
+                imageItem.getNodeId(),
+                ReferenceTypes.HasComponent,
+                arrayItemFolder.getNodeId().expanded(),
+                Direction.INVERSE));
+      }
+    }
+
+    // Add NDimensionArrayItemType instance
+    {
+      NodeId nDimensionArrayItemTypeId = new NodeId(UShort.valueOf(0), 12068);
+      UaNode node =
+          getNodeFactory()
+              .createNode(
+                  deriveChildNodeId(arrayItemFolder.getNodeId(), "NDimensionArrayItem"),
+                  nDimensionArrayItemTypeId);
+
+      if (node instanceof NDimensionArrayItemTypeNode nDimensionArrayItem) {
+        nDimensionArrayItem.setBrowseName(new QualifiedName(namespaceIndex, "NDimensionArrayItem"));
+        nDimensionArrayItem.setDisplayName(new LocalizedText("NDimensionArrayItem"));
+        nDimensionArrayItem.setDataType(NodeIds.Double);
+        nDimensionArrayItem.setValueRank(2);
+        nDimensionArrayItem.setArrayDimensions(new UInteger[] {uint(2), uint(3)});
+        nDimensionArrayItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        nDimensionArrayItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        // Create 2D array data: 2x3 = 6 elements
+        Double[][] nDimensionData =
+            new Double[][] {
+              {1.0, 2.0, 3.0},
+              {4.0, 5.0, 6.0}
+            };
+        nDimensionArrayItem.setValue(new DataValue(Variant.ofMatrix(new Matrix(nDimensionData))));
+
+        // Set ArrayItemType properties
+        nDimensionArrayItem.setInstrumentRange(new Range(0.0, 100.0));
+        nDimensionArrayItem.setEuRange(new Range(0.0, 100.0));
+        nDimensionArrayItem.setEngineeringUnits(
+            new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")));
+        nDimensionArrayItem.setTitle(new LocalizedText("NDimensionArray Item"));
+        nDimensionArrayItem.setAxisScaleType(AxisScaleEnumeration.Linear);
+
+        // Set NDimensionArrayItemType specific properties
+        AxisInformation[] axisDefinitions = new AxisInformation[2];
+        axisDefinitions[0] =
+            new AxisInformation(
+                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")),
+                new Range(0.0, 1.0),
+                new LocalizedText("Axis 0"),
+                AxisScaleEnumeration.Linear,
+                new Double[] {0.0, 1.0});
+        axisDefinitions[1] =
+            new AxisInformation(
+                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")),
+                new Range(0.0, 2.0),
+                new LocalizedText("Axis 1"),
+                AxisScaleEnumeration.Linear,
+                new Double[] {0.0, 1.0, 2.0});
+        nDimensionArrayItem.setAxisDefinition(axisDefinitions);
+
+        nDimensionArrayItem.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
+
+        getNodeManager().addNode(nDimensionArrayItem);
+
+        nDimensionArrayItem.addReference(
+            new Reference(
+                nDimensionArrayItem.getNodeId(),
+                ReferenceTypes.HasComponent,
+                arrayItemFolder.getNodeId().expanded(),
+                Direction.INVERSE));
+      }
+    }
+
+    // Add XYArrayItemType instance
+    {
+      NodeId xyArrayItemTypeId = new NodeId(UShort.valueOf(0), 12038);
+      UaNode node =
+          getNodeFactory()
+              .createNode(
+                  deriveChildNodeId(arrayItemFolder.getNodeId(), "XYArrayItem"), xyArrayItemTypeId);
+
+      if (node instanceof XYArrayItemTypeNode xyArrayItem) {
+        xyArrayItem.setBrowseName(new QualifiedName(namespaceIndex, "XYArrayItem"));
+        xyArrayItem.setDisplayName(new LocalizedText("XYArrayItem"));
+        xyArrayItem.setDataType(NodeIds.Double);
+        xyArrayItem.setValueRank(ValueRanks.OneDimension);
+        xyArrayItem.setArrayDimensions(new UInteger[] {uint(0)});
+        xyArrayItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        xyArrayItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        // Create 1D array data: 6 elements (3 X-Y pairs)
+        Double[] xyData = new Double[] {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+        xyArrayItem.setValue(new DataValue(Variant.ofDoubleArray(xyData)));
+
+        // Set ArrayItemType properties
+        xyArrayItem.setInstrumentRange(new Range(0.0, 100.0));
+        xyArrayItem.setEuRange(new Range(0.0, 100.0));
+        xyArrayItem.setEngineeringUnits(
+            new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")));
+        xyArrayItem.setTitle(new LocalizedText("XYArray Item"));
+        xyArrayItem.setAxisScaleType(AxisScaleEnumeration.Linear);
+
+        // Set XYArrayItemType specific properties
+        xyArrayItem.setXAxisDefinition(
+            new AxisInformation(
+                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")),
+                new Range(0.0, 5.0),
+                new LocalizedText("X Axis"),
+                AxisScaleEnumeration.Linear,
+                new Double[] {0.0, 1.0, 2.0, 3.0, 4.0, 5.0}));
+
+        xyArrayItem.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
+
+        getNodeManager().addNode(xyArrayItem);
+
+        xyArrayItem.addReference(
+            new Reference(
+                xyArrayItem.getNodeId(),
+                ReferenceTypes.HasComponent,
+                arrayItemFolder.getNodeId().expanded(),
+                Direction.INVERSE));
+      }
+    }
+
+    // Add YArrayItemType instance
+    {
+      NodeId yArrayItemTypeId = new NodeId(UShort.valueOf(0), 12029);
+      UaNode node =
+          getNodeFactory()
+              .createNode(
+                  deriveChildNodeId(arrayItemFolder.getNodeId(), "YArrayItem"), yArrayItemTypeId);
+
+      if (node instanceof YArrayItemTypeNode yArrayItem) {
+        yArrayItem.setBrowseName(new QualifiedName(namespaceIndex, "YArrayItem"));
+        yArrayItem.setDisplayName(new LocalizedText("YArrayItem"));
+        yArrayItem.setDataType(NodeIds.Double);
+        yArrayItem.setValueRank(ValueRanks.OneDimension);
+        yArrayItem.setArrayDimensions(new UInteger[] {uint(0)});
+        yArrayItem.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        yArrayItem.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        // Create 1D array data: 6 Y values
+        Double[] yData = new Double[] {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+        yArrayItem.setValue(new DataValue(Variant.ofDoubleArray(yData)));
+
+        // Set ArrayItemType properties
+        yArrayItem.setInstrumentRange(new Range(0.0, 100.0));
+        yArrayItem.setEuRange(new Range(0.0, 100.0));
+        yArrayItem.setEngineeringUnits(
+            new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")));
+        yArrayItem.setTitle(new LocalizedText("YArray Item"));
+        yArrayItem.setAxisScaleType(AxisScaleEnumeration.Linear);
+
+        // Set YArrayItemType specific properties
+        yArrayItem.setXAxisDefinition(
+            new AxisInformation(
+                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")),
+                new Range(0.0, 5.0),
+                new LocalizedText("X Axis"),
+                AxisScaleEnumeration.Linear,
+                new Double[] {0.0, 1.0, 2.0, 3.0, 4.0, 5.0}));
+
+        yArrayItem.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
+
+        getNodeManager().addNode(yArrayItem);
+
+        yArrayItem.addReference(
+            new Reference(
+                yArrayItem.getNodeId(),
+                ReferenceTypes.HasComponent,
+                arrayItemFolder.getNodeId().expanded(),
                 Direction.INVERSE));
       }
     }
@@ -1048,6 +1372,8 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
 
   static class EuRangeCheckFilter implements AttributeFilter {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(EuRangeCheckFilter.class);
+
     private static final EuRangeCheckFilter INSTANCE = new EuRangeCheckFilter();
 
     @Override
@@ -1057,11 +1383,28 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
 
       UaNode node = ctx.getNode();
 
-      if (attributeId == AttributeId.Value && node instanceof AnalogItemType analogItem) {
-        if (value instanceof DataValue dataValue) {
+      if (attributeId == AttributeId.Value && value instanceof DataValue dataValue) {
+        Range euRange = null;
+
+        if (node instanceof BaseAnalogType baseAnalog) {
+          euRange = baseAnalog.getEuRange();
+        } else if (node instanceof ArrayItemType arrayItem) {
+          euRange = arrayItem.getEuRange();
+        }
+
+        if (euRange != null) {
           Object v = dataValue.getValue().getValue();
-          Double low = analogItem.getEuRange().getLow();
-          Double high = analogItem.getEuRange().getHigh();
+          Double low = euRange.getLow();
+          Double high = euRange.getHigh();
+
+          if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(
+                "Validating EU Range: node={}, value={}, low={}, high={}",
+                node.getNodeId().toParseableString(),
+                v,
+                low,
+                high);
+          }
 
           switch (v) {
             case Number n -> validateScalarValue(n, low, high);
