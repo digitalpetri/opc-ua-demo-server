@@ -12,3 +12,6 @@ org/
 
 # Server data #
 data/
+
+# External folder #
+external/

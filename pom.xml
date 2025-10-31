@@ -182,6 +182,37 @@
     </plugins>
   </build>
 
+  <profiles>
+    <profile>
+      <id>download-external-src</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>unpack-sources</id>
+                <phase>generate-resources</phase>
+                <goals>
+                  <goal>unpack-dependencies</goal>
+                </goals>
+                <configuration>
+                  <classifier>sources</classifier>
+                  <failOnMissingClassifierArtifact>false</failOnMissingClassifierArtifact>
+                  <outputDirectory>${session.executionRootDirectory}/external/src</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
   <dependencies>
     <dependency>
       <groupId>org.eclipse.milo</groupId>
