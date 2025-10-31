@@ -585,6 +585,8 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
                 AxisScaleEnumeration.Linear,
                 new Double[] {0.0, 10.0}));
 
+        cubeItem.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
+
         getNodeManager().addNode(cubeItem);
 
         cubeItem.addReference(
@@ -644,6 +646,8 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
                 new LocalizedText("Y Axis"),
                 AxisScaleEnumeration.Linear,
                 new Double[] {0.0, 1.0, 2.0}));
+
+        imageItem.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
 
         getNodeManager().addNode(imageItem);
 
@@ -706,6 +710,8 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
                 new Double[] {0.0, 1.0, 2.0});
         nDimensionArrayItem.setAxisDefinition(axisDefinitions);
 
+        nDimensionArrayItem.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
+
         getNodeManager().addNode(nDimensionArrayItem);
 
         nDimensionArrayItem.addReference(
@@ -755,6 +761,8 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
                 AxisScaleEnumeration.Linear,
                 new Double[] {0.0, 1.0, 2.0, 3.0, 4.0, 5.0}));
 
+        xyArrayItem.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
+
         getNodeManager().addNode(xyArrayItem);
 
         xyArrayItem.addReference(
@@ -803,6 +811,8 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
                 new LocalizedText("X Axis"),
                 AxisScaleEnumeration.Linear,
                 new Double[] {0.0, 1.0, 2.0, 3.0, 4.0, 5.0}));
+
+        yArrayItem.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
 
         getNodeManager().addNode(yArrayItem);
 
