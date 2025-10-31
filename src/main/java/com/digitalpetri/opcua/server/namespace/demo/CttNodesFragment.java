@@ -21,7 +21,10 @@ import org.eclipse.milo.opcua.sdk.server.model.variables.BaseAnalogType;
 import org.eclipse.milo.opcua.sdk.server.model.variables.CubeItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.DataItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.ImageItemTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.variables.MultiStateDiscreteTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.variables.MultiStateValueDiscreteTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.NDimensionArrayItemTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.variables.TwoStateDiscreteTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.XYArrayItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.YArrayItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
@@ -50,6 +53,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.AxisScaleEnumeration;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 import org.eclipse.milo.opcua.stack.core.types.structured.AxisInformation;
+import org.eclipse.milo.opcua.stack.core.types.structured.EnumValueType;
 import org.eclipse.milo.opcua.stack.core.types.structured.EUInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.Range;
 import org.jspecify.annotations.Nullable;
@@ -400,6 +404,8 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
       addAnalogItemTypeArrayNodes(dataAccessFolder.getNodeId());
       addArrayItemTypeNodes(dataAccessFolder.getNodeId());
       addDataItemTypeNodes(dataAccessFolder.getNodeId());
+      addDiscreteItemTypeNodes(dataAccessFolder.getNodeId());
+      addMultiStateValueDiscreteTypeNodes(dataAccessFolder.getNodeId());
     } catch (UaException e) {
       throw new RuntimeException(e);
     }
@@ -907,6 +913,175 @@ public class CttNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
                 dataItemNode.getNodeId(),
                 ReferenceTypes.HasComponent,
                 dataTypeFolder.getNodeId().expanded(),
+                Direction.INVERSE));
+      }
+    }
+  }
+
+  private void addDiscreteItemTypeNodes(NodeId parentNodeId) throws UaException {
+    var discreteItemTypeFolder =
+        new UaFolderNode(
+            getNodeContext(),
+            deriveChildNodeId(parentNodeId, "DiscreteItemType"),
+            new QualifiedName(namespaceIndex, "DiscreteItemType"),
+            new LocalizedText("DiscreteItemType"));
+
+    getNodeManager().addNode(discreteItemTypeFolder);
+
+    discreteItemTypeFolder.addReference(
+        new Reference(
+            discreteItemTypeFolder.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+
+    // Add MultiStateDiscrete nodes (001-005)
+    for (int i = 1; i <= 5; i++) {
+      String nodeName = "MultiStateDiscrete%03d".formatted(i);
+      NodeId multiStateDiscreteTypeId = new NodeId(UShort.valueOf(0), 2373);
+      UaNode node =
+          getNodeFactory()
+              .createNode(
+                  deriveChildNodeId(discreteItemTypeFolder.getNodeId(), nodeName),
+                  multiStateDiscreteTypeId);
+
+      if (node instanceof MultiStateDiscreteTypeNode multiStateNode) {
+        multiStateNode.setBrowseName(new QualifiedName(namespaceIndex, nodeName));
+        multiStateNode.setDisplayName(new LocalizedText(nodeName));
+        multiStateNode.setDataType(NodeIds.UInt32);
+        multiStateNode.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        multiStateNode.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        multiStateNode.setMinimumSamplingInterval(100.0);
+
+        // Set mandatory EnumStrings property
+        multiStateNode.setEnumStrings(
+            new LocalizedText[] {
+              new LocalizedText("State0"),
+              new LocalizedText("State1"),
+              new LocalizedText("State2"),
+              new LocalizedText("State3")
+            });
+
+        multiStateNode.setValue(new DataValue(Variant.ofUInt32(uint(0))));
+
+        getNodeManager().addNode(multiStateNode);
+
+        multiStateNode.addReference(
+            new Reference(
+                multiStateNode.getNodeId(),
+                ReferenceTypes.HasComponent,
+                discreteItemTypeFolder.getNodeId().expanded(),
+                Direction.INVERSE));
+      }
+    }
+
+    // Add TwoStateDiscrete nodes (001-005)
+    for (int i = 1; i <= 5; i++) {
+      String nodeName = "TwoStateDiscrete%03d".formatted(i);
+      NodeId twoStateDiscreteTypeId = new NodeId(UShort.valueOf(0), 2372);
+      UaNode node =
+          getNodeFactory()
+              .createNode(
+                  deriveChildNodeId(discreteItemTypeFolder.getNodeId(), nodeName),
+                  twoStateDiscreteTypeId);
+
+      if (node instanceof TwoStateDiscreteTypeNode twoStateNode) {
+        twoStateNode.setBrowseName(new QualifiedName(namespaceIndex, nodeName));
+        twoStateNode.setDisplayName(new LocalizedText(nodeName));
+        twoStateNode.setDataType(NodeIds.Boolean);
+        twoStateNode.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        twoStateNode.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        twoStateNode.setMinimumSamplingInterval(100.0);
+
+        // Set mandatory TrueState and FalseState properties
+        twoStateNode.setTrueState(new LocalizedText("True"));
+        twoStateNode.setFalseState(new LocalizedText("False"));
+
+        twoStateNode.setValue(new DataValue(Variant.ofBoolean(false)));
+
+        getNodeManager().addNode(twoStateNode);
+
+        twoStateNode.addReference(
+            new Reference(
+                twoStateNode.getNodeId(),
+                ReferenceTypes.HasComponent,
+                discreteItemTypeFolder.getNodeId().expanded(),
+                Direction.INVERSE));
+      }
+    }
+  }
+
+  private void addMultiStateValueDiscreteTypeNodes(NodeId parentNodeId) throws UaException {
+    var multiStateValueDiscreteTypeFolder =
+        new UaFolderNode(
+            getNodeContext(),
+            deriveChildNodeId(parentNodeId, "MultiStateValueDiscreteType"),
+            new QualifiedName(namespaceIndex, "MultiStateValueDiscreteType"),
+            new LocalizedText("MultiStateValueDiscreteType"));
+
+    getNodeManager().addNode(multiStateValueDiscreteTypeFolder);
+
+    multiStateValueDiscreteTypeFolder.addReference(
+        new Reference(
+            multiStateValueDiscreteTypeFolder.getNodeId(),
+            ReferenceTypes.HasComponent,
+            parentNodeId.expanded(),
+            Direction.INVERSE));
+
+    var dataTypes =
+        List.of(
+            OpcUaDataType.Byte,
+            OpcUaDataType.Int16,
+            OpcUaDataType.Int32,
+            OpcUaDataType.Int64,
+            OpcUaDataType.SByte,
+            OpcUaDataType.UInt16,
+            OpcUaDataType.UInt32,
+            OpcUaDataType.UInt64);
+
+    for (OpcUaDataType dataType : dataTypes) {
+      NodeId multiStateValueDiscreteTypeId = new NodeId(UShort.valueOf(0), 11238);
+      UaNode node =
+          getNodeFactory()
+              .createNode(
+                  deriveChildNodeId(
+                      multiStateValueDiscreteTypeFolder.getNodeId(), dataType.name()),
+                  multiStateValueDiscreteTypeId);
+
+      if (node instanceof MultiStateValueDiscreteTypeNode multiStateValueNode) {
+        multiStateValueNode.setBrowseName(new QualifiedName(namespaceIndex, dataType.name()));
+        multiStateValueNode.setDisplayName(new LocalizedText(dataType.name()));
+        multiStateValueNode.setDataType(dataType.getNodeId());
+        multiStateValueNode.setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        multiStateValueNode.setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE));
+        multiStateValueNode.setMinimumSamplingInterval(100.0);
+
+        // Set mandatory EnumValues property
+        multiStateValueNode.setEnumValues(
+            new EnumValueType[] {
+              new EnumValueType(0L, new LocalizedText("Value0"), new LocalizedText("Value0")),
+              new EnumValueType(1L, new LocalizedText("Value1"), new LocalizedText("Value1")),
+              new EnumValueType(2L, new LocalizedText("Value2"), new LocalizedText("Value2")),
+              new EnumValueType(3L, new LocalizedText("Value3"), new LocalizedText("Value3"))
+            });
+
+        // Set mandatory ValueAsText property
+        multiStateValueNode.setValueAsText(new LocalizedText("Value0"));
+
+        Object value = Util.getDefaultScalarValue(dataType);
+        if (value instanceof Variant v) {
+          multiStateValueNode.setValue(new DataValue(v));
+        } else {
+          multiStateValueNode.setValue(new DataValue(Variant.of(value)));
+        }
+
+        getNodeManager().addNode(multiStateValueNode);
+
+        multiStateValueNode.addReference(
+            new Reference(
+                multiStateValueNode.getNodeId(),
+                ReferenceTypes.HasComponent,
+                multiStateValueDiscreteTypeFolder.getNodeId().expanded(),
                 Direction.INVERSE));
       }
     }
