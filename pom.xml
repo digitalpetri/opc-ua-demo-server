@@ -59,6 +59,7 @@
     <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
     <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
     <spotless-maven-plugin.version>3.0.0</spotless-maven-plugin.version>
+    <native-maven-plugin.version>0.11.1</native-maven-plugin.version>
   </properties>
 
   <build>
@@ -215,6 +216,41 @@
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>native</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.graalvm.buildtools</groupId>
+            <artifactId>native-maven-plugin</artifactId>
+            <version>${native-maven-plugin.version}</version>
+            <extensions>true</extensions>
+            <executions>
+              <execution>
+                <id>build-native</id>
+                <goals>
+                  <goal>compile-no-fork</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+            </executions>
+            <configuration>
+              <imageName>opc-ua-demo-server</imageName>
+              <mainClass>com.digitalpetri.opcua.server.OpcUaDemoServer</mainClass>
+              <buildArgs>
+                <buildArg>--no-fallback</buildArg>
+                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                <buildArg>--initialize-at-build-time=org.slf4j,ch.qos.logback</buildArg>
+                <buildArg>--initialize-at-run-time=io.netty,org.bouncycastle</buildArg>
+              </buildArgs>
+            </configuration>
           </plugin>
         </plugins>
       </build>

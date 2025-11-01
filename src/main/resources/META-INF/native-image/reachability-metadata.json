@@ -1,0 +1,3280 @@
+{
+  "reflection": [
+    {
+      "type": "apple.security.AppleProvider",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.classic.BasicConfigurator",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.classic.encoder.PatternLayoutEncoder",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.classic.joran.SerializedModelConfigurator",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.classic.spi.LogbackServiceProvider"
+    },
+    {
+      "type": "ch.qos.logback.classic.util.DefaultJoranConfigurator",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.core.ConsoleAppender",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.core.OutputStreamAppender",
+      "methods": [
+        {
+          "name": "setEncoder",
+          "parameterTypes": [
+            "ch.qos.logback.core.encoder.Encoder"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.core.encoder.Encoder"
+    },
+    {
+      "type": "ch.qos.logback.core.encoder.LayoutWrappingEncoder",
+      "methods": [
+        {
+          "name": "setParent",
+          "parameterTypes": [
+            "ch.qos.logback.core.spi.ContextAware"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.core.pattern.PatternLayoutEncoderBase",
+      "methods": [
+        {
+          "name": "setPattern",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.core.spi.ContextAware"
+    },
+    {
+      "type": "com.digitalpetri.opcua.test.types.ConcreteTestTypeEx[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.test.types.ConcreteTestType[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.test.types.TestEnumType[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.test.types.UnionOfArray[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.test.types.UnionOfScalar[]"
+    },
+    {
+      "type": "com.sun.crypto.provider.HmacCore$HmacSHA256",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.HmacPKCS12PBECore$HmacPKCS12PBE_SHA256",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.PBEKeyFactory$PBEWithMD5AndDES",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.PBES2Core$HmacSHA256AndAES_256",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.PBES2Parameters$General",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.org.apache.xerces.internal.jaxp.datatype.DatatypeFactoryImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "io.netty.bootstrap.ServerBootstrap$1"
+    },
+    {
+      "type": "io.netty.bootstrap.ServerBootstrap$ServerBootstrapAcceptor"
+    },
+    {
+      "type": "io.netty.buffer.AbstractByteBufAllocator"
+    },
+    {
+      "type": "io.netty.buffer.AbstractReferenceCountedByteBuf",
+      "fields": [
+        {
+          "name": "refCnt"
+        }
+      ]
+    },
+    {
+      "type": "io.netty.channel.AbstractChannelHandlerContext"
+    },
+    {
+      "type": "io.netty.channel.ChannelOutboundBuffer"
+    },
+    {
+      "type": "io.netty.channel.DefaultChannelConfig"
+    },
+    {
+      "type": "io.netty.channel.DefaultChannelPipeline"
+    },
+    {
+      "type": "io.netty.channel.DefaultChannelPipeline$HeadContext"
+    },
+    {
+      "type": "io.netty.channel.DefaultChannelPipeline$TailContext"
+    },
+    {
+      "type": "io.netty.channel.socket.nio.NioServerSocketChannel",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "io.netty.handler.logging.LoggingHandler"
+    },
+    {
+      "type": "io.netty.util.DefaultAttributeMap"
+    },
+    {
+      "type": "io.netty.util.DefaultAttributeMap$DefaultAttribute"
+    },
+    {
+      "type": "io.netty.util.HashedWheelTimer"
+    },
+    {
+      "type": "io.netty.util.HashedWheelTimer$HashedWheelTimeout"
+    },
+    {
+      "type": "io.netty.util.Recycler$DefaultHandle"
+    },
+    {
+      "type": "io.netty.util.ReferenceCountUtil"
+    },
+    {
+      "type": "io.netty.util.ResourceLeakDetector$DefaultResourceLeak"
+    },
+    {
+      "type": "io.netty.util.concurrent.DefaultPromise"
+    },
+    {
+      "type": "io.netty.util.concurrent.SingleThreadEventExecutor"
+    },
+    {
+      "type": "io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueColdProducerFields",
+      "fields": [
+        {
+          "name": "producerLimit"
+        }
+      ]
+    },
+    {
+      "type": "io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueConsumerFields",
+      "fields": [
+        {
+          "name": "consumerIndex"
+        }
+      ]
+    },
+    {
+      "type": "io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueProducerFields",
+      "fields": [
+        {
+          "name": "producerIndex"
+        }
+      ]
+    },
+    {
+      "type": "io.netty.util.internal.shaded.org.jctools.queues.unpadded.MpscUnpaddedArrayQueueConsumerIndexField",
+      "fields": [
+        {
+          "name": "consumerIndex"
+        }
+      ]
+    },
+    {
+      "type": "io.netty.util.internal.shaded.org.jctools.queues.unpadded.MpscUnpaddedArrayQueueProducerIndexField",
+      "fields": [
+        {
+          "name": "producerIndex"
+        }
+      ]
+    },
+    {
+      "type": "io.netty.util.internal.shaded.org.jctools.queues.unpadded.MpscUnpaddedArrayQueueProducerLimitField",
+      "fields": [
+        {
+          "name": "producerLimit"
+        }
+      ]
+    },
+    {
+      "type": "jakarta.xml.bind.annotation.W3CDomHandler",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "jakarta.xml.bind.annotation.XmlAnyElement",
+      "methods": [
+        {
+          "name": "value",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "jakarta.xml.bind.annotation.XmlElement",
+      "methods": [
+        {
+          "name": "type",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "jakarta.xml.bind.annotation.XmlEnum",
+      "methods": [
+        {
+          "name": "value",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "jakarta.xml.bind.annotation.XmlSeeAlso",
+      "methods": [
+        {
+          "name": "value",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "jakarta.xml.bind.annotation.XmlType",
+      "methods": [
+        {
+          "name": "factoryClass",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "jakarta.xml.bind.annotation.adapters.CollapsedStringAdapter",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter",
+      "methods": [
+        {
+          "name": "type",
+          "parameterTypes": []
+        },
+        {
+          "name": "value",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.lang.BaseVirtualThread"
+    },
+    {
+      "type": "java.lang.Boolean",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "getBoolean",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Boolean[]"
+    },
+    {
+      "type": "java.lang.Boolean[][]"
+    },
+    {
+      "type": "java.lang.Byte[]"
+    },
+    {
+      "type": "java.lang.Byte[][]"
+    },
+    {
+      "type": "java.lang.Double[]"
+    },
+    {
+      "type": "java.lang.Double[][]"
+    },
+    {
+      "type": "java.lang.Float[]"
+    },
+    {
+      "type": "java.lang.Float[][]"
+    },
+    {
+      "type": "java.lang.Integer[]"
+    },
+    {
+      "type": "java.lang.Integer[][]"
+    },
+    {
+      "type": "java.lang.Long[]"
+    },
+    {
+      "type": "java.lang.Long[][]"
+    },
+    {
+      "type": "java.lang.Object"
+    },
+    {
+      "type": "java.lang.ProcessHandle",
+      "methods": [
+        {
+          "name": "current",
+          "parameterTypes": []
+        },
+        {
+          "name": "pid",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Short[]"
+    },
+    {
+      "type": "java.lang.Short[][]"
+    },
+    {
+      "type": "java.lang.String[]"
+    },
+    {
+      "type": "java.lang.String[][]"
+    },
+    {
+      "type": "java.lang.Thread",
+      "methods": [
+        {
+          "name": "isVirtual",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.lang.invoke.VarHandle"
+    },
+    {
+      "type": "java.nio.Bits"
+    },
+    {
+      "type": "java.nio.Buffer",
+      "fields": [
+        {
+          "name": "address"
+        }
+      ]
+    },
+    {
+      "type": "java.nio.ByteBuffer"
+    },
+    {
+      "type": "java.nio.DirectByteBuffer"
+    },
+    {
+      "type": "java.nio.channels.spi.SelectorProvider"
+    },
+    {
+      "type": "java.security.AlgorithmParametersSpi"
+    },
+    {
+      "type": "java.security.KeyStoreSpi"
+    },
+    {
+      "type": "java.security.cert.PKIXRevocationChecker"
+    },
+    {
+      "type": "java.security.interfaces.RSAPrivateKey"
+    },
+    {
+      "type": "java.security.interfaces.RSAPublicKey"
+    },
+    {
+      "type": "java.util.ArrayList",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.util.UUID[]"
+    },
+    {
+      "type": "java.util.UUID[][]"
+    },
+    {
+      "type": "jdk.internal.misc.Unsafe",
+      "methods": [
+        {
+          "name": "getUnsafe",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.COMPOSITE$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.CONTEXT$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.CompositeSignatures$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.DH$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.DSA$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.DSTU4145$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.Dilithium$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.EC$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.ECGOST$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.EXTERNAL$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.EdEC$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.ElGamal$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.Falcon$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.GM$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.GOST$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.IES$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.LMS$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.MLDSA$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.MLKEM$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.NTRU$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.RSA$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.SLHDSA$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.SPHINCSPlus$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.X509$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.Blake2b$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.Blake2s$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.Blake3$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.DSTU7564$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.GOST3411$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.Haraka$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.Keccak$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.MD2$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.MD4$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.MD5$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.RIPEMD128$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.RIPEMD160$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.RIPEMD256$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.RIPEMD320$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.SHA1$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.SHA224$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.SHA256$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.SHA3$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.SHA384$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.SHA512$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.SM3$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.Skein$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.Tiger$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.digest.Whirlpool$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.drbg.DRBG$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.keystore.BC$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.keystore.BCFKS$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.keystore.PKCS12$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.AES$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.ARC4$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.ARIA$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Blowfish$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.CAST5$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.CAST6$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Camellia$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.ChaCha$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.DES$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.DESede$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.DSTU7624$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.GOST28147$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.GOST3412_2015$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Grain128$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Grainv1$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.HC128$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.HC256$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.IDEA$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Noekeon$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.OpenSSLPBKDF$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.PBEPBKDF1$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.PBEPBKDF2$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.PBEPKCS12$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Poly1305$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.RC2$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.RC5$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.RC6$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Rijndael$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.SCRYPT$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.SEED$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.SM4$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Salsa20$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Serpent$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Shacal2$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.SipHash$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.SipHash128$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Skipjack$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.TEA$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.TLSKDF$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Threefish$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Twofish$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.VMPC$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.VMPCKSA3$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.XSalsa20$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.XTEA$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.symmetric.Zuc$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.StatusCodes"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.StatusCodes0",
+      "fields": [
+        {
+          "name": "Bad"
+        },
+        {
+          "name": "Bad_AggregateConfigurationRejected"
+        },
+        {
+          "name": "Bad_AggregateInvalidInputs"
+        },
+        {
+          "name": "Bad_AggregateListMismatch"
+        },
+        {
+          "name": "Bad_AggregateNotSupported"
+        },
+        {
+          "name": "Bad_AlreadyExists"
+        },
+        {
+          "name": "Bad_ApplicationSignatureInvalid"
+        },
+        {
+          "name": "Bad_ArgumentsMissing"
+        },
+        {
+          "name": "Bad_AttributeIdInvalid"
+        },
+        {
+          "name": "Bad_BoundNotFound"
+        },
+        {
+          "name": "Bad_BoundNotSupported"
+        },
+        {
+          "name": "Bad_BrowseDirectionInvalid"
+        },
+        {
+          "name": "Bad_BrowseNameDuplicated"
+        },
+        {
+          "name": "Bad_BrowseNameInvalid"
+        },
+        {
+          "name": "Bad_CertificateChainIncomplete"
+        },
+        {
+          "name": "Bad_CertificateHostNameInvalid"
+        },
+        {
+          "name": "Bad_CertificateInvalid"
+        },
+        {
+          "name": "Bad_CertificateIssuerRevocationUnknown"
+        },
+        {
+          "name": "Bad_CertificateIssuerRevoked"
+        },
+        {
+          "name": "Bad_CertificateIssuerTimeInvalid"
+        },
+        {
+          "name": "Bad_CertificateIssuerUseNotAllowed"
+        },
+        {
+          "name": "Bad_CertificatePolicyCheckFailed"
+        },
+        {
+          "name": "Bad_CertificateRevocationUnknown"
+        },
+        {
+          "name": "Bad_CertificateRevoked"
+        },
+        {
+          "name": "Bad_CertificateTimeInvalid"
+        },
+        {
+          "name": "Bad_CertificateUntrusted"
+        },
+        {
+          "name": "Bad_CertificateUriInvalid"
+        },
+        {
+          "name": "Bad_CertificateUseNotAllowed"
+        },
+        {
+          "name": "Bad_CommunicationError"
+        },
+        {
+          "name": "Bad_ConditionAlreadyDisabled"
+        },
+        {
+          "name": "Bad_ConditionAlreadyEnabled"
+        },
+        {
+          "name": "Bad_ConditionAlreadyShelved"
+        },
+        {
+          "name": "Bad_ConditionBranchAlreadyAcked"
+        },
+        {
+          "name": "Bad_ConditionBranchAlreadyConfirmed"
+        },
+        {
+          "name": "Bad_ConditionDisabled"
+        },
+        {
+          "name": "Bad_ConditionNotShelved"
+        },
+        {
+          "name": "Bad_ConfigurationError"
+        },
+        {
+          "name": "Bad_ConnectionClosed"
+        },
+        {
+          "name": "Bad_ConnectionRejected"
+        },
+        {
+          "name": "Bad_ContentFilterInvalid"
+        },
+        {
+          "name": "Bad_ContinuationPointInvalid"
+        },
+        {
+          "name": "Bad_DataEncodingInvalid"
+        },
+        {
+          "name": "Bad_DataEncodingUnsupported"
+        },
+        {
+          "name": "Bad_DataLost"
+        },
+        {
+          "name": "Bad_DataSetIdInvalid"
+        },
+        {
+          "name": "Bad_DataTypeIdUnknown"
+        },
+        {
+          "name": "Bad_DataUnavailable"
+        },
+        {
+          "name": "Bad_DeadbandFilterInvalid"
+        },
+        {
+          "name": "Bad_DecodingError"
+        },
+        {
+          "name": "Bad_DependentValueChanged"
+        },
+        {
+          "name": "Bad_DeviceFailure"
+        },
+        {
+          "name": "Bad_DialogNotActive"
+        },
+        {
+          "name": "Bad_DialogResponseInvalid"
+        },
+        {
+          "name": "Bad_Disconnect"
+        },
+        {
+          "name": "Bad_DiscoveryUrlMissing"
+        },
+        {
+          "name": "Bad_DominantValueChanged"
+        },
+        {
+          "name": "Bad_DuplicateReferenceNotAllowed"
+        },
+        {
+          "name": "Bad_Edited_OutOfRange"
+        },
+        {
+          "name": "Bad_Edited_OutOfRange_DominantValueChanged"
+        },
+        {
+          "name": "Bad_Edited_OutOfRange_DominantValueChanged_DependentValueChanged"
+        },
+        {
+          "name": "Bad_EncodingError"
+        },
+        {
+          "name": "Bad_EncodingLimitsExceeded"
+        },
+        {
+          "name": "Bad_EndOfStream"
+        },
+        {
+          "name": "Bad_EntryExists"
+        },
+        {
+          "name": "Bad_EventFilterInvalid"
+        },
+        {
+          "name": "Bad_EventIdUnknown"
+        },
+        {
+          "name": "Bad_EventNotAcknowledgeable"
+        },
+        {
+          "name": "Bad_ExpectedStreamToBlock"
+        },
+        {
+          "name": "Bad_FilterElementInvalid"
+        },
+        {
+          "name": "Bad_FilterLiteralInvalid"
+        },
+        {
+          "name": "Bad_FilterNotAllowed"
+        },
+        {
+          "name": "Bad_FilterOperandCountMismatch"
+        },
+        {
+          "name": "Bad_FilterOperandInvalid"
+        },
+        {
+          "name": "Bad_FilterOperatorInvalid"
+        },
+        {
+          "name": "Bad_FilterOperatorUnsupported"
+        },
+        {
+          "name": "Bad_HistoryOperationInvalid"
+        },
+        {
+          "name": "Bad_HistoryOperationUnsupported"
+        },
+        {
+          "name": "Bad_IdentityChangeNotSupported"
+        },
+        {
+          "name": "Bad_IdentityTokenInvalid"
+        },
+        {
+          "name": "Bad_IdentityTokenRejected"
+        },
+        {
+          "name": "Bad_IndexRangeDataMismatch"
+        },
+        {
+          "name": "Bad_IndexRangeInvalid"
+        },
+        {
+          "name": "Bad_IndexRangeNoData"
+        },
+        {
+          "name": "Bad_InitialValue_OutOfRange"
+        },
+        {
+          "name": "Bad_InsufficientClientProfile"
+        },
+        {
+          "name": "Bad_InternalError"
+        },
+        {
+          "name": "Bad_InvalidArgument"
+        },
+        {
+          "name": "Bad_InvalidSelfReference"
+        },
+        {
+          "name": "Bad_InvalidState"
+        },
+        {
+          "name": "Bad_InvalidTimestamp"
+        },
+        {
+          "name": "Bad_InvalidTimestampArgument"
+        },
+        {
+          "name": "Bad_LicenseExpired"
+        },
+        {
+          "name": "Bad_LicenseLimitsExceeded"
+        },
+        {
+          "name": "Bad_LicenseNotAvailable"
+        },
+        {
+          "name": "Bad_LocaleNotSupported"
+        },
+        {
+          "name": "Bad_Locked"
+        },
+        {
+          "name": "Bad_MaxAgeInvalid"
+        },
+        {
+          "name": "Bad_MaxConnectionsReached"
+        },
+        {
+          "name": "Bad_MessageNotAvailable"
+        },
+        {
+          "name": "Bad_MethodInvalid"
+        },
+        {
+          "name": "Bad_MonitoredItemFilterInvalid"
+        },
+        {
+          "name": "Bad_MonitoredItemFilterUnsupported"
+        },
+        {
+          "name": "Bad_MonitoredItemIdInvalid"
+        },
+        {
+          "name": "Bad_MonitoringModeInvalid"
+        },
+        {
+          "name": "Bad_NoCommunication"
+        },
+        {
+          "name": "Bad_NoContinuationPoints"
+        },
+        {
+          "name": "Bad_NoData"
+        },
+        {
+          "name": "Bad_NoDataAvailable"
+        },
+        {
+          "name": "Bad_NoDeleteRights"
+        },
+        {
+          "name": "Bad_NoEntryExists"
+        },
+        {
+          "name": "Bad_NoMatch"
+        },
+        {
+          "name": "Bad_NoSubscription"
+        },
+        {
+          "name": "Bad_NoValidCertificates"
+        },
+        {
+          "name": "Bad_NoValue"
+        },
+        {
+          "name": "Bad_NodeAttributesInvalid"
+        },
+        {
+          "name": "Bad_NodeClassInvalid"
+        },
+        {
+          "name": "Bad_NodeIdExists"
+        },
+        {
+          "name": "Bad_NodeIdInvalid"
+        },
+        {
+          "name": "Bad_NodeIdRejected"
+        },
+        {
+          "name": "Bad_NodeIdUnknown"
+        },
+        {
+          "name": "Bad_NodeNotInView"
+        },
+        {
+          "name": "Bad_NonceInvalid"
+        },
+        {
+          "name": "Bad_NotConnected"
+        },
+        {
+          "name": "Bad_NotExecutable"
+        },
+        {
+          "name": "Bad_NotFound"
+        },
+        {
+          "name": "Bad_NotImplemented"
+        },
+        {
+          "name": "Bad_NotReadable"
+        },
+        {
+          "name": "Bad_NotSupported"
+        },
+        {
+          "name": "Bad_NotTypeDefinition"
+        },
+        {
+          "name": "Bad_NotWritable"
+        },
+        {
+          "name": "Bad_NothingToDo"
+        },
+        {
+          "name": "Bad_NumericOverflow"
+        },
+        {
+          "name": "Bad_ObjectDeleted"
+        },
+        {
+          "name": "Bad_OperationAbandoned"
+        },
+        {
+          "name": "Bad_OutOfMemory"
+        },
+        {
+          "name": "Bad_OutOfRange"
+        },
+        {
+          "name": "Bad_OutOfRange_DominantValueChanged"
+        },
+        {
+          "name": "Bad_OutOfRange_DominantValueChanged_DependentValueChanged"
+        },
+        {
+          "name": "Bad_OutOfService"
+        },
+        {
+          "name": "Bad_ParentNodeIdInvalid"
+        },
+        {
+          "name": "Bad_ProtocolVersionUnsupported"
+        },
+        {
+          "name": "Bad_QueryTooComplex"
+        },
+        {
+          "name": "Bad_ReferenceLocalOnly"
+        },
+        {
+          "name": "Bad_ReferenceNotAllowed"
+        },
+        {
+          "name": "Bad_ReferenceTypeIdInvalid"
+        },
+        {
+          "name": "Bad_RefreshInProgress"
+        },
+        {
+          "name": "Bad_RequestCancelledByClient"
+        },
+        {
+          "name": "Bad_RequestCancelledByRequest"
+        },
+        {
+          "name": "Bad_RequestHeaderInvalid"
+        },
+        {
+          "name": "Bad_RequestInterrupted"
+        },
+        {
+          "name": "Bad_RequestNotAllowed"
+        },
+        {
+          "name": "Bad_RequestNotComplete"
+        },
+        {
+          "name": "Bad_RequestTimeout"
+        },
+        {
+          "name": "Bad_RequestTooLarge"
+        },
+        {
+          "name": "Bad_RequestTypeInvalid"
+        },
+        {
+          "name": "Bad_RequiresLock"
+        },
+        {
+          "name": "Bad_ResourceUnavailable"
+        },
+        {
+          "name": "Bad_ResponseTooLarge"
+        },
+        {
+          "name": "Bad_SecureChannelClosed"
+        },
+        {
+          "name": "Bad_SecureChannelIdInvalid"
+        },
+        {
+          "name": "Bad_SecureChannelTokenUnknown"
+        },
+        {
+          "name": "Bad_SecurityChecksFailed"
+        },
+        {
+          "name": "Bad_SecurityModeInsufficient"
+        },
+        {
+          "name": "Bad_SecurityModeRejected"
+        },
+        {
+          "name": "Bad_SecurityPolicyRejected"
+        },
+        {
+          "name": "Bad_SemaphoreFileMissing"
+        },
+        {
+          "name": "Bad_SensorFailure"
+        },
+        {
+          "name": "Bad_SequenceNumberInvalid"
+        },
+        {
+          "name": "Bad_SequenceNumberUnknown"
+        },
+        {
+          "name": "Bad_ServerHalted"
+        },
+        {
+          "name": "Bad_ServerIndexInvalid"
+        },
+        {
+          "name": "Bad_ServerNameMissing"
+        },
+        {
+          "name": "Bad_ServerNotConnected"
+        },
+        {
+          "name": "Bad_ServerTooBusy"
+        },
+        {
+          "name": "Bad_ServerUriInvalid"
+        },
+        {
+          "name": "Bad_ServiceUnsupported"
+        },
+        {
+          "name": "Bad_SessionClosed"
+        },
+        {
+          "name": "Bad_SessionIdInvalid"
+        },
+        {
+          "name": "Bad_SessionNotActivated"
+        },
+        {
+          "name": "Bad_ShelvingTimeOutOfRange"
+        },
+        {
+          "name": "Bad_Shutdown"
+        },
+        {
+          "name": "Bad_SourceNodeIdInvalid"
+        },
+        {
+          "name": "Bad_StateNotActive"
+        },
+        {
+          "name": "Bad_StructureMissing"
+        },
+        {
+          "name": "Bad_SubscriptionIdInvalid"
+        },
+        {
+          "name": "Bad_SyntaxError"
+        },
+        {
+          "name": "Bad_TargetNodeIdInvalid"
+        },
+        {
+          "name": "Bad_TcpEndpointUrlInvalid"
+        },
+        {
+          "name": "Bad_TcpInternalError"
+        },
+        {
+          "name": "Bad_TcpMessageTooLarge"
+        },
+        {
+          "name": "Bad_TcpMessageTypeInvalid"
+        },
+        {
+          "name": "Bad_TcpNotEnoughResources"
+        },
+        {
+          "name": "Bad_TcpSecureChannelUnknown"
+        },
+        {
+          "name": "Bad_TcpServerTooBusy"
+        },
+        {
+          "name": "Bad_TicketInvalid"
+        },
+        {
+          "name": "Bad_TicketRequired"
+        },
+        {
+          "name": "Bad_Timeout"
+        },
+        {
+          "name": "Bad_TimestampNotSupported"
+        },
+        {
+          "name": "Bad_TimestampsToReturnInvalid"
+        },
+        {
+          "name": "Bad_TooManyArguments"
+        },
+        {
+          "name": "Bad_TooManyMatches"
+        },
+        {
+          "name": "Bad_TooManyMonitoredItems"
+        },
+        {
+          "name": "Bad_TooManyOperations"
+        },
+        {
+          "name": "Bad_TooManyPublishRequests"
+        },
+        {
+          "name": "Bad_TooManySessions"
+        },
+        {
+          "name": "Bad_TooManySubscriptions"
+        },
+        {
+          "name": "Bad_TransactionPending"
+        },
+        {
+          "name": "Bad_TypeDefinitionInvalid"
+        },
+        {
+          "name": "Bad_TypeMismatch"
+        },
+        {
+          "name": "Bad_UnexpectedError"
+        },
+        {
+          "name": "Bad_UnknownResponse"
+        },
+        {
+          "name": "Bad_UserAccessDenied"
+        },
+        {
+          "name": "Bad_UserSignatureInvalid"
+        },
+        {
+          "name": "Bad_ViewIdUnknown"
+        },
+        {
+          "name": "Bad_ViewParameterMismatch"
+        },
+        {
+          "name": "Bad_ViewTimestampInvalid"
+        },
+        {
+          "name": "Bad_ViewVersionInvalid"
+        },
+        {
+          "name": "Bad_WaitingForInitialData"
+        },
+        {
+          "name": "Bad_WaitingForResponse"
+        },
+        {
+          "name": "Bad_WouldBlock"
+        },
+        {
+          "name": "Bad_WriteNotSupported"
+        },
+        {
+          "name": "Good"
+        },
+        {
+          "name": "Good_CallAgain"
+        },
+        {
+          "name": "Good_Cascade"
+        },
+        {
+          "name": "Good_CascadeInitializationAcknowledged"
+        },
+        {
+          "name": "Good_CascadeInitializationRequest"
+        },
+        {
+          "name": "Good_CascadeNotInvited"
+        },
+        {
+          "name": "Good_CascadeNotSelected"
+        },
+        {
+          "name": "Good_Clamped"
+        },
+        {
+          "name": "Good_CommunicationEvent"
+        },
+        {
+          "name": "Good_CompletesAsynchronously"
+        },
+        {
+          "name": "Good_DataIgnored"
+        },
+        {
+          "name": "Good_DependentValueChanged"
+        },
+        {
+          "name": "Good_Edited"
+        },
+        {
+          "name": "Good_Edited_DependentValueChanged"
+        },
+        {
+          "name": "Good_Edited_DominantValueChanged"
+        },
+        {
+          "name": "Good_Edited_DominantValueChanged_DependentValueChanged"
+        },
+        {
+          "name": "Good_EntryInserted"
+        },
+        {
+          "name": "Good_EntryReplaced"
+        },
+        {
+          "name": "Good_FaultStateActive"
+        },
+        {
+          "name": "Good_InitiateFaultState"
+        },
+        {
+          "name": "Good_LocalOverride"
+        },
+        {
+          "name": "Good_MoreData"
+        },
+        {
+          "name": "Good_NoData"
+        },
+        {
+          "name": "Good_NonCriticalTimeout"
+        },
+        {
+          "name": "Good_Overload"
+        },
+        {
+          "name": "Good_PasswordChangeRequired"
+        },
+        {
+          "name": "Good_PostActionFailed"
+        },
+        {
+          "name": "Good_ResultsMayBeIncomplete"
+        },
+        {
+          "name": "Good_RetransmissionQueueNotSupported"
+        },
+        {
+          "name": "Good_ShutdownEvent"
+        },
+        {
+          "name": "Good_SubNormal"
+        },
+        {
+          "name": "Good_SubscriptionTransferred"
+        },
+        {
+          "name": "Uncertain"
+        },
+        {
+          "name": "Uncertain_ConfigurationError"
+        },
+        {
+          "name": "Uncertain_DataSubNormal"
+        },
+        {
+          "name": "Uncertain_DependentValueChanged"
+        },
+        {
+          "name": "Uncertain_DominantValueChanged"
+        },
+        {
+          "name": "Uncertain_EngineeringUnitsExceeded"
+        },
+        {
+          "name": "Uncertain_InitialValue"
+        },
+        {
+          "name": "Uncertain_LastUsableValue"
+        },
+        {
+          "name": "Uncertain_NoCommunicationLastUsableValue"
+        },
+        {
+          "name": "Uncertain_NotAllNodesAvailable"
+        },
+        {
+          "name": "Uncertain_ReferenceNotDeleted"
+        },
+        {
+          "name": "Uncertain_ReferenceOutOfServer"
+        },
+        {
+          "name": "Uncertain_SensorCalibration"
+        },
+        {
+          "name": "Uncertain_SensorNotAccurate"
+        },
+        {
+          "name": "Uncertain_SimulatedValue"
+        },
+        {
+          "name": "Uncertain_SubNormal"
+        },
+        {
+          "name": "Uncertain_SubstituteValue"
+        },
+        {
+          "name": "Uncertain_TransducerInManual"
+        }
+      ]
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.encoding.json.OpcUaDefaultJsonEncoding"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.encoding.xml.OpcUaDefaultXmlEncoding",
+      "methods": [
+        {
+          "name": "getInstance",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.ByteString[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.ByteString[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.DataValue[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.DataValue[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.DateTime[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.DateTime[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject$Binary[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject$Binary[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.NodeId[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.NodeId[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.Variant[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.Variant[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort[][]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.enumerated.ApplicationType[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.structured.AccessLevelExType[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.structured.AccessLevelType[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.structured.AccessRestrictionType[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.structured.SignedSoftwareCertificate[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.structured.XVType[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransport$1"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.transport.server.tcp.RateLimitingHandler"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.transport.server.uasc.UascServerAsymmetricHandler"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.transport.server.uasc.UascServerHelloHandler"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.transport.server.uasc.UascServerSymmetricHandler"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.transport.server.uasc.UascServiceRequestHandler"
+    },
+    {
+      "type": "org.eclipse.milo.shaded.com.google.common.util.concurrent.AbstractFutureState",
+      "fields": [
+        {
+          "name": "listenersField"
+        },
+        {
+          "name": "valueField"
+        },
+        {
+          "name": "waitersField"
+        }
+      ]
+    },
+    {
+      "type": "org.eclipse.milo.shaded.com.google.common.util.concurrent.AbstractFutureState$Waiter",
+      "fields": [
+        {
+          "name": "next"
+        },
+        {
+          "name": "thread"
+        }
+      ]
+    },
+    {
+      "type": "org.glassfish.jaxb.core.v2.model.nav.ReflectionNavigator",
+      "methods": [
+        {
+          "name": "getInstance",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.glassfish.jaxb.runtime.v2.JAXBContextFactory"
+    },
+    {
+      "type": "org.glassfish.jaxb.runtime.v2.runtime.property.ArrayElementLeafProperty",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.glassfish.jaxb.runtime.v2.runtime.JAXBContextImpl",
+            "org.glassfish.jaxb.runtime.v2.model.runtime.RuntimeElementPropertyInfo"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.glassfish.jaxb.runtime.v2.runtime.property.ArrayElementNodeProperty",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.glassfish.jaxb.runtime.v2.runtime.JAXBContextImpl",
+            "org.glassfish.jaxb.runtime.v2.model.runtime.RuntimeElementPropertyInfo"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.glassfish.jaxb.runtime.v2.runtime.property.ArrayReferenceNodeProperty"
+    },
+    {
+      "type": "org.glassfish.jaxb.runtime.v2.runtime.property.SingleElementLeafProperty",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.glassfish.jaxb.runtime.v2.runtime.JAXBContextImpl",
+            "org.glassfish.jaxb.runtime.v2.model.runtime.RuntimeElementPropertyInfo"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.glassfish.jaxb.runtime.v2.runtime.property.SingleElementNodeProperty",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.glassfish.jaxb.runtime.v2.runtime.JAXBContextImpl",
+            "org.glassfish.jaxb.runtime.v2.model.runtime.RuntimeElementPropertyInfo"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.glassfish.jaxb.runtime.v2.runtime.property.SingleMapNodeProperty"
+    },
+    {
+      "type": "org.glassfish.jaxb.runtime.v2.runtime.property.SingleReferenceNodeProperty",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.glassfish.jaxb.runtime.v2.runtime.JAXBContextImpl",
+            "org.glassfish.jaxb.runtime.v2.model.runtime.RuntimeReferencePropertyInfo"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.AliasTable",
+      "fields": [
+        {
+          "name": "alias"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.DataTypeDefinition",
+      "fields": [
+        {
+          "name": "field"
+        },
+        {
+          "name": "isOptionSet"
+        },
+        {
+          "name": "isUnion"
+        },
+        {
+          "name": "name"
+        },
+        {
+          "name": "symbolicName"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.DataTypeField",
+      "fields": [
+        {
+          "name": "allowSubTypes"
+        },
+        {
+          "name": "arrayDimensions"
+        },
+        {
+          "name": "dataType"
+        },
+        {
+          "name": "description"
+        },
+        {
+          "name": "isOptional"
+        },
+        {
+          "name": "name"
+        },
+        {
+          "name": "value"
+        },
+        {
+          "name": "valueRank"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.DataTypePurpose",
+      "fields": [
+        {
+          "name": "CODE_GENERATOR"
+        },
+        {
+          "name": "NORMAL"
+        },
+        {
+          "name": "SERVICES_ONLY"
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.ListOfExtensions",
+      "fields": [
+        {
+          "name": "extension"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.ListOfExtensions$Extension",
+      "fields": [
+        {
+          "name": "any"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.ListOfReferences",
+      "fields": [
+        {
+          "name": "reference"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.ListOfRolePermissions"
+    },
+    {
+      "type": "org.opcfoundation.ua.LocalizedText",
+      "fields": [
+        {
+          "name": "value"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.ModelTable",
+      "fields": [
+        {
+          "name": "model"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.ModelTableEntry",
+      "fields": [
+        {
+          "name": "modelUri"
+        },
+        {
+          "name": "publicationDate"
+        },
+        {
+          "name": "requiredModel"
+        },
+        {
+          "name": "version"
+        },
+        {
+          "name": "xmlSchemaUri"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.NodeIdAlias",
+      "fields": [
+        {
+          "name": "alias"
+        },
+        {
+          "name": "value"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.NodeSetStatus"
+    },
+    {
+      "type": "org.opcfoundation.ua.NodeSetStatusList"
+    },
+    {
+      "type": "org.opcfoundation.ua.NodeToDelete"
+    },
+    {
+      "type": "org.opcfoundation.ua.NodesToAdd"
+    },
+    {
+      "type": "org.opcfoundation.ua.NodesToDelete"
+    },
+    {
+      "type": "org.opcfoundation.ua.ObjectFactory"
+    },
+    {
+      "type": "org.opcfoundation.ua.Reference",
+      "fields": [
+        {
+          "name": "isForward"
+        },
+        {
+          "name": "referenceType"
+        },
+        {
+          "name": "value"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.ReferenceChange"
+    },
+    {
+      "type": "org.opcfoundation.ua.ReferencesToChange"
+    },
+    {
+      "type": "org.opcfoundation.ua.ReleaseStatus",
+      "fields": [
+        {
+          "name": "DEPRECATED"
+        },
+        {
+          "name": "DRAFT"
+        },
+        {
+          "name": "RELEASED"
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.RolePermission"
+    },
+    {
+      "type": "org.opcfoundation.ua.StructureTranslationType"
+    },
+    {
+      "type": "org.opcfoundation.ua.TranslationType"
+    },
+    {
+      "type": "org.opcfoundation.ua.UADataType",
+      "fields": [
+        {
+          "name": "definition"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.UAInstance",
+      "fields": [
+        {
+          "name": "parentNodeId"
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.UAMethod",
+      "fields": [
+        {
+          "name": "methodDeclarationId"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.UAMethodArgument"
+    },
+    {
+      "type": "org.opcfoundation.ua.UANode",
+      "fields": [
+        {
+          "name": "browseName"
+        },
+        {
+          "name": "category"
+        },
+        {
+          "name": "description"
+        },
+        {
+          "name": "displayName"
+        },
+        {
+          "name": "documentation"
+        },
+        {
+          "name": "nodeId"
+        },
+        {
+          "name": "references"
+        },
+        {
+          "name": "releaseStatus"
+        },
+        {
+          "name": "symbolicName"
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.UANodeSet",
+      "fields": [
+        {
+          "name": "aliases"
+        },
+        {
+          "name": "extensions"
+        },
+        {
+          "name": "lastModified"
+        },
+        {
+          "name": "models"
+        },
+        {
+          "name": "namespaceUris"
+        },
+        {
+          "name": "uaObjectOrUAVariableOrUAMethod"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.UANodeSetChanges"
+    },
+    {
+      "type": "org.opcfoundation.ua.UANodeSetChangesStatus"
+    },
+    {
+      "type": "org.opcfoundation.ua.UAObject",
+      "fields": [
+        {
+          "name": "eventNotifier"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.UAObjectType",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.UAReferenceType",
+      "fields": [
+        {
+          "name": "inverseName"
+        },
+        {
+          "name": "symmetric"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.UAType",
+      "fields": [
+        {
+          "name": "isAbstract"
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.UAVariable",
+      "fields": [
+        {
+          "name": "accessLevel"
+        },
+        {
+          "name": "arrayDimensions"
+        },
+        {
+          "name": "dataType"
+        },
+        {
+          "name": "minimumSamplingInterval"
+        },
+        {
+          "name": "value"
+        },
+        {
+          "name": "valueRank"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.UAVariable$Value",
+      "fields": [
+        {
+          "name": "any"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.UAVariableType",
+      "fields": [
+        {
+          "name": "arrayDimensions"
+        },
+        {
+          "name": "dataType"
+        },
+        {
+          "name": "valueRank"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.opcfoundation.ua.UAVariableType$Value"
+    },
+    {
+      "type": "org.opcfoundation.ua.UAView"
+    },
+    {
+      "type": "org.opcfoundation.ua.UriTable",
+      "fields": [
+        {
+          "name": "uri"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.misc.Unsafe",
+      "fields": [
+        {
+          "name": "theUnsafe"
+        }
+      ],
+      "methods": [
+        {
+          "name": "invokeCleaner",
+          "parameterTypes": [
+            "java.nio.ByteBuffer"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.nio.ch.SelectorImpl",
+      "fields": [
+        {
+          "name": "publicSelectedKeys"
+        },
+        {
+          "name": "selectedKeys"
+        }
+      ]
+    },
+    {
+      "type": "sun.security.pkcs12.PKCS12KeyStore",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.pkcs12.PKCS12KeyStore$DualFormatPKCS12",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.NativePRNG",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.security.SecureRandomParameters"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.SHA",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.SHA2$SHA256",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.X509Factory",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.rsa.RSAKeyFactory$Legacy",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.rsa.RSASignature$SHA256withRSA",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.AuthorityKeyIdentifierExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.BasicConstraintsExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.ExtendedKeyUsageExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.KeyUsageExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.SubjectAlternativeNameExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.SubjectKeyIdentifierExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData"
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData_en"
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData_en_US"
+    },
+    {
+      "type": "sun.util.resources.cldr.CalendarData"
+    }
+  ],
+  "resources": [
+    {
+      "glob": "1.05/Opc.Ua.NodeSet2.xml"
+    },
+    {
+      "glob": "DataTypeTest.NodeSet.xml"
+    },
+    {
+      "glob": "META-INF/MANIFEST.MF"
+    },
+    {
+      "glob": "META-INF/services/ch.qos.logback.classic.spi.Configurator"
+    },
+    {
+      "glob": "META-INF/services/jakarta.xml.bind.JAXBContextFactory"
+    },
+    {
+      "glob": "META-INF/services/java.net.spi.URLStreamHandlerProvider"
+    },
+    {
+      "glob": "META-INF/services/java.nio.channels.spi.SelectorProvider"
+    },
+    {
+      "glob": "META-INF/services/java.nio.charset.spi.CharsetProvider"
+    },
+    {
+      "glob": "META-INF/services/java.time.zone.ZoneRulesProvider"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.datatype.DatatypeFactory"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.parsers.DocumentBuilderFactory"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.parsers.SAXParserFactory"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.transform.TransformerFactory"
+    },
+    {
+      "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
+    },
+    {
+      "glob": "default-server.conf"
+    },
+    {
+      "glob": "logback-test.scmo"
+    },
+    {
+      "glob": "logback-test.xml"
+    },
+    {
+      "glob": "logback.scmo"
+    },
+    {
+      "glob": "logback.xml"
+    },
+    {
+      "glob": "turtle-icon.png"
+    },
+    {
+      "module": "java.base",
+      "glob": "jdk/internal/icu/impl/data/icudt76b/nfc.nrm"
+    },
+    {
+      "module": "java.base",
+      "glob": "jdk/internal/icu/impl/data/icudt76b/nfkc.nrm"
+    },
+    {
+      "module": "java.xml",
+      "glob": "com/sun/org/apache/xml/internal/serializer/Encodings.properties"
+    },
+    {
+      "module": "java.xml",
+      "glob": "com/sun/org/apache/xml/internal/serializer/XMLEntities.properties"
+    },
+    {
+      "module": "java.xml",
+      "glob": "com/sun/org/apache/xml/internal/serializer/XMLEntities_en.properties"
+    },
+    {
+      "module": "java.xml",
+      "glob": "com/sun/org/apache/xml/internal/serializer/XMLEntities_en_US.properties"
+    },
+    {
+      "bundle": "com.sun.org.apache.xml.internal.serializer.XMLEntities"
+    }
+  ]
+}

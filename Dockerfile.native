@@ -1,0 +1,41 @@
+# Stage 1: Build the native image
+FROM ghcr.io/graalvm/native-image-community:25 AS builder
+
+# Install Maven and Git
+RUN microdnf install -y maven git && microdnf clean all
+
+# Set working directory inside the container
+WORKDIR /app
+
+# Copy the project files
+COPY . .
+
+## See https://bugs.openjdk.org/browse/JDK-834529
+#ARG TARGETPLATFORM
+#ARG ENV_JTO=${TARGETPLATFORM/linux\/arm64/-XX:UseSVE=0}
+#ARG ENV_JTO=${ENV_JTO/$TARGETPLATFORM/}
+#
+#RUN echo "ENV_JTO is set to: $ENV_JTO"
+#ENV JAVA_TOOL_OPTIONS=$ENV_JTO
+
+# Build the native image using Maven
+RUN mvn clean package -Pnative -DskipTests
+
+# Stage 2: Create minimal runtime image
+FROM debian:bookworm-slim AS runtime
+
+# Install minimal dependencies for native image
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libstdc++6 \
+    zlib1g && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set working directory inside the container
+WORKDIR /app
+
+# Copy the native executable from the build stage
+COPY --from=builder /app/target/opc-ua-demo-server opc-ua-demo-server
+
+# Define the entry point to run server
+ENTRYPOINT ["./opc-ua-demo-server"]
