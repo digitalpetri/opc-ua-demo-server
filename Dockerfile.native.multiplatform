@@ -1,0 +1,21 @@
+# Multi-platform Dockerfile for pre-built native images
+# This Dockerfile expects the native binary to be provided via build context
+
+FROM debian:bookworm-slim
+
+# Install minimal dependencies for native image
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libstdc++6 \
+    zlib1g && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy the appropriate binary based on platform
+ARG TARGETPLATFORM
+COPY ${TARGETPLATFORM}/opc-ua-demo-server /app/opc-ua-demo-server
+
+# Define the entry point
+ENTRYPOINT ["./opc-ua-demo-server"]
