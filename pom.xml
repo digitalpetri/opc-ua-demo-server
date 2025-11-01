@@ -255,7 +255,6 @@
                 </buildArg>
                 <!-- Memory optimization flags -->
                 <buildArg>-J-Xmx12g</buildArg>
-                <buildArg>-H:+UnlockExperimentalVMOptions -H:MaxHeapSize=256m</buildArg>
                 <buildArg>--gc=serial</buildArg>
                 <buildArg>--parallelism=2</buildArg>
               </buildArgs>
