@@ -10,17 +10,22 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseResultMask;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
+import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodRequest;
+import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodResult;
+import org.eclipse.milo.opcua.stack.core.types.structured.CallResponse;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -279,6 +284,28 @@ class CttNodesIT {
     NodeId methodNoArgsNodeId = browseForNode(methodsFolderNodeId, "MethodNoArgs");
     assertNotNull(methodNoArgsNodeId, "MethodNoArgs should be found");
     logger.info("Found MethodNoArgs: {}", methodNoArgsNodeId);
+
+    // Then: Call the method to verify it's callable
+    Variant[] inputArguments = new Variant[0]; // MethodNoArgs has no input arguments
+    CallMethodRequest request =
+        new CallMethodRequest(methodsFolderNodeId, methodNoArgsNodeId, inputArguments);
+
+    CallResponse response = client.call(List.of(request));
+
+    // And: Verify the method executed successfully
+    assertNotNull(response, "Method call should return a response");
+    assertNotNull(response.getResults(), "Response should contain results");
+    assertEquals(1, response.getResults().length, "Should have one result");
+
+    CallMethodResult result = response.getResults()[0];
+    assertTrue(
+        result.getStatusCode().isGood(), "Method call should succeed: " + result.getStatusCode());
+
+    Variant[] outputValues = result.getOutputArguments();
+    assertNotNull(outputValues, "Output values should not be null");
+    assertEquals(0, outputValues.length, "MethodNoArgs should return no output values");
+
+    logger.info("Successfully called MethodNoArgs");
   }
 
   @Test
