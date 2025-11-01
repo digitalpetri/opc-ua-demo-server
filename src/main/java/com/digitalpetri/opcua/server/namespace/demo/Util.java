@@ -44,7 +44,7 @@ public class Util {
         parentNodeId.getNamespaceIndex(), "%s.%s".formatted(parentNodeId.getIdentifier(), name));
   }
 
-  static Object getDefaultScalarValue(OpcUaDataType dataType) {
+  public static Object getDefaultScalarValue(OpcUaDataType dataType) {
     return switch (dataType) {
       case Boolean -> Boolean.FALSE;
       case SByte -> (byte) 0;
@@ -75,7 +75,7 @@ public class Util {
     };
   }
 
-  static Object getDefaultArrayValue(OpcUaDataType dataType) {
+  public static Object getDefaultArrayValue(OpcUaDataType dataType) {
     Object value = getDefaultScalarValue(dataType);
     Object array = Array.newInstance(value.getClass(), 5);
     for (int i = 0; i < 5; i++) {
@@ -84,7 +84,7 @@ public class Util {
     return array;
   }
 
-  static Matrix getDefaultMatrixValue(OpcUaDataType dataType) {
+  public static Matrix getDefaultMatrixValue(OpcUaDataType dataType) {
     Object value = getDefaultScalarValue(dataType);
     Object array = Array.newInstance(value.getClass(), 5, 5);
     for (int i = 0; i < 5; i++) {
