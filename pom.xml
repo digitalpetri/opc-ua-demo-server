@@ -247,8 +247,12 @@
               <buildArgs>
                 <buildArg>--no-fallback</buildArg>
                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
-                <buildArg>--initialize-at-build-time=org.slf4j,ch.qos.logback</buildArg>
-                <buildArg>--initialize-at-run-time=io.netty,org.bouncycastle</buildArg>
+                <buildArg>
+                  --initialize-at-build-time=org.slf4j,ch.qos.logback,com.digitalpetri.opcua.server.BouncyCastleInitializer,org.bouncycastle
+                </buildArg>
+                <buildArg>
+                  --initialize-at-run-time=io.netty,org.bouncycastle.jcajce.provider.drbg.DRBG$Default,org.bouncycastle.jcajce.provider.drbg.DRBG$NonceAndIV
+                </buildArg>
               </buildArgs>
             </configuration>
           </plugin>

@@ -112,6 +112,15 @@
       "type": "com.digitalpetri.opcua.test.types.UnionOfScalar[]"
     },
     {
+      "type": "com.sun.crypto.provider.AESCipher$General",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "com.sun.crypto.provider.HmacCore$HmacSHA256",
       "methods": [
         {
@@ -149,6 +158,15 @@
     },
     {
       "type": "com.sun.crypto.provider.PBES2Parameters$General",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.PBES2Parameters$HmacSHA256AndAES_256",
       "methods": [
         {
           "name": "<init>",
@@ -749,6 +767,33 @@
     },
     {
       "type": "org.bouncycastle.jcajce.provider.asymmetric.X509$Mappings",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.rsa.CipherSpi$NoPadding",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.rsa.DigestSignatureSpi$SHA256",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.bouncycastle.jcajce.provider.asymmetric.rsa.PSSSignatureSpi$SHA256withRSA",
       "methods": [
         {
           "name": "<init>",
@@ -2364,10 +2409,25 @@
       "type": "org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription[]"
     },
     {
+      "type": "org.eclipse.milo.opcua.stack.core.types.structured.BrowsePath[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.structured.ContentFilterElement[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateRequest[]"
+    },
+    {
       "type": "org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId[]"
     },
     {
+      "type": "org.eclipse.milo.opcua.stack.core.types.structured.RelativePathElement[]"
+    },
+    {
       "type": "org.eclipse.milo.opcua.stack.core.types.structured.SignedSoftwareCertificate[]"
+    },
+    {
+      "type": "org.eclipse.milo.opcua.stack.core.types.structured.SimpleAttributeOperand[]"
     },
     {
       "type": "org.eclipse.milo.opcua.stack.core.types.structured.XVType[]"
@@ -3086,7 +3146,25 @@
       ]
     },
     {
+      "type": "sun.security.provider.certpath.SunCertPathBuilder",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "sun.security.rsa.RSAKeyFactory$Legacy",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.rsa.RSAKeyPairGenerator$Legacy",
       "methods": [
         {
           "name": "<init>",
@@ -3230,6 +3308,9 @@
     },
     {
       "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
+    },
+    {
+      "glob": "default-logback.xml"
     },
     {
       "glob": "default-server.conf"
