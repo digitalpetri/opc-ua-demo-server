@@ -88,7 +88,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
   private final OpcUaServer server;
 
-  public OpcUaDemoServer(Path dataDirPath) throws Exception {
+  public OpcUaDemoServer(Path dataDirPath, Config config) throws Exception {
     Path securityDirPath = dataDirPath.resolve("security");
     Path pkiDirPath = securityDirPath.resolve("pki");
     Path userPkiDirPath = securityDirPath.resolve("pki-user");
@@ -99,27 +99,6 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     if (!userPkiDirPath.toFile().exists() && !userPkiDirPath.toFile().mkdirs()) {
       throw new RuntimeException("failed to resolve or create user pki dir: " + userPkiDirPath);
     }
-
-    Path configFilePath = dataDirPath.resolve("server.conf");
-
-    InputStream defaultConfigInputStream =
-        OpcUaDemoServer.class.getClassLoader().getResourceAsStream("default-server.conf");
-
-    assert defaultConfigInputStream != null;
-
-    // If the config file doesn't exist, copy the default from the classpath.
-    if (!configFilePath.toFile().exists()) {
-      Files.copy(defaultConfigInputStream, configFilePath);
-    }
-
-    Config defaultConfig =
-        ConfigFactory.parseReader(new InputStreamReader(defaultConfigInputStream));
-
-    Config userConfig = ConfigFactory.parseFile(configFilePath.toFile());
-
-    // Load the user config and merge it with the default config in case anything is missing.
-    // This also allows the user config to contain only override values.
-    Config config = userConfig.withFallback(defaultConfig);
 
     Stack.ConnectionLimits.RATE_LIMIT_ENABLED = config.getBoolean("rate-limit-enabled");
 
@@ -258,6 +237,15 @@ public class OpcUaDemoServer extends AbstractLifecycle {
   @Override
   protected void onShutdown() {
     server.shutdown();
+  }
+
+  /**
+   * Get the underlying {@link OpcUaServer}.
+   *
+   * @return the underlying {@link OpcUaServer}.
+   */
+  public OpcUaServer getServer() {
+    return server;
   }
 
   private UsernameIdentityValidator createUsernameIdentityValidator() {
@@ -523,7 +511,29 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     configureLogback(logbackXmlFile);
 
-    var server = new OpcUaDemoServer(dataDirPath);
+    // Load configuration
+    Path configFilePath = dataDirPath.resolve("server.conf");
+
+    InputStream defaultConfigInputStream =
+        OpcUaDemoServer.class.getClassLoader().getResourceAsStream("default-server.conf");
+
+    assert defaultConfigInputStream != null;
+
+    // If the config file doesn't exist, copy the default from the classpath.
+    if (!configFilePath.toFile().exists()) {
+      Files.copy(defaultConfigInputStream, configFilePath);
+    }
+
+    Config defaultConfig =
+        ConfigFactory.parseReader(new InputStreamReader(defaultConfigInputStream));
+
+    Config userConfig = ConfigFactory.parseFile(configFilePath.toFile());
+
+    // Load the user config and merge it with the default config in case anything is missing.
+    // This also allows the user config to contain only override values.
+    Config config = userConfig.withFallback(defaultConfig);
+
+    var server = new OpcUaDemoServer(dataDirPath, config);
     server.startup();
 
     long startupDuration =
