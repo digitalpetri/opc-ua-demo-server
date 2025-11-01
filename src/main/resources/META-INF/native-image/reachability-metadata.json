@@ -3191,6 +3191,11 @@
             "java.lang.Object"
           ]
         }
+      ],
+      "fields": [
+        {
+          "name": "NAME"
+        }
       ]
     },
     {
@@ -3202,6 +3207,11 @@
             "java.lang.Boolean",
             "java.lang.Object"
           ]
+        }
+      ],
+      "fields": [
+        {
+          "name": "NAME"
         }
       ]
     },
@@ -3215,6 +3225,11 @@
             "java.lang.Object"
           ]
         }
+      ],
+      "fields": [
+        {
+          "name": "NAME"
+        }
       ]
     },
     {
@@ -3226,6 +3241,11 @@
             "java.lang.Boolean",
             "java.lang.Object"
           ]
+        }
+      ],
+      "fields": [
+        {
+          "name": "NAME"
         }
       ]
     },
@@ -3239,6 +3259,11 @@
             "java.lang.Object"
           ]
         }
+      ],
+      "fields": [
+        {
+          "name": "NAME"
+        }
       ]
     },
     {
@@ -3250,6 +3275,11 @@
             "java.lang.Boolean",
             "java.lang.Object"
           ]
+        }
+      ],
+      "fields": [
+        {
+          "name": "NAME"
         }
       ]
     },
