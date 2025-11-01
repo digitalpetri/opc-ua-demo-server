@@ -13,9 +13,22 @@ RUN apt-get update && \
 # Set working directory
 WORKDIR /app
 
-# Copy the appropriate binary based on platform
+# Copy all binaries and select the appropriate one based on platform
+# TARGETPLATFORM is in format linux/amd64 or linux/arm64
+# Our directory structure uses hyphens: linux-amd64, linux-arm64
+COPY linux-amd64/opc-ua-demo-server /tmp/linux-amd64-binary
+COPY linux-arm64/opc-ua-demo-server /tmp/linux-arm64-binary
+
 ARG TARGETPLATFORM
-COPY ${TARGETPLATFORM}/opc-ua-demo-server /app/opc-ua-demo-server
+RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ]; then \
+        mv /tmp/linux-amd64-binary /app/opc-ua-demo-server; \
+    elif [ "${TARGETPLATFORM}" = "linux/arm64" ]; then \
+        mv /tmp/linux-arm64-binary /app/opc-ua-demo-server; \
+    else \
+        echo "Unsupported platform: ${TARGETPLATFORM}" && exit 1; \
+    fi && \
+    chmod +x /app/opc-ua-demo-server && \
+    rm -f /tmp/linux-*-binary
 
 # Define the entry point
 ENTRYPOINT ["./opc-ua-demo-server"]
