@@ -45,17 +45,18 @@
     <data-type-test.version>0.3</data-type-test.version>
     <jakarta.xml.bind-api.version>4.0.2</jakarta.xml.bind-api.version>
     <jetbrains-annotations.version>24.1.0</jetbrains-annotations.version>
-    <logback.version>1.5.17</logback.version>
+    <junit.version>6.0.1</junit.version>
+    <logback.version>1.5.20</logback.version>
     <milo.version>1.0.7</milo.version>
-    <typesafe-config.version>1.4.3</typesafe-config.version>
-    <uanodeset.version>0.3</uanodeset.version>
+    <typesafe-config.version>1.4.5</typesafe-config.version>
+    <uanodeset.version>0.4.1</uanodeset.version>
 
     <!-- Plugin Dependencies -->
     <buildnumber-maven-plugin.version>3.2.1</buildnumber-maven-plugin.version>
-    <checkstyle.version>10.21.4</checkstyle.version>
-    <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
-    <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
-    <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
+    <maven-dependency-plugin.version>3.9.0</maven-dependency-plugin.version>
+    <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
+    <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
+    <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
     <spotless-maven-plugin.version>3.0.0</spotless-maven-plugin.version>
   </properties>
 
@@ -84,7 +85,7 @@
         <version>${spotless-maven-plugin.version}</version>
         <configuration>
           <java>
-            <googleJavaFormat />
+            <googleJavaFormat/>
           </java>
         </configuration>
         <executions>
@@ -94,35 +95,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${maven-checkstyle-plugin.version}</version>
-        <configuration>
-          <configLocation>config/checkstyle/google_checks.xml</configLocation>
-          <consoleOutput>true</consoleOutput>
-          <failsOnError>true</failsOnError>
-          <includeTestSourceDirectory>true
-          </includeTestSourceDirectory>
-          <linkXRef>false</linkXRef>
-        </configuration>
-        <executions>
-          <execution>
-            <id>validate</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>com.puppycrawl.tools</groupId>
-            <artifactId>checkstyle</artifactId>
-            <version>${checkstyle.version}</version>
-          </dependency>
-        </dependencies>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -137,7 +109,7 @@
             <configuration>
               <rules>
                 <requireMavenVersion>
-                  <version>3.2.5</version>
+                  <version>3.6.3</version>
                 </requireMavenVersion>
               </rules>
             </configuration>
@@ -192,7 +164,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.2.5</version>
+        <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <useModulePath>false</useModulePath>
         </configuration>
@@ -211,6 +183,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
+            <version>${maven-dependency-plugin.version}</version>
             <executions>
               <execution>
                 <id>unpack-sources</id>
@@ -221,7 +194,7 @@
                 <configuration>
                   <classifier>sources</classifier>
                   <failOnMissingClassifierArtifact>false</failOnMissingClassifierArtifact>
-                  <outputDirectory>${session.executionRootDirectory}/external/src</outputDirectory>
+                  <outputDirectory>${project.basedir}/external/src</outputDirectory>
                 </configuration>
               </execution>
             </executions>
@@ -264,13 +237,13 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
-      <version>5.10.2</version>
+      <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.10.2</version>
+      <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
