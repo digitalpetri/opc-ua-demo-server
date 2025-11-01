@@ -10,14 +10,6 @@ WORKDIR /app
 # Copy the project files
 COPY . .
 
-## See https://bugs.openjdk.org/browse/JDK-834529
-#ARG TARGETPLATFORM
-#ARG ENV_JTO=${TARGETPLATFORM/linux\/arm64/-XX:UseSVE=0}
-#ARG ENV_JTO=${ENV_JTO/$TARGETPLATFORM/}
-#
-#RUN echo "ENV_JTO is set to: $ENV_JTO"
-#ENV JAVA_TOOL_OPTIONS=$ENV_JTO
-
 # Build the native image using Maven
 RUN mvn clean package -Pnative -DskipTests
 
