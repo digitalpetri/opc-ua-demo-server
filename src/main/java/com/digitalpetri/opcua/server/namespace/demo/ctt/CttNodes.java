@@ -39,8 +39,7 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
 
     // Create and add all child fragments
     var allProfilesFragment =
-        new AllProfilesFragment(
-            server, this, rootFragment.getStaticFolderNodeId(), namespaceIndex);
+        new AllProfilesFragment(server, this, rootFragment.getStaticFolderNodeId(), namespaceIndex);
     lifecycleManager.addLifecycle(allProfilesFragment);
 
     var dataAccessProfileFragment =
@@ -49,8 +48,7 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
     lifecycleManager.addLifecycle(dataAccessProfileFragment);
 
     var referencesFragment =
-        new ReferencesFragment(
-            server, this, rootFragment.getStaticFolderNodeId(), namespaceIndex);
+        new ReferencesFragment(server, this, rootFragment.getStaticFolderNodeId(), namespaceIndex);
     lifecycleManager.addLifecycle(referencesFragment);
 
     var pathsFragment =
@@ -62,8 +60,7 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
     lifecycleManager.addLifecycle(methodsFragment);
 
     var securityAccessFragment =
-        new SecurityAccessFragment(
-            server, this, rootFragment.getCttFolderNodeId(), namespaceIndex);
+        new SecurityAccessFragment(server, this, rootFragment.getCttFolderNodeId(), namespaceIndex);
     lifecycleManager.addLifecycle(securityAccessFragment);
   }
 

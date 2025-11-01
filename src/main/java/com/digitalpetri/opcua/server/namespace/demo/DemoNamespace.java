@@ -2,6 +2,7 @@ package com.digitalpetri.opcua.server.namespace.demo;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 
+import com.digitalpetri.opcua.server.namespace.demo.ctt.CttNodes;
 import com.digitalpetri.opcua.server.namespace.demo.debug.DebugNodesFragment;
 import com.typesafe.config.Config;
 import java.util.List;
@@ -73,7 +74,8 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
 
     boolean cttEnabled = config.getBoolean("address-space.ctt.enabled");
     if (cttEnabled) {
-      var cttNodes = new com.digitalpetri.opcua.server.namespace.demo.ctt.CttNodes(server, this);
+      var cttNodes = new CttNodes(server, this);
+      register(cttNodes);
       lifecycleManager.addLifecycle(cttNodes);
     }
 
