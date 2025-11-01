@@ -38,12 +38,22 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
     lifecycleManager.addLifecycle(cttRootFragment);
 
     // Register all CTT fragments
-    register(new AllProfilesFragment(server, this, cttRootFragment.getStaticFolderNodeId(), namespaceIndex));
-    register(new DataAccessProfileFragment(server, this, cttRootFragment.getStaticFolderNodeId(), namespaceIndex));
-    register(new ReferencesFragment(server, this, cttRootFragment.getStaticFolderNodeId(), namespaceIndex));
-    register(new PathsFragment(server, this, cttRootFragment.getStaticFolderNodeId(), namespaceIndex));
-    register(new MethodsFragment(server, this, cttRootFragment.getCttFolderNodeId(), namespaceIndex));
-    register(new SecurityAccessFragment(server, this, cttRootFragment.getCttFolderNodeId(), namespaceIndex));
+    register(
+        new AllProfilesFragment(
+            server, this, cttRootFragment.getStaticFolderNodeId(), namespaceIndex));
+    register(
+        new DataAccessProfileFragment(
+            server, this, cttRootFragment.getStaticFolderNodeId(), namespaceIndex));
+    register(
+        new ReferencesFragment(
+            server, this, cttRootFragment.getStaticFolderNodeId(), namespaceIndex));
+    register(
+        new PathsFragment(server, this, cttRootFragment.getStaticFolderNodeId(), namespaceIndex));
+    register(
+        new MethodsFragment(server, this, cttRootFragment.getCttFolderNodeId(), namespaceIndex));
+    register(
+        new SecurityAccessFragment(
+            server, this, cttRootFragment.getCttFolderNodeId(), namespaceIndex));
   }
 
   @Override
@@ -56,9 +66,7 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
     lifecycleManager.shutdown();
   }
 
-  /**
-   * Private fragment that creates the root CTT folder and Static subfolder.
-   */
+  /** Private fragment that creates the root CTT folder and Static subfolder. */
   private static class CttRootFragment extends ManagedAddressSpaceFragmentWithLifecycle {
 
     private final AddressSpaceFilter filter =
