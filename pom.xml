@@ -253,6 +253,11 @@
                 <buildArg>
                   --initialize-at-run-time=io.netty,org.bouncycastle.jcajce.provider.drbg.DRBG$Default,org.bouncycastle.jcajce.provider.drbg.DRBG$NonceAndIV
                 </buildArg>
+                <!-- Memory optimization flags -->
+                <buildArg>-J-Xmx12g</buildArg>
+                <buildArg>-H:MaxHeapSize=256m</buildArg>
+                <buildArg>--gc=serial</buildArg>
+                <buildArg>--parallelism=2</buildArg>
               </buildArgs>
             </configuration>
           </plugin>
