@@ -18,7 +18,7 @@ jobs:
             runner: ubuntu-latest
             artifact-name: opc-ua-demo-server-linux-amd64
           - platform: linux/arm64
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             artifact-name: opc-ua-demo-server-linux-arm64
     
     steps:
