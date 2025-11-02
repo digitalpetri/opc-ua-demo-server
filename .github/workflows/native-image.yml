@@ -2,9 +2,9 @@ name: Native Image Build and Docker
 
 on:
   push:
-    branches: [ "native-image", "1.0" ]
+    branches: [ "1.0" ]
   pull_request:
-    branches: [ "native-image", "1.0" ]
+    branches: [ "1.0" ]
   workflow_dispatch:
 
 jobs:
