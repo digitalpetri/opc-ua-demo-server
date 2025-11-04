@@ -48,6 +48,7 @@
     <junit.version>6.0.1</junit.version>
     <logback.version>1.5.20</logback.version>
     <milo.version>1.0.7</milo.version>
+    <netty.version>4.2.7.Final</netty.version>
     <typesafe-config.version>1.4.5</typesafe-config.version>
     <uanodeset.version>0.4.1</uanodeset.version>
 
@@ -269,6 +270,20 @@
     <dependency>
       <groupId>org.eclipse.milo</groupId>
       <artifactId>milo-sdk-server</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-handler</artifactId>
     </dependency>
     <dependency>
       <groupId>com.typesafe</groupId>
@@ -320,6 +335,13 @@
         <groupId>org.eclipse.milo</groupId>
         <artifactId>milo-bom</artifactId>
         <version>${milo.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-bom</artifactId>
+        <version>${netty.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
