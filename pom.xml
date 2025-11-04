@@ -249,7 +249,7 @@
                 <buildArg>--no-fallback</buildArg>
                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
                 <buildArg>
-                  --initialize-at-build-time=org.slf4j,ch.qos.logback,com.digitalpetri.opcua.server.BouncyCastleInitializer,org.bouncycastle
+                  --initialize-at-build-time=org.slf4j,ch.qos.logback,com.digitalpetri.opcua.server.BouncyCastleInitializer,org.bouncycastle,org.eclipse.milo.opcua.stack.core.types.builtin,org.bouncycastle,org.eclipse.milo.opcua.stack.core.types.enumerated,org.bouncycastle,org.eclipse.milo.opcua.stack.core.types.structured,org.eclipse.milo.opcua.stack.core.NodeIds,org.eclipse.milo.opcua.sdk.server.model.objects,org.eclipse.milo.opcua.sdk.server.model.variables,org.eclipse.milo.opcua.sdk.core.QualifiedProperty
                 </buildArg>
                 <buildArg>
                   --initialize-at-run-time=io.netty,org.bouncycastle.jcajce.provider.drbg.DRBG$Default,org.bouncycastle.jcajce.provider.drbg.DRBG$NonceAndIV
