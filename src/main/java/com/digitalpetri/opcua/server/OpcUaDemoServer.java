@@ -203,9 +203,12 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     server.getNamespaceTable().set(2, DemoNamespace.NAMESPACE_URI);
 
-    server.getNamespaceTable().set(3, DataTypeTestNamespace.NAMESPACE_URI);
-    var dataTypeTestNamespace = DataTypeTestNamespace.create(server);
-    dataTypeTestNamespace.startup();
+    boolean dataTypeTestEnabled = config.getBoolean("address-space.data-type-test.enabled");
+    if (dataTypeTestEnabled) {
+      server.getNamespaceTable().set(3, DataTypeTestNamespace.NAMESPACE_URI);
+      var dataTypeTestNamespace = DataTypeTestNamespace.create(server);
+      dataTypeTestNamespace.startup();
+    }
 
     var demoNamespace = new DemoNamespace(server, config);
     demoNamespace.startup();
