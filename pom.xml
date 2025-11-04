@@ -47,7 +47,7 @@
     <jetbrains-annotations.version>24.1.0</jetbrains-annotations.version>
     <junit.version>6.0.1</junit.version>
     <logback.version>1.5.20</logback.version>
-    <milo.version>1.0.7</milo.version>
+    <milo.version>1.0.8</milo.version>
     <netty.version>4.2.7.Final</netty.version>
     <typesafe-config.version>1.4.5</typesafe-config.version>
     <uanodeset.version>0.4.1</uanodeset.version>
