@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -400,7 +401,7 @@ class CttNodesIT {
     ReferenceDescription[] references = browseResult.getReferences();
     if (references != null) {
       for (ReferenceDescription ref : references) {
-        if (ref.getBrowseName().getName().equals(browseName)) {
+        if (Objects.equals(ref.getBrowseName().getName(), browseName)) {
           return ref.getNodeId().toNodeId(client.getNamespaceTable()).orElse(null);
         }
       }
