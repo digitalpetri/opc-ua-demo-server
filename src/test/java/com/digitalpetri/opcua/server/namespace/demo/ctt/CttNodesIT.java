@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
-import org.eclipse.milo.opcua.stack.core.Identifiers;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
@@ -81,7 +81,7 @@ class CttNodesIT {
     // Objects -> CTT -> Static -> AllProfiles -> Scalar -> Boolean
 
     // When: Browse to CTT folder
-    NodeId cttFolderNodeId = browseForNode(Identifiers.ObjectsFolder, "CTT");
+    NodeId cttFolderNodeId = browseForNode(NodeIds.ObjectsFolder, "CTT");
     assertNotNull(cttFolderNodeId, "CTT folder should be found");
     logger.info("Found CTT folder: {}", cttFolderNodeId);
 
@@ -117,7 +117,7 @@ class CttNodesIT {
     // Given: Path to an array node in AllProfiles fragment
     // Objects -> CTT -> Static -> AllProfiles -> Array -> Int32Array
 
-    NodeId cttFolderNodeId = browseForNode(Identifiers.ObjectsFolder, "CTT");
+    NodeId cttFolderNodeId = browseForNode(NodeIds.ObjectsFolder, "CTT");
     NodeId staticFolderNodeId = browseForNode(cttFolderNodeId, "Static");
     NodeId allProfilesFolderNodeId = browseForNode(staticFolderNodeId, "AllProfiles");
 
@@ -143,7 +143,7 @@ class CttNodesIT {
     // Given: Path to a matrix node in AllProfiles fragment
     // Objects -> CTT -> Static -> AllProfiles -> Matrix -> DoubleMatrix
 
-    NodeId cttFolderNodeId = browseForNode(Identifiers.ObjectsFolder, "CTT");
+    NodeId cttFolderNodeId = browseForNode(NodeIds.ObjectsFolder, "CTT");
     NodeId staticFolderNodeId = browseForNode(cttFolderNodeId, "Static");
     NodeId allProfilesFolderNodeId = browseForNode(staticFolderNodeId, "AllProfiles");
 
@@ -169,7 +169,7 @@ class CttNodesIT {
     // Given: Path to an AnalogItemType node in DataAccessProfile fragment
     // Objects -> CTT -> Static -> DataAccessProfile -> AnalogItemType -> DoubleAnalog
 
-    NodeId cttFolderNodeId = browseForNode(Identifiers.ObjectsFolder, "CTT");
+    NodeId cttFolderNodeId = browseForNode(NodeIds.ObjectsFolder, "CTT");
     NodeId staticFolderNodeId = browseForNode(cttFolderNodeId, "Static");
     NodeId dataAccessProfileFolderNodeId = browseForNode(staticFolderNodeId, "DataAccessProfile");
     assertNotNull(dataAccessProfileFolderNodeId, "DataAccessProfile folder should be found");
@@ -198,7 +198,7 @@ class CttNodesIT {
     // Given: Path to a DataItemType node in DataAccessProfile fragment
     // Objects -> CTT -> Static -> DataAccessProfile -> DataItemType -> Int32
 
-    NodeId cttFolderNodeId = browseForNode(Identifiers.ObjectsFolder, "CTT");
+    NodeId cttFolderNodeId = browseForNode(NodeIds.ObjectsFolder, "CTT");
     NodeId staticFolderNodeId = browseForNode(cttFolderNodeId, "Static");
     NodeId dataAccessProfileFolderNodeId = browseForNode(staticFolderNodeId, "DataAccessProfile");
 
@@ -224,7 +224,7 @@ class CttNodesIT {
     // Given: Path to a variable in References fragment
     // Objects -> CTT -> Static -> References -> Has3ForwardReferences1 -> Variable0
 
-    NodeId cttFolderNodeId = browseForNode(Identifiers.ObjectsFolder, "CTT");
+    NodeId cttFolderNodeId = browseForNode(NodeIds.ObjectsFolder, "CTT");
     NodeId staticFolderNodeId = browseForNode(cttFolderNodeId, "Static");
     NodeId referencesFolderNodeId = browseForNode(staticFolderNodeId, "References");
     assertNotNull(referencesFolderNodeId, "References folder should be found");
@@ -253,7 +253,7 @@ class CttNodesIT {
     // Given: Path to a deeply nested folder in Paths fragment
     // Objects -> CTT -> Static -> Paths -> Folder0 -> Folder1
 
-    NodeId cttFolderNodeId = browseForNode(Identifiers.ObjectsFolder, "CTT");
+    NodeId cttFolderNodeId = browseForNode(NodeIds.ObjectsFolder, "CTT");
     NodeId staticFolderNodeId = browseForNode(cttFolderNodeId, "Static");
     NodeId pathsFolderNodeId = browseForNode(staticFolderNodeId, "Paths");
     assertNotNull(pathsFolderNodeId, "Paths folder should be found");
@@ -275,7 +275,7 @@ class CttNodesIT {
     // Given: Path to a method in Methods fragment
     // Objects -> CTT -> Methods -> MethodNoArgs
 
-    NodeId cttFolderNodeId = browseForNode(Identifiers.ObjectsFolder, "CTT");
+    NodeId cttFolderNodeId = browseForNode(NodeIds.ObjectsFolder, "CTT");
     NodeId methodsFolderNodeId = browseForNode(cttFolderNodeId, "Methods");
     assertNotNull(methodsFolderNodeId, "Methods folder should be found");
     logger.info("Found Methods folder: {}", methodsFolderNodeId);
@@ -309,11 +309,54 @@ class CttNodesIT {
   }
 
   @Test
+  void testMethodsFragmentNodeIO() throws Exception {
+    // Given: Path to a method with both input and output in Methods fragment
+    // Objects -> CTT -> Methods -> MethodIO
+
+    NodeId cttFolderNodeId = browseForNode(NodeIds.ObjectsFolder, "CTT");
+    NodeId methodsFolderNodeId = browseForNode(cttFolderNodeId, "Methods");
+    assertNotNull(methodsFolderNodeId, "Methods folder should be found");
+    logger.info("Found Methods folder: {}", methodsFolderNodeId);
+
+    // When: Browse to MethodIO
+    NodeId methodIONodeId = browseForNode(methodsFolderNodeId, "MethodIO");
+    assertNotNull(methodIONodeId, "MethodIO should be found");
+    logger.info("Found MethodIO: {}", methodIONodeId);
+
+    // Then: Call the method with an Int32 input and expect the same value as output
+    int input = 123;
+    Variant[] inputArguments = new Variant[] {Variant.ofInt32(input)};
+    CallMethodRequest request =
+        new CallMethodRequest(methodsFolderNodeId, methodIONodeId, inputArguments);
+
+    CallResponse response = client.call(List.of(request));
+
+    // And: Verify the method executed successfully and echoed the input
+    assertNotNull(response, "Method call should return a response");
+    assertNotNull(response.getResults(), "Response should contain results");
+    assertEquals(1, response.getResults().length, "Should have one result");
+
+    CallMethodResult result = response.getResults()[0];
+    assertTrue(
+        result.getStatusCode().isGood(), "Method call should succeed: " + result.getStatusCode());
+
+    Variant[] outputValues = result.getOutputArguments();
+    assertNotNull(outputValues, "Output values should not be null");
+    assertEquals(1, outputValues.length, "MethodIO should return one output value");
+
+    Integer output = (Integer) outputValues[0].getValue();
+    assertNotNull(output, "Output value should not be null");
+    assertEquals(input, output.intValue(), "MethodIO should echo the input value");
+
+    logger.info("Successfully called MethodIO with input {} and received output {}", input, output);
+  }
+
+  @Test
   void testSecurityAccessFragmentNode() throws Exception {
     // Given: Path to a variable in SecurityAccess fragment
     // Objects -> CTT -> SecurityAccess -> AccessLevel_CurrentRead
 
-    NodeId cttFolderNodeId = browseForNode(Identifiers.ObjectsFolder, "CTT");
+    NodeId cttFolderNodeId = browseForNode(NodeIds.ObjectsFolder, "CTT");
     NodeId securityAccessFolderNodeId = browseForNode(cttFolderNodeId, "SecurityAccess");
     assertNotNull(securityAccessFolderNodeId, "SecurityAccess folder should be found");
     logger.info("Found SecurityAccess folder: {}", securityAccessFolderNodeId);
