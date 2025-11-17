@@ -27,6 +27,7 @@ import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
@@ -260,6 +261,25 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
                         NodeIds.Organizes,
                         NodeIds.ObjectsFolder.expanded(),
                         Direction.INVERSE));
+
+                demoFolder.addReference(
+                    new Reference(
+                        demoFolder.getNodeId(),
+                        NodeIds.HasComponent,
+                        ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Scalar"),
+                        Direction.FORWARD));
+                demoFolder.addReference(
+                    new Reference(
+                        demoFolder.getNodeId(),
+                        NodeIds.HasComponent,
+                        ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Array"),
+                        Direction.FORWARD));
+                demoFolder.addReference(
+                    new Reference(
+                        demoFolder.getNodeId(),
+                        NodeIds.HasComponent,
+                        ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Matrix"),
+                        Direction.FORWARD));
               });
     }
 
