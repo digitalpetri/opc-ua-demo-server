@@ -130,7 +130,7 @@ exhaustively.
 
 ### Pattern Matching
 
-Pattern matching eliminates boilerplate and makes type-safe operations more expressive and less
+Pattern matching removes boilerplate and makes type-safe operations more expressive and less
 error-prone.
 
 - Use pattern matching for `instanceof` checks (JDK 16+)
@@ -449,24 +449,27 @@ public final class Configuration {
 For any coding practices not explicitly covered by these conventions, defer to established Java best
 practices and community standards.
 
-## Maven
+## Building and Testing
 
-### Building and Testing
+Delegate to a subagent when running Maven commands.
 
-#### Build/Compile the Project
+**Note:** All Maven commands below use the `-q` (quiet) flag to reduce verbose output. If you need
+to debug build issues or see detailed output, remove the `-q` flag and re-run the command.
+
+### Build/Compile the Project
 
 To compile the project without running tests:
 
 ```bash
-mvn clean compile
+mvn -q clean compile
 ```
 
-#### Run All Tests
+### Run All Tests
 
 To run all tests and verify the project:
 
 ```bash
-mvn clean verify
+mvn -q clean verify
 ```
 
 This command will:
@@ -477,74 +480,47 @@ This command will:
 - Run integration tests (if configured)
 - Run code quality checks (like Spotless)
 
-#### Run Specific Tests
+### Run Specific Tests
 
 To run a specific test class:
 
 ```bash
-mvn test -Dtest=ClassName
+mvn -q test -Dtest=ClassName
 ```
 
 To run a specific test method:
 
 ```bash
-mvn test -Dtest=ClassName#methodName
+mvn -q test -Dtest=ClassName#methodName
 ```
 
 To run multiple test classes:
 
 ```bash
-mvn test -Dtest=ClassOne,ClassTwo
+mvn -q test -Dtest=ClassOne,ClassTwo
 ```
 
 To run tests matching a pattern:
 
 ```bash
-mvn test -Dtest=*ServiceTest
+mvn -q test -Dtest=*ServiceTest
 ```
 
-#### Other Common Maven Commands
-
-**Run tests only (skip compilation if already compiled):**
-
-```bash
-mvn test
-```
-
-**Package the project (creates JAR/WAR file):**
-
-```bash
-mvn clean package
-```
-
-**Install to local Maven repository:**
-
-```bash
-mvn clean install
-```
-
-**Run only unit tests (skip integration tests):**
-
-```bash
-mvn clean test
-```
-
-### Code Formatting
+## Code Formatting
 
 This project uses Spotless with Google Java Format for code formatting.
 
 The `spotless:check` goal is bound to the `verify` phase and will fail the build if code is not
 properly formatted.
 
-If the build fails due to formatting issues, run:
+If the build fails due to formatting issues, run the `spotless:apply` goal to automatically format
+the code:
 
 ```bash
-mvn spotless:apply
+mvn -q spotless:apply
 ```
 
-This will automatically format all Java files according to Google Java Format standards.
-
-### Dependency Source Code
+## Dependency Source Code
 
 To examine dependency source code, check the `external/src` directory at the project root. This
 directory contains unpacked source files from all dependencies, organized by package structure for
@@ -555,32 +531,8 @@ easy browsing and searching.
 Run this command from the project root to download and unpack all dependency sources:
 
 ```bash
-mvn generate-resources -Pdownload-external-src
+mvn -q generate-resources -Pdownload-external-src
 ```
 
 This will create the `external/src` directory with sources from all dependencies in a single
 top-level location.
-
-## Commit Messages
-
-Keep the title of the commit message to ~72 characters.
-
-Use the body to summarize the changes made in the commit. If the commit contains a number of
-unrelated changes, try to generate a brief one-line subject, then summarize using bullet points. Be
-concise.
-
-Avoid subjective justification or explanation for changes; state changes on their own merit.
-
-Do not include counts (files, tests, lines, changes, etc.).
-
-Do not include a "generated with Claude Code" line or similar.
-
-## Pull Requests
-
-Do not include a "Test Plan" section in PRs.
-
-Do not mention the build was successful or tests passed.
-
-Do not include counts (files, tests, lines, changes, etc.).
-
-Do not include a "generated with Claude Code" line or similar.
