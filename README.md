@@ -1,5 +1,5 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/digitalpetri/opc-ua-demo-server)
- ![Docker Image Version (tag)](https://img.shields.io/docker/v/digitalpetri/opc-ua-demo-server/1.0.0)
+ ![Docker Image Version (tag)](https://img.shields.io/docker/v/digitalpetri/opc-ua-demo-server/1.0.3)
 
 # Eclipse Milo OPC UA Demo Server
 
@@ -79,3 +79,4 @@ attempted to connect at least once. Moving a client certificate to
 security enabled.
 
 These directories are monitored by the server and changes will be picked up automatically.
+
