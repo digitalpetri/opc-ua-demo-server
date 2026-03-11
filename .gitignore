@@ -21,3 +21,6 @@ external/
 
 # VS Code #
 .vscode/
+
+compose.override.yml
+.claude

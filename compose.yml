@@ -1,0 +1,11 @@
+services:
+  opc-ua-demo-server:
+    build: .
+    image: opc-ua-demo-server:latest
+    ports:
+      - "4842:4842"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    environment:
+      JAVA_OPTS: ""

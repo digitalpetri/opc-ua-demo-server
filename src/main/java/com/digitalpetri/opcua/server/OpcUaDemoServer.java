@@ -8,6 +8,7 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.util.StatusPrinter2;
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
+import com.digitalpetri.opcua.server.namespace.load.LoadNamespace;
 import com.digitalpetri.opcua.server.namespace.test.DataTypeTestNamespace;
 import com.digitalpetri.opcua.server.objects.ServerConfigurationObject;
 import com.typesafe.config.Config;
@@ -201,7 +202,10 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     server = new OpcUaServer(serverConfigBuilder.build(), transportFactory);
 
-    server.getNamespaceTable().set(2, DemoNamespace.NAMESPACE_URI);
+    boolean demoEnabled = config.getBoolean("address-space.demo.enabled");
+    if (demoEnabled) {
+      server.getNamespaceTable().set(2, DemoNamespace.NAMESPACE_URI);
+    }
 
     boolean dataTypeTestEnabled = config.getBoolean("address-space.data-type-test.enabled");
     if (dataTypeTestEnabled) {
@@ -210,8 +214,16 @@ public class OpcUaDemoServer extends AbstractLifecycle {
       dataTypeTestNamespace.startup();
     }
 
-    var demoNamespace = new DemoNamespace(server, config);
-    demoNamespace.startup();
+    if (demoEnabled) {
+      var demoNamespace = new DemoNamespace(server, config);
+      demoNamespace.startup();
+    }
+
+    boolean loadEnabled = config.getBoolean("load.enabled");
+    if (loadEnabled) {
+      var loadNamespace = new LoadNamespace(server, config);
+      loadNamespace.startup();
+    }
 
     boolean gdsPushEnabled = config.getBoolean("gds-push-enabled");
 
@@ -532,9 +544,18 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     Config userConfig = ConfigFactory.parseFile(configFilePath.toFile());
 
-    // Load the user config and merge it with the default config in case anything is missing.
-    // This also allows the user config to contain only override values.
-    Config config = userConfig.withFallback(defaultConfig);
+    InputStream envOverridesInputStream =
+        OpcUaDemoServer.class.getClassLoader().getResourceAsStream("env-overrides.conf");
+
+    assert envOverridesInputStream != null;
+
+    Config envOverridesConfig =
+        ConfigFactory.parseReader(new InputStreamReader(envOverridesInputStream));
+
+    // Priority: env vars > user server.conf > default-server.conf defaults.
+    // resolve() evaluates ${?ENV_VAR} substitutions against the process environment.
+    Config config =
+        envOverridesConfig.withFallback(userConfig).withFallback(defaultConfig).resolve();
 
     var server = new OpcUaDemoServer(dataDirPath, config);
     server.startup();
