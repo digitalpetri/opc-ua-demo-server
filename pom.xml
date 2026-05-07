@@ -47,9 +47,9 @@
     <jetbrains-annotations.version>24.1.0</jetbrains-annotations.version>
     <junit.version>6.0.1</junit.version>
     <logback.version>1.5.32</logback.version>
-    <milo.version>1.1.1</milo.version>
-    <netty.version>4.2.10.Final</netty.version>
-    <typesafe-config.version>1.4.6</typesafe-config.version>
+    <milo.version>1.1.3</milo.version>
+    <netty.version>4.2.13.Final</netty.version>
+    <typesafe-config.version>1.4.8</typesafe-config.version>
     <uanodeset.version>0.4.1</uanodeset.version>
 
     <!-- Plugin Dependencies -->
@@ -59,8 +59,8 @@
     <maven-failsafe-plugin.version>3.5.5</maven-failsafe-plugin.version>
     <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
     <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
-    <spotless-maven-plugin.version>3.3.0</spotless-maven-plugin.version>
-    <native-maven-plugin.version>0.11.5</native-maven-plugin.version>
+    <spotless-maven-plugin.version>3.4.0</spotless-maven-plugin.version>
+    <native-maven-plugin.version>1.1.0</native-maven-plugin.version>
   </properties>
 
   <build>
