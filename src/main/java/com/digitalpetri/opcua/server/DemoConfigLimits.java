@@ -19,7 +19,7 @@ public class DemoConfigLimits implements OpcUaServerConfigLimits {
 
   @Override
   public UInteger getMaxSessions() {
-    return uint(200);
+    return uint(500);
   }
 
   @Override
