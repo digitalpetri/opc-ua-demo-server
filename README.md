@@ -24,7 +24,35 @@ Authenticate anonymously or with one of the following credential pairs:
 - `SecurityAdmin` / `password`
     - roles: `WellKnownRole_SecurityAdmin`
 
-## Building
+## Building and Running
+
+### Maven + JDK 25
+
+This repository pins Java 25 and Maven versions with `mise`. Trust the local mise config once, then
+install the pinned tools:
+
+```bash
+mise trust
+mise install
+```
+
+Use this path to run the server locally from the command line without an IDE.
+
+From the repository root, build the executable JAR:
+
+```bash
+mise exec -- mvn clean package
+```
+
+Then start the server:
+
+```bash
+mise exec -- java -jar target/opc-ua-demo-server.jar
+```
+
+The server process runs until you stop it with `Ctrl-C`. When launched from the repository root,
+it creates and uses the local `data` directory, including `data/server.conf` and the security
+directories. The default configuration listens on `opc.tcp://localhost:4840/milo`.
 
 ### Docker
 
@@ -47,19 +75,14 @@ volume mapped to the container's `/app/data` directory:
 docker run --rm -it -p 4840:4840 -v /tmp/opc-ua-demo-server-data:/app/data opc-ua-demo-server
 ```
 
-### Maven + JDK 25
-
-**Using JDK 25**, run `mvn clean package` in the root directory.
-
-An executable JAR file will be created in the `target` directory. This JAR file can be run with
-`java -jar target/opc-ua-demo-server.jar`.
-
 ## Configuration
 
 ### Server
 
-On startup the server loads its configuration from `/app/data/server.conf`. If it doesn't exist, the
-default configuration from `src/main/resources/default-server.conf` will be copied to that location.
+On startup the server loads its configuration from the active data directory. When run with
+`java -jar` from the repository root, this is `data/server.conf`. When run in Docker, this is
+`/app/data/server.conf`. If the file doesn't exist, the default configuration from
+`src/main/resources/default-server.conf` will be copied to that location.
 
 The server configuration file is in HOCON format and its configuration keys and values are
 documented with comments.
@@ -67,16 +90,16 @@ documented with comments.
 ### Security
 
 The server's application instance certificate is stored in the KeyStore at
-`/app/data/security/pki/certificates.pfx`. If the server starts and this file doesn't exist it will
-generate a new one.
+`security/pki/certificates.pfx` under the active data directory. If the server starts and this file
+doesn't exist it will generate a new one.
 
 Issuer and trusted certificates are managed using the standard OPC UA PKI layout found at
-`/app/data/security/pki/issuer` and `/app/data/security/pki/trusted`.
+`security/pki/issuer` and `security/pki/trusted` under the active data directory.
 
-Certificates from untrusted clients can be found at `/app/data/security/rejected` after they have
-attempted to connect at least once. Moving a client certificate to
-`/app/data/security/pki/trusted/certs` will mark it "trusted" and allow the client to connect with
-security enabled.
+Certificates from untrusted clients can be found at `security/rejected` under the active data
+directory after they have attempted to connect at least once. Moving a client certificate to
+`security/pki/trusted/certs` will mark it "trusted" and allow the client to connect with security
+enabled.
 
 These directories are monitored by the server and changes will be picked up automatically.
 

@@ -453,15 +453,34 @@ practices and community standards.
 
 Delegate to a subagent when running Maven commands.
 
-**Note:** All Maven commands below use the `-q` (quiet) flag to reduce verbose output. If you need
-to debug build issues or see detailed output, remove the `-q` flag and re-run the command.
+This repository pins Java and Maven versions with `mise` in `.mise.toml`. Run `mise trust` once in
+a fresh checkout, then run `mise install` before the first Maven or Java command.
+
+**Note:** All Maven commands below run through `mise exec --` and use the `-q` (quiet) flag to
+reduce verbose output. If you need to debug build issues or see detailed output, remove the `-q`
+flag and re-run the command.
+
+### Run the Server from the Command Line
+
+Use this when an agent needs to start the demo server outside an IDE. Run these commands from the
+repository root:
+
+```bash
+mise exec -- mvn -q clean package
+mise exec -- java -jar target/opc-ua-demo-server.jar
+```
+
+The `java -jar` command is a long-running server process; stop it with `Ctrl-C` when finished. When
+started from the repository root, the server creates and uses the local `data` directory, including
+`data/server.conf` and the security directories. The default endpoint is
+`opc.tcp://localhost:4840/milo`.
 
 ### Build/Compile the Project
 
 To compile the project without running tests:
 
 ```bash
-mvn -q clean compile
+mise exec -- mvn -q clean compile
 ```
 
 ### Run All Tests
@@ -469,7 +488,7 @@ mvn -q clean compile
 To run all tests and verify the project:
 
 ```bash
-mvn -q clean verify
+mise exec -- mvn -q clean verify
 ```
 
 This command will:
@@ -485,25 +504,25 @@ This command will:
 To run a specific test class:
 
 ```bash
-mvn -q test -Dtest=ClassName
+mise exec -- mvn -q test -Dtest=ClassName
 ```
 
 To run a specific test method:
 
 ```bash
-mvn -q test -Dtest=ClassName#methodName
+mise exec -- mvn -q test -Dtest=ClassName#methodName
 ```
 
 To run multiple test classes:
 
 ```bash
-mvn -q test -Dtest=ClassOne,ClassTwo
+mise exec -- mvn -q test -Dtest=ClassOne,ClassTwo
 ```
 
 To run tests matching a pattern:
 
 ```bash
-mvn -q test -Dtest=*ServiceTest
+mise exec -- mvn -q test -Dtest=*ServiceTest
 ```
 
 ## Code Formatting
@@ -517,7 +536,7 @@ If the build fails due to formatting issues, run the `spotless:apply` goal to au
 the code:
 
 ```bash
-mvn -q spotless:apply
+mise exec -- mvn -q spotless:apply
 ```
 
 ## Dependency Source Code
@@ -531,7 +550,7 @@ easy browsing and searching.
 Run this command from the project root to download and unpack all dependency sources:
 
 ```bash
-mvn -q generate-resources -Pdownload-external-src
+mise exec -- mvn -q generate-resources -Pdownload-external-src
 ```
 
 This will create the `external/src` directory with sources from all dependencies in a single
