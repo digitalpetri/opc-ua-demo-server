@@ -14,9 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.core.CefactEngineeringUnits;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
+import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
@@ -28,6 +31,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodRequest;
 import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.CallResponse;
+import org.eclipse.milo.opcua.stack.core.types.structured.EUInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -193,6 +197,38 @@ class CttNodesIT {
     assertNotNull(value, "Value should be readable");
     assertNotNull(value.getValue(), "Value should not be null");
     logger.info("Read DoubleAnalog value: {}", value.getValue().getValue());
+  }
+
+  @Test
+  void testDataAccessProfileArrayItemEngineeringUnitsUseOfficialDefinitions() throws Exception {
+    List<NodeId> engineeringUnitsNodeIds =
+        List.of(
+            new NodeId(2, "CTT.Static.DataAccessProfile.ArrayItemType.CubeItem/0:EngineeringUnits"),
+            new NodeId(
+                2, "CTT.Static.DataAccessProfile.ArrayItemType.ImageItem/0:EngineeringUnits"),
+            new NodeId(
+                2,
+                "CTT.Static.DataAccessProfile.ArrayItemType.NDimensionArrayItem/0:"
+                    + "EngineeringUnits"),
+            new NodeId(
+                2, "CTT.Static.DataAccessProfile.ArrayItemType.XYArrayItem/0:EngineeringUnits"),
+            new NodeId(
+                2, "CTT.Static.DataAccessProfile.ArrayItemType.YArrayItem/0:EngineeringUnits"));
+
+    for (NodeId engineeringUnitsNodeId : engineeringUnitsNodeIds) {
+      DataValue value = client.readValue(0.0, TimestampsToReturn.Neither, engineeringUnitsNodeId);
+
+      assertNotNull(value, "EngineeringUnits value should be readable: " + engineeringUnitsNodeId);
+      assertTrue(
+          value.getStatusCode().isGood(),
+          "EngineeringUnits read should succeed for "
+              + engineeringUnitsNodeId
+              + ": "
+              + value.getStatusCode());
+
+      EUInformation engineeringUnits = decodeEngineeringUnits(value, engineeringUnitsNodeId);
+      assertOfficialEngineeringUnits(engineeringUnits, engineeringUnitsNodeId);
+    }
   }
 
   @Test
@@ -446,5 +482,55 @@ class CttNodesIT {
     }
 
     return null;
+  }
+
+  private EUInformation decodeEngineeringUnits(DataValue value, NodeId nodeId) throws Exception {
+    assertNotNull(value.getValue(), "EngineeringUnits variant should be present: " + nodeId);
+
+    Object valueObject = value.getValue().getValue();
+    if (valueObject instanceof EUInformation engineeringUnits) {
+      return engineeringUnits;
+    }
+
+    if (valueObject instanceof ExtensionObject extensionObject) {
+      Object decoded = extensionObject.decode(client.getStaticEncodingContext());
+      if (decoded instanceof EUInformation engineeringUnits) {
+        return engineeringUnits;
+      }
+    }
+
+    fail("EngineeringUnits should decode to EUInformation for " + nodeId + ", got: " + valueObject);
+    return null;
+  }
+
+  private void assertOfficialEngineeringUnits(EUInformation engineeringUnits, NodeId nodeId) {
+    String namespaceUri = engineeringUnits.getNamespaceUri();
+    assertNotNull(namespaceUri, "EngineeringUnits namespace URI should be present: " + nodeId);
+    assertFalse(
+        namespaceUri.isBlank(), "EngineeringUnits namespace URI should not be blank: " + nodeId);
+
+    Integer unitId = engineeringUnits.getUnitId();
+    assertNotNull(unitId, "EngineeringUnits unit ID should be present: " + nodeId);
+    assertTrue(unitId >= 0, "EngineeringUnits unit ID should be non-negative: " + nodeId);
+
+    EUInformation officialDefinition = CefactEngineeringUnits.getByUnitId(unitId);
+    assertNotNull(
+        officialDefinition,
+        "EngineeringUnits unit ID should resolve to a CEFACT definition: " + nodeId);
+    assertEquals(
+        officialDefinition.getNamespaceUri(),
+        namespaceUri,
+        "EngineeringUnits should use the official CEFACT namespace URI: " + nodeId);
+    assertLocalizedTextPresent(engineeringUnits.getDisplayName(), "display name", nodeId);
+    assertLocalizedTextPresent(engineeringUnits.getDescription(), "description", nodeId);
+  }
+
+  private void assertLocalizedTextPresent(LocalizedText text, String label, NodeId nodeId) {
+    assertNotNull(text, "EngineeringUnits " + label + " should be present: " + nodeId);
+    assertNotNull(
+        text.getText(), "EngineeringUnits " + label + " text should be present: " + nodeId);
+    assertFalse(
+        text.getText().isBlank(),
+        "EngineeringUnits " + label + " text should not be blank: " + nodeId);
   }
 }

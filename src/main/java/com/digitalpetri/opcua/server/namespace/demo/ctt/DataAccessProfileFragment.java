@@ -7,6 +7,7 @@ import com.digitalpetri.opcua.server.namespace.demo.EuRangeCheckFilter;
 import com.digitalpetri.opcua.server.namespace.demo.Util;
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
+import org.eclipse.milo.opcua.sdk.core.CefactEngineeringUnits;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
@@ -49,6 +50,9 @@ import org.eclipse.milo.opcua.stack.core.types.structured.EnumValueType;
 import org.eclipse.milo.opcua.stack.core.types.structured.Range;
 
 public class DataAccessProfileFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+
+  private static final EUInformation DIMENSIONLESS_UNITS = CefactEngineeringUnits.CODE_C62;
+  private static final EUInformation MILLIMETRE_UNITS = CefactEngineeringUnits.CODE_MMT;
 
   private final SimpleAddressSpaceFilter filter;
   private final SubscriptionModel subscriptionModel;
@@ -302,29 +306,28 @@ public class DataAccessProfileFragment extends ManagedAddressSpaceFragmentWithLi
         // Set ArrayItemType properties
         cubeItem.setInstrumentRange(new Range(0.0, 100.0));
         cubeItem.setEuRange(new Range(0.0, 100.0));
-        cubeItem.setEngineeringUnits(
-            new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")));
+        cubeItem.setEngineeringUnits(DIMENSIONLESS_UNITS);
         cubeItem.setTitle(new LocalizedText("Cube Item"));
         cubeItem.setAxisScaleType(AxisScaleEnumeration.Linear);
 
         // Set CubeItemType specific properties
         cubeItem.setXAxisDefinition(
             new AxisInformation(
-                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("mm")),
+                MILLIMETRE_UNITS,
                 new Range(0.0, 10.0),
                 new LocalizedText("X Axis"),
                 AxisScaleEnumeration.Linear,
                 new Double[] {0.0, 10.0}));
         cubeItem.setYAxisDefinition(
             new AxisInformation(
-                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("mm")),
+                MILLIMETRE_UNITS,
                 new Range(0.0, 10.0),
                 new LocalizedText("Y Axis"),
                 AxisScaleEnumeration.Linear,
                 new Double[] {0.0, 10.0}));
         cubeItem.setZAxisDefinition(
             new AxisInformation(
-                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("mm")),
+                MILLIMETRE_UNITS,
                 new Range(0.0, 10.0),
                 new LocalizedText("Z Axis"),
                 AxisScaleEnumeration.Linear,
@@ -371,22 +374,21 @@ public class DataAccessProfileFragment extends ManagedAddressSpaceFragmentWithLi
         // Set ArrayItemType properties
         imageItem.setInstrumentRange(new Range(0.0, 100.0));
         imageItem.setEuRange(new Range(0.0, 100.0));
-        imageItem.setEngineeringUnits(
-            new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")));
+        imageItem.setEngineeringUnits(DIMENSIONLESS_UNITS);
         imageItem.setTitle(new LocalizedText("Image Item"));
         imageItem.setAxisScaleType(AxisScaleEnumeration.Linear);
 
         // Set ImageItemType specific properties
         imageItem.setXAxisDefinition(
             new AxisInformation(
-                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("pixels")),
+                DIMENSIONLESS_UNITS,
                 new Range(0.0, 2.0),
                 new LocalizedText("X Axis"),
                 AxisScaleEnumeration.Linear,
                 new Double[] {0.0, 1.0, 2.0}));
         imageItem.setYAxisDefinition(
             new AxisInformation(
-                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("pixels")),
+                DIMENSIONLESS_UNITS,
                 new Range(0.0, 2.0),
                 new LocalizedText("Y Axis"),
                 AxisScaleEnumeration.Linear,
@@ -433,8 +435,7 @@ public class DataAccessProfileFragment extends ManagedAddressSpaceFragmentWithLi
         // Set ArrayItemType properties
         nDimensionArrayItem.setInstrumentRange(new Range(0.0, 100.0));
         nDimensionArrayItem.setEuRange(new Range(0.0, 100.0));
-        nDimensionArrayItem.setEngineeringUnits(
-            new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")));
+        nDimensionArrayItem.setEngineeringUnits(DIMENSIONLESS_UNITS);
         nDimensionArrayItem.setTitle(new LocalizedText("NDimensionArray Item"));
         nDimensionArrayItem.setAxisScaleType(AxisScaleEnumeration.Linear);
 
@@ -442,14 +443,14 @@ public class DataAccessProfileFragment extends ManagedAddressSpaceFragmentWithLi
         AxisInformation[] axisDefinitions = new AxisInformation[2];
         axisDefinitions[0] =
             new AxisInformation(
-                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")),
+                DIMENSIONLESS_UNITS,
                 new Range(0.0, 1.0),
                 new LocalizedText("Axis 0"),
                 AxisScaleEnumeration.Linear,
                 new Double[] {0.0, 1.0});
         axisDefinitions[1] =
             new AxisInformation(
-                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")),
+                DIMENSIONLESS_UNITS,
                 new Range(0.0, 2.0),
                 new LocalizedText("Axis 1"),
                 AxisScaleEnumeration.Linear,
@@ -492,15 +493,14 @@ public class DataAccessProfileFragment extends ManagedAddressSpaceFragmentWithLi
         // Set ArrayItemType properties
         xyArrayItem.setInstrumentRange(new Range(0.0, 100.0));
         xyArrayItem.setEuRange(new Range(0.0, 100.0));
-        xyArrayItem.setEngineeringUnits(
-            new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")));
+        xyArrayItem.setEngineeringUnits(DIMENSIONLESS_UNITS);
         xyArrayItem.setTitle(new LocalizedText("XYArray Item"));
         xyArrayItem.setAxisScaleType(AxisScaleEnumeration.Linear);
 
         // Set XYArrayItemType specific properties
         xyArrayItem.setXAxisDefinition(
             new AxisInformation(
-                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")),
+                DIMENSIONLESS_UNITS,
                 new Range(0.0, 5.0),
                 new LocalizedText("X Axis"),
                 AxisScaleEnumeration.Linear,
@@ -542,15 +542,14 @@ public class DataAccessProfileFragment extends ManagedAddressSpaceFragmentWithLi
         // Set ArrayItemType properties
         yArrayItem.setInstrumentRange(new Range(0.0, 100.0));
         yArrayItem.setEuRange(new Range(0.0, 100.0));
-        yArrayItem.setEngineeringUnits(
-            new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")));
+        yArrayItem.setEngineeringUnits(DIMENSIONLESS_UNITS);
         yArrayItem.setTitle(new LocalizedText("YArray Item"));
         yArrayItem.setAxisScaleType(AxisScaleEnumeration.Linear);
 
         // Set YArrayItemType specific properties
         yArrayItem.setXAxisDefinition(
             new AxisInformation(
-                new EUInformation("", -1, new LocalizedText(""), new LocalizedText("units")),
+                DIMENSIONLESS_UNITS,
                 new Range(0.0, 5.0),
                 new LocalizedText("X Axis"),
                 AxisScaleEnumeration.Linear,
