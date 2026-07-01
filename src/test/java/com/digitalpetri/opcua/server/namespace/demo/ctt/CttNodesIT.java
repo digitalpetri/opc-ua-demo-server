@@ -16,6 +16,7 @@ import java.util.Objects;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
@@ -374,6 +375,43 @@ class CttNodesIT {
     assertNotNull(value, "Value should be readable");
     assertNotNull(value.getValue(), "Value should not be null");
     logger.info("Read AccessLevel_CurrentRead value: {}", value.getValue().getValue());
+  }
+
+  @Test
+  void testObjectReferencesFromObjectsFolderHaveTypeDefinitions() throws Exception {
+    BrowseDescription browseDescription =
+        new BrowseDescription(
+            NodeIds.ObjectsFolder,
+            BrowseDirection.Forward,
+            null,
+            true,
+            uint(NodeClass.Object.getValue()),
+            uint(BrowseResultMask.All.getValue()));
+
+    BrowseResult browseResult = client.browse(browseDescription);
+    assertTrue(
+        browseResult.getStatusCode().isGood(),
+        () -> "Browse ObjectsFolder failed: " + browseResult.getStatusCode());
+
+    ReferenceDescription[] references = browseResult.getReferences();
+    assertNotNull(references, "ObjectsFolder references should not be null");
+    assertTrue(references.length > 0, "ObjectsFolder should have Object references");
+
+    boolean foundDebugObject = false;
+    for (ReferenceDescription reference : references) {
+      if (Objects.equals(reference.getBrowseName().getName(), "Debug")) {
+        foundDebugObject = true;
+      }
+
+      ExpandedNodeId typeDefinition = reference.getTypeDefinition();
+      assertNotNull(
+          typeDefinition, () -> reference.getBrowseName() + " should include a TypeDefinition");
+      assertTrue(
+          typeDefinition.isNotNull(),
+          () -> reference.getBrowseName() + " should include a non-null TypeDefinition");
+    }
+
+    assertTrue(foundDebugObject, "Debug object should be present under ObjectsFolder");
   }
 
   /**

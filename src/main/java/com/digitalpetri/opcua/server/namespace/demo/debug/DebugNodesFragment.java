@@ -16,6 +16,7 @@ import org.eclipse.milo.opcua.sdk.server.items.DataItem;
 import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode.UaObjectNodeBuilder;
 import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
@@ -70,16 +71,14 @@ public class DebugNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle
   }
 
   private void addDebugNodes() {
-    UaObjectNode debugNode =
-        new UaObjectNode(
-            getNodeContext(),
-            new NodeId(namespace.getNamespaceIndex(), "Debug"),
-            new QualifiedName(namespace.getNamespaceIndex(), "Debug"),
-            LocalizedText.english("Debug"),
-            LocalizedText.NULL_VALUE,
-            uint(0),
-            uint(0),
-            ubyte(0));
+    var builder = new UaObjectNodeBuilder(getNodeContext());
+    builder
+        .setNodeId(new NodeId(namespace.getNamespaceIndex(), "Debug"))
+        .setBrowseName(new QualifiedName(namespace.getNamespaceIndex(), "Debug"))
+        .setDisplayName(LocalizedText.english("Debug"))
+        .setEventNotifier(ubyte(0));
+
+    UaObjectNode debugNode = builder.build();
 
     getNodeManager().addNode(debugNode);
 
