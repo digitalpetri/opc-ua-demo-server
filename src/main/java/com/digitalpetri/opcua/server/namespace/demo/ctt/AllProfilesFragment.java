@@ -193,7 +193,7 @@ public class AllProfilesFragment extends ManagedAddressSpaceFragmentWithLifecycl
           .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
           .setMinimumSamplingInterval(100.0);
 
-      builder.setValue(new DataValue(Variant.of(UInteger.MIN_VALUE)));
+      builder.setValue(new DataValue(Variant.of(UInteger.MIN)));
 
       UaVariableNode variableNode = builder.build();
 
