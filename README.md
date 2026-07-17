@@ -28,13 +28,14 @@ Authenticate anonymously or with one of the following credential pairs:
 
 ### Maven + JDK 25
 
-This repository pins Java 25 and Maven versions with `mise`. Trust the local mise config once, then
-install the pinned tools:
+This repository pins Java 25 and Maven versions with `mise`. Install the pinned tools:
 
 ```bash
-mise trust
 mise install
 ```
+
+If `mise` reports that the config is not trusted, review `.mise.toml` and run
+`mise trust .mise.toml` once before retrying.
 
 Use this path to run the server locally from the command line without an IDE.
 

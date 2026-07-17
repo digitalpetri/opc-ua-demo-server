@@ -4,14 +4,23 @@ This project supports building a native executable using GraalVM 25 Native Image
 
 ## Prerequisites
 
-Install GraalVM 25 using SDKMAN:
+Native-image work uses the repository's `native` mise environment. It keeps the Maven version from
+`.mise.toml` and replaces the standard Temurin runtime with the GraalVM version pinned in
+`.mise.native.toml`.
+
+Install the native-image toolchain:
 
 ```bash
-sdk install java 25-graalce
-sdk use java 25-graalce
+MISE_ENV=native mise install
 ```
 
-Maven 3.2.5 or later is also required.
+If `mise` reports that either config is not trusted, review the file and trust it once before
+retrying:
+
+```bash
+mise trust .mise.toml
+mise trust .mise.native.toml
+```
 
 ## Building a Native Image
 
@@ -20,7 +29,7 @@ Maven 3.2.5 or later is also required.
 Build the native image directly:
 
 ```bash
-mvn clean package -Pnative
+MISE_ENV=native mise exec -- mvn clean package -Pnative
 ```
 
 The native executable will be created at: `target/opc-ua-demo-server`
@@ -42,7 +51,7 @@ For better runtime compatibility, generate reflection configuration files by pro
 4. Build the native image:
 
     ```bash
-    mvn clean package -Pnative
+    MISE_ENV=native mise exec -- mvn clean package -Pnative
     ```
 
 ## Running the Native Image

@@ -453,8 +453,24 @@ practices and community standards.
 
 Delegate to a subagent when running Maven commands.
 
-This repository pins Java and Maven versions with `mise` in `.mise.toml`. Run `mise trust` once in
-a fresh checkout, then run `mise install` before the first Maven or Java command.
+This repository pins Java and Maven versions with `mise` in `.mise.toml`. Install the standard
+toolchain before the first Maven or Java command:
+
+```bash
+mise install
+```
+
+If `mise` reports that the config is not trusted, review `.mise.toml` and run
+`mise trust .mise.toml` once before retrying. Always run Maven and Java through `mise exec --` so
+the pinned versions are used.
+
+Native-image work uses the `native` mise environment, which replaces Temurin with the GraalVM
+version pinned in `.mise.native.toml` while retaining the pinned Maven version:
+
+```bash
+MISE_ENV=native mise install
+MISE_ENV=native mise exec -- mvn -q clean package -Pnative -DskipTests
+```
 
 **Note:** All Maven commands below run through `mise exec --` and use the `-q` (quiet) flag to
 reduce verbose output. If you need to debug build issues or see detailed output, remove the `-q`

@@ -2,6 +2,15 @@
 
 set -e
 
+export MISE_ENV=native
+
+if ! command -v mise >/dev/null 2>&1; then
+    echo "ERROR: mise is required. Install it from https://mise.jdx.dev/."
+    exit 1
+fi
+
+mise install
+
 echo "===================================="
 echo "GraalVM Native Image Profile Setup"
 echo "===================================="
@@ -15,12 +24,12 @@ echo "you want to include in the native image."
 echo ""
 
 # Check if GraalVM is being used
-if ! java -version 2>&1 | grep -q "GraalVM\|Oracle GraalVM"; then
+if ! mise exec -- java -version 2>&1 | grep -q "GraalVM\|Oracle GraalVM"; then
     echo "WARNING: GraalVM is not detected as the active Java runtime."
     echo "Please ensure you're using GraalVM 25 or later."
     echo ""
     echo "Current Java version:"
-    java -version
+    mise exec -- java -version
     echo ""
     read -p "Continue anyway? (y/n) " -n 1 -r
     echo ""
@@ -31,7 +40,7 @@ fi
 
 # Clean and build the JAR first
 echo "Building the application JAR..."
-mvn clean package -DskipTests
+mise exec -- mvn clean package -DskipTests
 
 # Create directory for native image configuration
 CONFIG_DIR="src/main/resources/META-INF/native-image"
@@ -45,7 +54,7 @@ echo "Press Ctrl+C when you're done exercising the application."
 echo ""
 
 # Run the application with the native image agent
-java -agentlib:native-image-agent=config-output-dir="$CONFIG_DIR" \
+mise exec -- java -agentlib:native-image-agent=config-output-dir="$CONFIG_DIR" \
     -jar target/opc-ua-demo-server.jar
 
 echo ""
@@ -58,5 +67,5 @@ echo ""
 ls -lh "$CONFIG_DIR"
 echo ""
 echo "You can now build the native image with:"
-echo "  mvn clean package -Pnative"
+echo "  MISE_ENV=native mise exec -- mvn clean package -Pnative"
 echo ""
