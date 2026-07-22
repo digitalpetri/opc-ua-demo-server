@@ -10,6 +10,8 @@ import ch.qos.logback.core.util.StatusPrinter2;
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
 import com.digitalpetri.opcua.server.namespace.test.DataTypeTestNamespace;
 import com.digitalpetri.opcua.server.objects.ServerConfigurationObject;
+import com.digitalpetri.opcua.server.reverse.ReverseConnectConfig;
+import com.digitalpetri.opcua.server.reverse.ReverseConnectTargetLogger;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.io.File;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -87,8 +90,13 @@ public class OpcUaDemoServer extends AbstractLifecycle {
   private static final String PROPERTY_SOFTWARE_VERSION = "X-Server-Software-Version";
 
   private final OpcUaServer server;
+  private final ReverseConnectConfig reverseConnectConfig;
 
   public OpcUaDemoServer(Path dataDirPath, Config config) throws Exception {
+    // Parse and validate the reverse-connect section before any server construction so an invalid
+    // target fails fast with an error identifying the target index and field.
+    reverseConnectConfig = ReverseConnectConfig.fromConfig(config);
+
     Path securityDirPath = dataDirPath.resolve("security");
     Path pkiDirPath = securityDirPath.resolve("pki");
     Path userPkiDirPath = securityDirPath.resolve("pki-user");
@@ -171,13 +179,22 @@ public class OpcUaDemoServer extends AbstractLifecycle {
           return certificateChain[0];
         };
 
+    Set<EndpointConfig> endpointConfigs = createEndpointConfigs(config, certificateSupplier);
+
+    if (!reverseConnectConfig.targets().isEmpty()) {
+      // Cross-validate each target's endpoint-url against the endpoints this server actually
+      // configures, mirroring the SDK-side validation that runs later at server startup.
+      reverseConnectConfig.validateEndpointUrls(
+          endpointConfigs.stream().map(EndpointConfig::getEndpointUrl).toList());
+    }
+
     var serverConfigBuilder = OpcUaServerConfig.builder();
     serverConfigBuilder
         .setProductUri(PRODUCT_URI)
         .setApplicationUri(applicationUri)
         .setApplicationName(LocalizedText.english("Eclipse Milo OPC UA Demo Server"))
         .setBuildInfo(createBuildInfo())
-        .setEndpoints(createEndpointConfigs(config, certificateSupplier))
+        .setEndpoints(endpointConfigs)
         .setCertificateManager(certificateManager)
         .setIdentityValidator(
             new CompositeValidator(
@@ -185,8 +202,11 @@ public class OpcUaDemoServer extends AbstractLifecycle {
                 createUsernameIdentityValidator(),
                 createX509IdentityValidator(userPkiDirPath)))
         .setRoleMapper(new DemoRoleMapper())
-        .setLimits(new DemoConfigLimits())
-        .build();
+        .setLimits(new DemoConfigLimits());
+
+    if (!reverseConnectConfig.targets().isEmpty()) {
+      serverConfigBuilder.setReverseConnectTargets(reverseConnectConfig.toTargets());
+    }
 
     OpcServerTransportFactory transportFactory =
         transportProfile -> {
@@ -200,6 +220,16 @@ public class OpcUaDemoServer extends AbstractLifecycle {
         };
 
     server = new OpcUaServer(serverConfigBuilder.build(), transportFactory);
+
+    if (!reverseConnectConfig.targets().isEmpty()) {
+      // The SDK does not emit onTargetAdded for targets supplied via the initial server config, so
+      // replay the initial snapshots through the logger to record each target's registration, then
+      // register the listener before startup() so the initial scheduling and attempt events are
+      // observed.
+      var reverseConnectTargetLogger = new ReverseConnectTargetLogger();
+      server.getReverseConnectTargetSnapshots().forEach(reverseConnectTargetLogger::onTargetAdded);
+      server.addReverseConnectTargetListener(reverseConnectTargetLogger);
+    }
 
     server.getNamespaceTable().set(2, DemoNamespace.NAMESPACE_URI);
 
@@ -234,11 +264,27 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
   @Override
   protected void onStartup() {
-    server.startup();
+    if (reverseConnectConfig.targets().isEmpty()) {
+      // Preserve pre-Reverse-Connect behavior: the startup future is not joined, so problems
+      // such as individual endpoint bind failures are logged by the SDK and tolerated.
+      server.startup();
+    } else {
+      // OpcUaServer.startup() re-validates Reverse Connect targets against the bound transports
+      // and endpoints; join the future so a validation failure aborts demo server startup.
+      try {
+        server.startup().join();
+      } catch (CompletionException e) {
+        Throwable cause = e.getCause() != null ? e.getCause() : e;
+        throw new RuntimeException("OPC UA server startup failed: " + cause.getMessage(), cause);
+      }
+    }
   }
 
   @Override
   protected void onShutdown() {
+    // OpcUaServer.shutdown() shuts down the SDK ReverseConnectTargetManager (cancelling scheduled
+    // attempts, closing in-flight attempts and reverse-opened channels) before unbinding
+    // transports, so no additional Reverse Connect wiring is needed here.
     server.shutdown();
   }
 
