@@ -1,0 +1,4 @@
+[submodule "milo"]
+	path = milo
+	url = https://github.com/kevinherron/milo.git
+	branch = dev
