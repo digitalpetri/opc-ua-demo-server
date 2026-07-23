@@ -90,6 +90,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
   private static final String PROPERTY_SOFTWARE_VERSION = "X-Server-Software-Version";
 
   private final OpcUaServer server;
+  private final DemoNamespace demoNamespace;
   private final ReverseConnectConfig reverseConnectConfig;
 
   public OpcUaDemoServer(Path dataDirPath, Config config) throws Exception {
@@ -240,7 +241,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
       dataTypeTestNamespace.startup();
     }
 
-    var demoNamespace = new DemoNamespace(server, config);
+    demoNamespace = new DemoNamespace(server, config);
     demoNamespace.startup();
 
     boolean gdsPushEnabled = config.getBoolean("gds-push-enabled");
@@ -282,6 +283,9 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
   @Override
   protected void onShutdown() {
+    // User namespace lifecycles are not owned by OpcUaServer and must be stopped explicitly.
+    demoNamespace.shutdown();
+
     // OpcUaServer.shutdown() shuts down the SDK ReverseConnectTargetManager (cancelling scheduled
     // attempts, closing in-flight attempts and reverse-opened channels) before unbinding
     // transports, so no additional Reverse Connect wiring is needed here.

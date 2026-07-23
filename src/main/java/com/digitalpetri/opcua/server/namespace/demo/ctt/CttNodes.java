@@ -1,6 +1,7 @@
 package com.digitalpetri.opcua.server.namespace.demo.ctt;
 
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
+import java.time.Duration;
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
@@ -62,6 +63,17 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
     var securityAccessFragment =
         new SecurityAccessFragment(server, this, rootFragment.getCttFolderNodeId(), namespaceIndex);
     lifecycleManager.addLifecycle(securityAccessFragment);
+
+    boolean alarmsAndConditionsEnabled =
+        namespace.getConfig().getBoolean("address-space.ctt.alarms-and-conditions.enabled");
+    if (alarmsAndConditionsEnabled) {
+      Duration dwellTime =
+          namespace.getConfig().getDuration("address-space.ctt.alarms-and-conditions.dwell-time");
+      var alarmsAndConditionsFragment =
+          new AlarmsAndConditionsFragment(
+              server, this, rootFragment.getCttFolderNodeId(), namespaceIndex, dwellTime);
+      lifecycleManager.addLifecycle(alarmsAndConditionsFragment);
+    }
   }
 
   public NodeId getCttFolderNodeId() {

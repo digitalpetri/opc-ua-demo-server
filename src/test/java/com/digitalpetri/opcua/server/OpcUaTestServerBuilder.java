@@ -159,6 +159,8 @@ public class OpcUaTestServerBuilder {
     // Address space configuration - disable all optional features for faster startup
     var addressSpace = new HashMap<String, Object>();
     addressSpace.put("ctt.enabled", false);
+    addressSpace.put("ctt.alarms-and-conditions.enabled", false);
+    addressSpace.put("ctt.alarms-and-conditions.dwell-time", "6 seconds");
     addressSpace.put("data-type-test.enabled", false);
     addressSpace.put("dynamic.enabled", false);
     addressSpace.put("mass.enabled", false);
