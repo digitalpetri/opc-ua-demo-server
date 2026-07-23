@@ -1,6 +1,7 @@
 package com.digitalpetri.opcua.server.namespace.demo.alarms;
 
 import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 
 import com.digitalpetri.opcua.server.namespace.demo.EuRangeCheckFilter;
@@ -40,6 +41,8 @@ import org.eclipse.milo.opcua.stack.core.types.structured.Range;
  * variables, and the publish that pairs a sampled value with the alarm evaluation it feeds.
  */
 final class AlarmNodeFactory {
+
+  private static final int SUBSCRIBE_TO_EVENTS = 0x01;
 
   private static final BrowsePath ENGINEERING_UNITS =
       BrowsePath.of(new QualifiedName(0, "EngineeringUnits"));
@@ -88,7 +91,7 @@ final class AlarmNodeFactory {
   }
 
   /**
-   * Create an equipment Object Node whose sole hierarchical parent is the area's HasEventSource
+   * Create an equipment event notifier whose sole hierarchical parent is the area's HasNotifier
    * Reference to it.
    *
    * <p>That Reference must exist before any Condition names this Node as its condition source.
@@ -105,12 +108,16 @@ final class AlarmNodeFactory {
   UaObjectNode equipmentNode(UaObjectNode areaNode, String name) {
     UaObjectNode node = areaNode(areaNode.getNodeId(), name);
 
+    UByte eventNotifier = node.getEventNotifier();
+    int bits = eventNotifier != null ? eventNotifier.intValue() : 0;
+    node.setEventNotifier(ubyte(bits | SUBSCRIBE_TO_EVENTS));
+
     nodeContext
         .getNodeManager()
         .addReferences(
             new Reference(
                 areaNode.getNodeId(),
-                NodeIds.HasEventSource,
+                NodeIds.HasNotifier,
                 node.getNodeId().expanded(),
                 Direction.FORWARD),
             nodeContext.getServer().getNamespaceTable());

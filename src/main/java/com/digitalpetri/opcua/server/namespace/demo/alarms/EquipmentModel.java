@@ -4,9 +4,9 @@ import java.util.List;
 import org.eclipse.milo.opcua.sdk.server.conditions.Condition;
 
 /**
- * One simulated piece of equipment in the {@code Demo/Alarms} plant: an Object Node acting as the
- * condition source for a set of alarms, plus a deterministic state machine driven by a shared tick
- * counter.
+ * One simulated piece of equipment in the {@code Demo/Alarms} plant: an event-notifying Object Node
+ * acting as the condition source for a set of alarms, plus a deterministic state machine driven by
+ * a shared tick counter.
  *
  * <p>Implementations build their Node structure in their constructor and are ticked by {@link
  * AlarmNodesFragment} afterwards. One tick represents one simulated second regardless of the

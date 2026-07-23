@@ -179,13 +179,12 @@ public final class AlarmNodesFragment extends ManagedAddressSpaceFragmentWithLif
   }
 
   /**
-   * Build the plant, in an order that is load-bearing: the notifier hierarchy and each area's
-   * HasEventSource Reference to its equipment must exist <i>before</i> any Condition names that
-   * equipment as its condition source.
+   * Build the plant, in an order that is load-bearing: each area's HasNotifier Reference to its
+   * equipment must exist <i>before</i> any Condition names that equipment as its condition source.
    *
    * <p>Condition wiring adds a {@code Server → HasEventSource → source} shortcut only when the
-   * source is not already the target of a HasEventSource-or-subtype Reference. Wiring the area
-   * first suppresses that shortcut, which is what keeps area-scoped subscriptions and
+   * source is not already the target of a HasEventSource-or-subtype Reference. Wiring the equipment
+   * beneath its area first suppresses that shortcut, which is what keeps scoped subscriptions and
    * ConditionRefresh from seeing the whole plant.
    */
   private void buildPlant() throws UaException {

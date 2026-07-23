@@ -214,33 +214,37 @@ class AlarmNodesIT {
           NodeId powerHouseId = nodeId(AlarmNodesFragment.POWER_HOUSE_ID);
           NodeId tankFarmId = nodeId(AlarmNodesFragment.TANK_FARM_ID);
 
-          // Structure: the plant, both areas, and every equipment node exist.
+          // Structure: the plant, both areas, and every equipment node exist and are subscribable.
           assertNotNull(managedNode(server, nodeId(AlarmNodesFragment.ROOT_ID)));
-          for (NodeId areaId : List.of(plantId, powerHouseId, tankFarmId)) {
-            UaNode area = managedNode(server, areaId);
-            assertTrue(area instanceof UaObjectNode, () -> areaId + " is not a UaObjectNode");
+          List<NodeId> notifierIds =
+              List.of(
+                  plantId,
+                  powerHouseId,
+                  tankFarmId,
+                  nodeId(BOILER),
+                  nodeId(PUMP),
+                  nodeId(TANK),
+                  nodeId(PLC));
 
-            // Each area is subscribable for events.
+          for (NodeId notifierId : notifierIds) {
+            UaNode notifier = managedNode(server, notifierId);
+            assertTrue(
+                notifier instanceof UaObjectNode, () -> notifierId + " is not a UaObjectNode");
+
             assertEquals(
                 0x01,
-                ((UaObjectNode) area).getEventNotifier().intValue() & 0x01,
-                () -> "SubscribeToEvents not set on " + areaId);
+                ((UaObjectNode) notifier).getEventNotifier().intValue() & 0x01,
+                () -> "SubscribeToEvents not set on " + notifierId);
           }
 
-          for (String equipmentId : List.of(BOILER, PUMP, TANK, PLC)) {
-            assertNotNull(managedNode(server, nodeId(equipmentId)));
-          }
-
-          // HasNotifier pairs exist in both directions: Server -> Plant -> area.
+          // HasNotifier pairs exist in both directions throughout the hierarchy.
           assertReferencePair(server, NodeIds.Server, NodeIds.HasNotifier, plantId);
           assertReferencePair(server, plantId, NodeIds.HasNotifier, powerHouseId);
           assertReferencePair(server, plantId, NodeIds.HasNotifier, tankFarmId);
-
-          // HasEventSource pairs exist in both directions: area -> equipment.
-          assertReferencePair(server, powerHouseId, NodeIds.HasEventSource, nodeId(BOILER));
-          assertReferencePair(server, powerHouseId, NodeIds.HasEventSource, nodeId(PUMP));
-          assertReferencePair(server, tankFarmId, NodeIds.HasEventSource, nodeId(TANK));
-          assertReferencePair(server, tankFarmId, NodeIds.HasEventSource, nodeId(PLC));
+          assertReferencePair(server, powerHouseId, NodeIds.HasNotifier, nodeId(BOILER));
+          assertReferencePair(server, powerHouseId, NodeIds.HasNotifier, nodeId(PUMP));
+          assertReferencePair(server, tankFarmId, NodeIds.HasNotifier, nodeId(TANK));
+          assertReferencePair(server, tankFarmId, NodeIds.HasNotifier, nodeId(PLC));
 
           // The regression guard: condition wiring must not have added a Server -> HasEventSource
           // shortcut to any equipment node, which would leak every event past the area scope.
@@ -348,10 +352,11 @@ class AlarmNodesIT {
   }
 
   @Test
-  void scopesEventsToTheSubscribedArea(@TempDir Path tempDir) throws Exception {
+  void scopesEventsToTheSubscribedAreaAndEquipment(@TempDir Path tempDir) throws Exception {
     withServer(
         tempDir,
         (server, client) -> {
+          Set<NodeId> boilerSources = Set.of(nodeId(BOILER));
           Set<NodeId> powerHouseSources = Set.of(nodeId(BOILER), nodeId(PUMP));
           Set<NodeId> tankFarmSources = Set.of(nodeId(TANK), nodeId(PLC));
 
@@ -359,30 +364,39 @@ class AlarmNodesIT {
           subscription.create();
 
           try {
+            var boilerEvents = new CopyOnWriteArrayList<NodeId>();
             var powerHouseEvents = new CopyOnWriteArrayList<NodeId>();
             var tankFarmEvents = new CopyOnWriteArrayList<NodeId>();
             var serverEvents = new CopyOnWriteArrayList<NodeId>();
 
+            OpcUaMonitoredItem boilerItem = eventItem(nodeId(BOILER), boilerEvents::add);
             OpcUaMonitoredItem powerHouseItem =
                 eventItem(nodeId(AlarmNodesFragment.POWER_HOUSE_ID), powerHouseEvents::add);
             OpcUaMonitoredItem tankFarmItem =
                 eventItem(nodeId(AlarmNodesFragment.TANK_FARM_ID), tankFarmEvents::add);
             OpcUaMonitoredItem serverItem = eventItem(NodeIds.Server, serverEvents::add);
 
-            subscription.addMonitoredItems(List.of(powerHouseItem, tankFarmItem, serverItem));
+            subscription.addMonitoredItems(
+                List.of(boilerItem, powerHouseItem, tankFarmItem, serverItem));
             subscription.synchronizeMonitoredItems();
 
+            assertTrue(boilerItem.getCreateResult().orElseThrow().isGood());
             assertTrue(powerHouseItem.getCreateResult().orElseThrow().isGood());
             assertTrue(tankFarmItem.getCreateResult().orElseThrow().isGood());
             assertTrue(serverItem.getCreateResult().orElseThrow().isGood());
 
-            // Wait until both areas have produced events, then assert neither saw the other's.
+            // Wait until the equipment and both areas have produced events, then assert that every
+            // item saw only the sources below its notifier.
             awaitTrue(
                 () ->
-                    powerHouseEvents.stream().anyMatch(powerHouseSources::contains)
+                    boilerEvents.stream().anyMatch(boilerSources::contains)
+                        && powerHouseEvents.stream().anyMatch(powerHouseSources::contains)
                         && tankFarmEvents.stream().anyMatch(tankFarmSources::contains),
-                "did not receive alarm events from both areas");
+                "did not receive alarm events from the equipment and both areas");
 
+            assertTrue(
+                boilerEvents.stream().allMatch(boilerSources::contains),
+                () -> "B-100 item received out-of-scope events: " + boilerEvents);
             assertTrue(
                 powerHouseEvents.stream().allMatch(powerHouseSources::contains),
                 () -> "PowerHouse item received out-of-scope events: " + powerHouseEvents);
@@ -403,83 +417,24 @@ class AlarmNodesIT {
   }
 
   @Test
-  void scopesConditionRefreshToTheSubscribedArea(@TempDir Path tempDir) throws Exception {
+  void scopesConditionRefreshToTheSubscribedAreaAndEquipment(@TempDir Path tempDir)
+      throws Exception {
+
     withServer(
         tempDir,
         (server, client) -> {
-          Set<NodeId> tankFarmSources = Set.of(nodeId(TANK), nodeId(PLC));
+          List<AlarmSpec> tankAlarms =
+              TANK_FARM_ALARMS.stream().filter(spec -> TANK.equals(spec.equipmentId())).toList();
 
-          OpcUaSubscription subscription = new OpcUaSubscription(client, 10.0);
-          subscription.create();
-
-          try {
-            var events = new CopyOnWriteArrayList<RefreshEvent>();
-
-            OpcUaMonitoredItem tankFarmItem =
-                OpcUaMonitoredItem.newEventItem(
-                    nodeId(AlarmNodesFragment.TANK_FARM_ID), eventTypeAndSourceFilter());
-            tankFarmItem.setQueueSize(uint(1000));
-            tankFarmItem.setEventValueListener(
-                (_, fields) ->
-                    events.add(
-                        new RefreshEvent(
-                            fields[0].value() instanceof NodeId eventType ? eventType : null,
-                            fields[1].value() instanceof NodeId sourceNode ? sourceNode : null)));
-
-            subscription.addMonitoredItems(List.of(tankFarmItem));
-            subscription.synchronizeMonitoredItems();
-            assertTrue(tankFarmItem.getCreateResult().orElseThrow().isGood());
-
-            // Let the tank farm retain at least one condition worth replaying.
-            awaitTrue(
-                () -> retainedConditions(server, TANK_FARM_ALARMS) > 0,
-                "no TankFarm condition became retained");
-
-            UInteger subscriptionId = subscription.getSubscriptionId().orElseThrow();
-            UInteger monitoredItemId = tankFarmItem.getMonitoredItemId().orElseThrow();
-
-            events.clear();
-
-            // ConditionRefresh2 is invoked on the ConditionType Object, which is where the server
-            // installs the handler, not on the Server Object.
-            CallMethodResult result =
-                call(
-                    client,
-                    NodeIds.ConditionType,
-                    NodeIds.ConditionType_ConditionRefresh2,
-                    Variant.of(subscriptionId),
-                    Variant.of(monitoredItemId));
-
-            assertTrue(
-                result.getStatusCode().isGood(),
-                () -> "ConditionRefresh2 failed: " + result.getStatusCode());
-
-            awaitTrue(
-                () ->
-                    events.stream()
-                        .anyMatch(e -> NodeIds.RefreshEndEventType.equals(e.eventType())),
-                "did not receive a RefreshEndEventType");
-
-            // The replay is bracketed by RefreshStart/RefreshEnd...
-            int start = indexOf(events, e -> NodeIds.RefreshStartEventType.equals(e.eventType()));
-            int end = indexOf(events, e -> NodeIds.RefreshEndEventType.equals(e.eventType()));
-
-            assertTrue(start >= 0, "did not receive a RefreshStartEventType");
-            assertTrue(start < end, "RefreshStart must precede RefreshEnd");
-
-            // ...and everything replayed between them belongs to the subscribed area.
-            List<NodeId> replayed =
-                events.subList(start + 1, end).stream().map(RefreshEvent::sourceNode).toList();
-
-            assertFalse(replayed.isEmpty(), "ConditionRefresh2 replayed no retained conditions");
-            assertTrue(
-                // Null-tolerant on purpose: an event with no SourceNode is a failure to report,
-                // not an NPE out of Set.of(...).contains(null).
-                replayed.stream().allMatch(id -> id != null && tankFarmSources.contains(id)),
-                () -> "ConditionRefresh2 replayed out-of-scope conditions: " + replayed);
-          } finally {
-            subscription.delete();
-          }
+          assertConditionRefreshScope(
+              server, client, nodeId(TANK), tankAlarms, Set.of(nodeId(TANK)), "TK-200");
+          assertConditionRefreshScope(
+              server,
+              client,
+              nodeId(AlarmNodesFragment.TANK_FARM_ID),
+              TANK_FARM_ALARMS,
+              Set.of(nodeId(TANK), nodeId(PLC)),
+              "TankFarm");
         });
   }
 
@@ -718,6 +673,86 @@ class AlarmNodesIT {
         });
 
     return item;
+  }
+
+  private static void assertConditionRefreshScope(
+      OpcUaServer server,
+      OpcUaClient client,
+      NodeId notifierId,
+      List<AlarmSpec> conditionSpecs,
+      Set<NodeId> expectedSources,
+      String scopeName)
+      throws Exception {
+
+    OpcUaSubscription subscription = new OpcUaSubscription(client, 10.0);
+    subscription.create();
+
+    try {
+      var events = new CopyOnWriteArrayList<RefreshEvent>();
+
+      OpcUaMonitoredItem item =
+          OpcUaMonitoredItem.newEventItem(notifierId, eventTypeAndSourceFilter());
+      item.setQueueSize(uint(1000));
+      item.setEventValueListener(
+          (_, fields) ->
+              events.add(
+                  new RefreshEvent(
+                      fields[0].value() instanceof NodeId eventType ? eventType : null,
+                      fields[1].value() instanceof NodeId sourceNode ? sourceNode : null)));
+
+      subscription.addMonitoredItems(List.of(item));
+      subscription.synchronizeMonitoredItems();
+      assertTrue(
+          item.getCreateResult().orElseThrow().isGood(),
+          () -> scopeName + " event monitored item was rejected");
+
+      awaitTrue(
+          () -> retainedConditions(server, conditionSpecs) > 0,
+          "no " + scopeName + " condition became retained");
+
+      UInteger subscriptionId = subscription.getSubscriptionId().orElseThrow();
+      UInteger monitoredItemId = item.getMonitoredItemId().orElseThrow();
+
+      events.clear();
+
+      // ConditionRefresh2 is invoked on the ConditionType Object, which is where the server
+      // installs the handler, not on the Server Object.
+      CallMethodResult result =
+          call(
+              client,
+              NodeIds.ConditionType,
+              NodeIds.ConditionType_ConditionRefresh2,
+              Variant.of(subscriptionId),
+              Variant.of(monitoredItemId));
+
+      assertTrue(
+          result.getStatusCode().isGood(),
+          () -> scopeName + " ConditionRefresh2 failed: " + result.getStatusCode());
+
+      awaitTrue(
+          () -> events.stream().anyMatch(e -> NodeIds.RefreshEndEventType.equals(e.eventType())),
+          scopeName + " item did not receive a RefreshEndEventType");
+
+      int start = indexOf(events, e -> NodeIds.RefreshStartEventType.equals(e.eventType()));
+      int end = indexOf(events, e -> NodeIds.RefreshEndEventType.equals(e.eventType()));
+
+      assertTrue(start >= 0, () -> scopeName + " item did not receive a RefreshStartEventType");
+      assertTrue(start < end, () -> scopeName + " RefreshStart must precede RefreshEnd");
+
+      List<NodeId> replayed =
+          events.subList(start + 1, end).stream().map(RefreshEvent::sourceNode).toList();
+
+      assertFalse(
+          replayed.isEmpty(),
+          () -> scopeName + " ConditionRefresh2 replayed no retained conditions");
+      assertTrue(
+          // Null-tolerant on purpose: an event with no SourceNode is a failure to report, not an
+          // NPE out of Set.of(...).contains(null).
+          replayed.stream().allMatch(id -> id != null && expectedSources.contains(id)),
+          () -> scopeName + " ConditionRefresh2 replayed out-of-scope conditions: " + replayed);
+    } finally {
+      subscription.delete();
+    }
   }
 
   /**
