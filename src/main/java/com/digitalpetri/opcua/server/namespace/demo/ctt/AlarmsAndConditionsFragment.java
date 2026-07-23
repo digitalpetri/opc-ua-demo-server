@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
@@ -32,7 +33,6 @@ import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode.UaObjectNodeBuilder;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode.UaVariableNodeBuilder;
 import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
-import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
 import org.eclipse.milo.opcua.stack.core.UaException;
@@ -44,8 +44,6 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
-import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
-import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +79,9 @@ public final class AlarmsAndConditionsFragment extends ManagedAddressSpaceFragme
   private final UShort namespaceIndex;
   private final Duration dwellTime;
   private final List<Condition> conditions = new ArrayList<>();
-  private final Object scenarioLock = new Object();
+
+  /** Guards the scenario state and Conditions, making a step and shutdown mutually exclusive. */
+  private final ReentrantLock scenarioLock = new ReentrantLock();
 
   private UaVariableNode discreteInput;
   private UaVariableNode discreteNormalState;
@@ -172,33 +172,56 @@ public final class AlarmsAndConditionsFragment extends ManagedAddressSpaceFragme
       initializeScenario();
       running = true;
 
+      // The scheduler only dispatches: advancing the scenario sets five values and fans their
+      // condition events out synchronously, which does not belong on the shared scheduled executor
+      // that every publish timer and sampling task in the server shares.
+      //
+      // At a fixed rate rather than a fixed delay, so a step that runs long does not stretch the
+      // dwell that follows it. Steps that pile up queue on the scenario lock rather than being
+      // dropped, which is what advanceScenarioSafely wants.
       long dwellNanos = dwellTime.toNanos();
       scenarioFuture =
           getServer()
               .getConfig()
               .getScheduledExecutorService()
               .scheduleAtFixedRate(
-                  this::advanceScenarioSafely, dwellNanos, dwellNanos, TimeUnit.NANOSECONDS);
+                  () -> getServer().getExecutorService().execute(this::advanceScenarioSafely),
+                  dwellNanos,
+                  dwellNanos,
+                  TimeUnit.NANOSECONDS);
     } catch (UaException e) {
       throw new IllegalStateException("failed to create CTT Alarms and Conditions fixtures", e);
     }
   }
 
+  /**
+   * Stop the scenario and unregister its Conditions, without interrupting a step that is midway
+   * through driving a Condition's state machine.
+   *
+   * <p>Cancelling without interruption stops further dispatches and lets any step in flight finish;
+   * taking the scenario lock then waits for it. Clearing {@code running} under that lock closes the
+   * remaining race, where a step dispatched to the executor just before the cancel would otherwise
+   * run and evaluate alarms whose Conditions have just been unregistered.
+   */
   private void stopFixture() {
-    running = false;
-
     ScheduledFuture<?> future = scenarioFuture;
     if (future != null) {
-      future.cancel(true);
+      // Without interruption: the scheduled task only dispatches, so an interrupt could never
+      // reach the scenario step, and would instead land on a scheduler thread the whole server
+      // shares. Clearing `running` under the lock below is what stops the scenario.
+      future.cancel(false);
       scenarioFuture = null;
     }
 
-    synchronized (scenarioLock) {
-      // Wait for a tick that was already emitting when shutdown began.
-    }
+    scenarioLock.lock();
+    try {
+      running = false;
 
-    conditions.forEach(getServer().getConditionManager()::unregister);
-    conditions.clear();
+      conditions.forEach(getServer().getConditionManager()::unregister);
+      conditions.clear();
+    } finally {
+      scenarioLock.unlock();
+    }
   }
 
   private void createAddressSpace() {
@@ -389,81 +412,84 @@ public final class AlarmsAndConditionsFragment extends ManagedAddressSpaceFragme
     updateNonExclusiveLevel(LEVEL_TRAJECTORY.getFirst());
   }
 
+  /**
+   * Advance the scenario one dwell.
+   *
+   * <p>Blocking on the lock rather than skipping the step, which is where this parts company with
+   * the {@code Demo/Alarms} plant: the CTT selections read the eight-state limit trajectory in
+   * order, so a dropped step corrupts the fixture in a way a slow step does not.
+   */
   private void advanceScenarioSafely() {
-    synchronized (scenarioLock) {
+    scenarioLock.lock();
+    try {
+      // Re-checked under the lock: this step may have been dispatched before a shutdown that has
+      // since unregistered the Conditions it is about to drive.
       if (!running) {
         return;
       }
 
-      try {
-        discreteValue = !discreteValue;
-        levelTrajectoryIndex = (levelTrajectoryIndex + 1) % LEVEL_TRAJECTORY.size();
-        double level = LEVEL_TRAJECTORY.get(levelTrajectoryIndex);
+      discreteValue = !discreteValue;
+      levelTrajectoryIndex = (levelTrajectoryIndex + 1) % LEVEL_TRAJECTORY.size();
+      double level = LEVEL_TRAJECTORY.get(levelTrajectoryIndex);
 
-        updateDiscrete(discreteValue);
-        updateExclusiveLimit(level);
-        updateExclusiveLevel(level);
-        updateNonExclusiveLimit(level);
-        updateNonExclusiveLevel(level);
-      } catch (RuntimeException e) {
-        LOGGER.error("Error advancing CTT Alarms and Conditions scenario", e);
-      }
+      updateDiscrete(discreteValue);
+      updateExclusiveLimit(level);
+      updateExclusiveLevel(level);
+      updateNonExclusiveLimit(level);
+      updateNonExclusiveLevel(level);
+    } catch (RuntimeException e) {
+      // A failing step must not kill the scheduled task and freeze the whole fixture.
+      LOGGER.error("Error advancing CTT Alarms and Conditions scenario", e);
+    } finally {
+      scenarioLock.unlock();
     }
   }
 
   private void updateDiscrete(boolean value) {
-    DateTime transitionTime = DateTime.now();
-    setInputValue(discreteInput, goodValue(Variant.ofBoolean(value), transitionTime));
-    discreteAlarm.evaluate(value, false);
+    publish(discreteInput, Variant.ofBoolean(value), () -> discreteAlarm.evaluate(value, false));
   }
 
   private void updateExclusiveLimit(double value) {
-    DateTime transitionTime = DateTime.now();
-    setInputValue(exclusiveLimitInput, goodValue(Variant.ofDouble(value), transitionTime));
-    exclusiveLimitAlarm.evaluate(value);
+    publish(
+        exclusiveLimitInput, Variant.ofDouble(value), () -> exclusiveLimitAlarm.evaluate(value));
   }
 
   private void updateExclusiveLevel(double value) {
-    DateTime transitionTime = DateTime.now();
-    setInputValue(exclusiveLevelInput, goodValue(Variant.ofDouble(value), transitionTime));
-    exclusiveLevelAlarm.evaluate(value);
+    publish(
+        exclusiveLevelInput, Variant.ofDouble(value), () -> exclusiveLevelAlarm.evaluate(value));
   }
 
   private void updateNonExclusiveLimit(double value) {
-    DateTime transitionTime = DateTime.now();
-    setInputValue(nonExclusiveLimitInput, goodValue(Variant.ofDouble(value), transitionTime));
-    nonExclusiveLimitAlarm.evaluate(value);
+    publish(
+        nonExclusiveLimitInput,
+        Variant.ofDouble(value),
+        () -> nonExclusiveLimitAlarm.evaluate(value));
   }
 
   private void updateNonExclusiveLevel(double value) {
+    publish(
+        nonExclusiveLevelInput,
+        Variant.ofDouble(value),
+        () -> nonExclusiveLevelAlarm.evaluate(value));
+  }
+
+  /**
+   * Publish {@code value} on {@code input} with Good quality, then evaluate the alarm watching it.
+   *
+   * <p>Both are stamped with one reading of the clock, which is what lets a client correlate an
+   * input value with the condition event it caused: the alarm's event Time and the DataValue's
+   * source timestamp share an origin. Arrival order is not part of that correlation — the value
+   * reaches a monitored item on the sampling interval its client asked for, which may well be after
+   * the event.
+   *
+   * @param input the {@link UaVariableNode} to publish on.
+   * @param value the value the input transitioned to.
+   * @param evaluate evaluates the alarm watching {@code input} against that same transition.
+   */
+  private static void publish(UaVariableNode input, Variant value, Runnable evaluate) {
     DateTime transitionTime = DateTime.now();
-    setInputValue(nonExclusiveLevelInput, goodValue(Variant.ofDouble(value), transitionTime));
-    nonExclusiveLevelAlarm.evaluate(value);
-  }
-
-  private void setInputValue(UaVariableNode input, DataValue value) {
-    input.setValue(value);
-
-    // Condition events are enqueued immediately, while SubscriptionModel normally samples values
-    // on a timer. Queue the matching value first so clients can correlate it with the event.
-    for (DataItem dataItem : subscriptionModel.getDataItems()) {
-      ReadValueId readValueId = dataItem.getReadValueId();
-
-      if (dataItem.isSamplingEnabled()
-          && input.getNodeId().equals(readValueId.getNodeId())
-          && AttributeId.Value.isEqual(readValueId.getAttributeId())) {
-
-        TimestampsToReturn timestampsToReturn = dataItem.getTimestampsToReturn();
-        DataValue monitoredValue =
-            timestampsToReturn != null ? DataValue.derivedValue(value, timestampsToReturn) : value;
-
-        dataItem.setValue(monitoredValue);
-      }
-    }
-  }
-
-  private static DataValue goodValue(Variant value, DateTime transitionTime) {
-    return new DataValue(value, StatusCode.GOOD, transitionTime, transitionTime);
+    input.setValue(new DataValue(value, StatusCode.GOOD, transitionTime, transitionTime));
+    evaluate.run();
   }
 
   private void addComponent(UaNode child, NodeId parent) {

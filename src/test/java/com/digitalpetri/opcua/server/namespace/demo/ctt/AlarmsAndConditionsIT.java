@@ -18,10 +18,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
@@ -66,6 +65,22 @@ class AlarmsAndConditionsIT {
   private static final int NAMESPACE_INDEX = 2;
   private static final Duration EVENT_TIMEOUT = Duration.ofSeconds(3);
   private static final long MAX_TIMESTAMP_DELTA_100NS = Duration.ofMillis(25).toNanos() / 100;
+
+  /** A dwell short enough that every fixture input transitions twenty times a second. */
+  private static final Duration FAST_DWELL_TIME = Duration.ofMillis(50);
+
+  /** A sampling interval an order of magnitude slower than {@link #FAST_DWELL_TIME}. */
+  private static final double SLOW_SAMPLING_INTERVAL = 500.0;
+
+  /** How long notifications are counted for, once the subscription has settled. */
+  private static final Duration SAMPLE_WINDOW = Duration.ofSeconds(2);
+
+  /**
+   * The fewest events a {@link #SAMPLE_WINDOW} of {@link #FAST_DWELL_TIME} dwells has to produce
+   * before a low value count over the same window says anything about sampling. The fixture should
+   * manage forty.
+   */
+  private static final int MIN_EVENTS_IN_WINDOW = 20;
 
   private static final List<FixtureSpec> FIXTURES =
       List.of(
@@ -171,16 +186,33 @@ class AlarmsAndConditionsIT {
     }
   }
 
+  /**
+   * A client is never queued values faster than the sampling interval it asked for, however fast
+   * the fixture underneath is changing them.
+   *
+   * <p>The event stream is what makes the value count mean anything: it witnesses that the input
+   * really was transitioning throughout the window, so a low value count is decimation by the
+   * sampling interval rather than a stalled fixture.
+   *
+   * <p>This once failed. The fixture pushed every value it produced straight into matching data
+   * items, so that the value explaining an alarm always preceded the event reporting it — a
+   * correlation the server is not allowed to buy by sampling ahead of what the client asked for.
+   * Correlating the two by timestamp instead costs the client nothing and is still covered, by
+   * {@link #registersStableFixturesAndEmitsTimestampCorrelatedEvents(Path)}.
+   */
   @Test
-  void monitoredInputValueArrivesBeforeMatchingConditionEvent(@TempDir Path tempDir)
+  void doesNotQueueValuesFasterThanTheRevisedSamplingInterval(@TempDir Path tempDir)
       throws Exception {
 
     Config config =
         ConfigFactory.parseMap(
             Map.of(
-                "address-space.ctt.enabled", true,
-                "address-space.ctt.alarms-and-conditions.enabled", true,
-                "address-space.ctt.alarms-and-conditions.dwell-time", "100 ms"));
+                "address-space.ctt.enabled",
+                true,
+                "address-space.ctt.alarms-and-conditions.enabled",
+                true,
+                "address-space.ctt.alarms-and-conditions.dwell-time",
+                FAST_DWELL_TIME.toMillis() + " ms"));
 
     OpcUaDemoServer demoServer =
         OpcUaTestServerBuilder.builder().withDataDir(tempDir).withConfig(config).build();
@@ -193,59 +225,30 @@ class AlarmsAndConditionsIT {
       try {
         client.connect();
 
-        OpcUaSubscription subscription = new OpcUaSubscription(client, 10.0);
+        OpcUaSubscription subscription = new OpcUaSubscription(client, 50.0);
 
         try {
           subscription.create();
 
-          List<Long> inputSourceTimes = new CopyOnWriteArrayList<>();
-          List<DateTime> uncorrelatedEventTimes = new CopyOnWriteArrayList<>();
-          CountDownLatch initialDataReceived = new CountDownLatch(1);
-          CountDownLatch receivedEvents = new CountDownLatch(8);
-          AtomicBoolean verifyNotifications = new AtomicBoolean();
+          var valueNotifications = new AtomicInteger();
+          var eventNotifications = new AtomicInteger();
+          var initialValueReceived = new CountDownLatch(1);
 
           OpcUaMonitoredItem inputItem =
               OpcUaMonitoredItem.newDataItem(
                   nodeId(AlarmsAndConditionsFragment.EXCLUSIVE_LIMIT_INPUT_ID));
-          inputItem.setSamplingInterval(50.0);
-          inputItem.setQueueSize(uint(100));
+          inputItem.setSamplingInterval(SLOW_SAMPLING_INTERVAL);
+          inputItem.setQueueSize(uint(1000));
           inputItem.setDataValueListener(
-              (_, value) -> {
-                DateTime sourceTime = value.getSourceTime();
-                if (sourceTime != null) {
-                  inputSourceTimes.add(sourceTime.getUtcTime());
-                  initialDataReceived.countDown();
-                }
+              (_, _) -> {
+                valueNotifications.incrementAndGet();
+                initialValueReceived.countDown();
               });
 
           OpcUaMonitoredItem eventItem =
               OpcUaMonitoredItem.newEventItem(NodeIds.Server, exclusiveLimitEventFilter());
-          eventItem.setQueueSize(uint(100));
-          eventItem.setEventValueListener(
-              (_, eventFields) -> {
-                if (!verifyNotifications.get()) {
-                  return;
-                }
-
-                if (eventFields[0].value() instanceof DateTime eventTime) {
-                  long eventUtcTime = eventTime.getUtcTime();
-                  boolean correlatedDataAlreadyReceived =
-                      inputSourceTimes.stream()
-                          .anyMatch(
-                              sourceUtcTime -> {
-                                long delta = eventUtcTime - sourceUtcTime;
-                                return delta >= 0 && delta <= MAX_TIMESTAMP_DELTA_100NS;
-                              });
-
-                  if (!correlatedDataAlreadyReceived) {
-                    uncorrelatedEventTimes.add(eventTime);
-                  }
-                } else {
-                  uncorrelatedEventTimes.add(DateTime.MIN_VALUE);
-                }
-
-                receivedEvents.countDown();
-              });
+          eventItem.setQueueSize(uint(1000));
+          eventItem.setEventValueListener((_, _) -> eventNotifications.incrementAndGet());
 
           subscription.addMonitoredItems(List.of(inputItem, eventItem));
           subscription.synchronizeMonitoredItems();
@@ -253,17 +256,41 @@ class AlarmsAndConditionsIT {
           assertTrue(inputItem.getCreateResult().orElseThrow().isGood());
           assertTrue(eventItem.getCreateResult().orElseThrow().isGood());
           assertTrue(
-              initialDataReceived.await(EVENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+              initialValueReceived.await(EVENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
               "did not receive the initial ExclusiveLimit input DataValue");
-          verifyNotifications.set(true);
+
+          // The revised interval rather than the requested one: a server may sample slower than a
+          // client asked, and is then held to the rate it actually agreed to.
+          double revisedSamplingInterval = inputItem.getRevisedSamplingInterval().orElseThrow();
           assertTrue(
-              receivedEvents.await(EVENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
-              "did not receive enough ExclusiveLimitAlarm events");
+              revisedSamplingInterval >= SLOW_SAMPLING_INTERVAL,
+              () -> "sampling interval revised faster than requested: " + revisedSamplingInterval);
+
+          // Counted from here, so the initial value delivered on item creation is excluded.
+          valueNotifications.set(0);
+          eventNotifications.set(0);
+          Thread.sleep(SAMPLE_WINDOW.toMillis());
+
+          int values = valueNotifications.get();
+          int events = eventNotifications.get();
+
           assertTrue(
-              uncorrelatedEventTimes.isEmpty(),
+              events >= MIN_EVENTS_IN_WINDOW,
               () ->
-                  "condition events arrived before their correlated input DataValues: "
-                      + uncorrelatedEventTimes);
+                  "the fixture produced too few events for the value count to mean much: "
+                      + events);
+
+          // Twice the sample count the window holds, plus the samples straddling either end of it:
+          // enough slack for scheduling jitter, not enough for a second value per interval.
+          int maxValues =
+              (int) Math.ceil(SAMPLE_WINDOW.toMillis() / revisedSamplingInterval) * 2 + 2;
+
+          assertTrue(
+              values <= maxValues,
+              () ->
+                  "queued %d values in %s at a %.0f ms sampling interval, expected at most %d (%d events fired in the same window)"
+                      .formatted(
+                          values, SAMPLE_WINDOW, revisedSamplingInterval, maxValues, events));
         } finally {
           subscription.delete();
         }
