@@ -3,6 +3,7 @@ package com.digitalpetri.opcua.server;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -35,8 +36,8 @@ public class DemoCertificateFactory extends AbstractCertificateFactory {
    * @param hostnames the DNS names and IP addresses placed in generated certificates.
    */
   public DemoCertificateFactory(String applicationUri, Supplier<Set<String>> hostnames) {
-    this.applicationUri = applicationUri;
-    this.hostnames = hostnames;
+    this.applicationUri = Objects.requireNonNull(applicationUri, "applicationUri must not be null");
+    this.hostnames = Objects.requireNonNull(hostnames, "hostnames must not be null");
   }
 
   @Override

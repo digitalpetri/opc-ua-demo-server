@@ -412,6 +412,8 @@ public class OpcUaDemoServer extends AbstractLifecycle {
                     .setSecurityMode(MessageSecurityMode.None)
                     .build());
           } else {
+            // Let the configured CertificateManager/DefaultApplicationGroup choose the RSA or ECC
+            // certificate type preferred by this endpoint's security policy.
             policyBuilder.setEndpointCertificateConfig(
                 EndpointCertificateConfig.newBuilder().build());
 
