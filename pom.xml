@@ -348,4 +348,23 @@
     </dependencies>
   </dependencyManagement>
 
+  <repositories>
+    <!--
+      Milo is currently tracked at a snapshot version, which Central proper does not serve. Without
+      this a clean checkout resolves it only from whatever happens to be in the local repository, so
+      CI and the native image's builder container cannot build the project at all.
+    -->
+    <repository>
+      <id>central-portal-snapshots</id>
+      <name>Central Portal Snapshots</name>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
 </project>
