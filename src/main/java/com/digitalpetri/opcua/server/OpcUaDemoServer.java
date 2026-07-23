@@ -34,9 +34,9 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle;
+import org.eclipse.milo.opcua.sdk.server.EndpointCertificateConfig;
 import org.eclipse.milo.opcua.sdk.server.EndpointConfig;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig;
@@ -64,13 +64,16 @@ import org.eclipse.milo.opcua.stack.core.security.FileBasedTrustListManager;
 import org.eclipse.milo.opcua.stack.core.security.KeyStoreCertificateStore;
 import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateQuarantine;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
+import org.eclipse.milo.opcua.stack.core.security.SecurityPolicyProfile;
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager;
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.UserTokenType;
 import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo;
+import org.eclipse.milo.opcua.stack.core.types.structured.UserTokenPolicy;
 import org.eclipse.milo.opcua.stack.core.util.ManifestUtil;
 import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck;
 import org.eclipse.milo.opcua.stack.transport.server.OpcServerTransportFactory;
@@ -155,32 +158,42 @@ public class OpcUaDemoServer extends AbstractLifecycle {
               trustListManager, ValidationCheck.ALL_OPTIONAL_CHECKS, certificateQuarantine);
     }
 
+    List<SecurityPolicy> configuredSecurityPolicies = getSecurityPolicies(config);
+    var supportedCertificateTypeIds = new LinkedHashSet<NodeId>();
+    supportedCertificateTypeIds.add(NodeIds.RsaSha256ApplicationCertificateType);
+
+    for (SecurityPolicy securityPolicy : configuredSecurityPolicies) {
+      SecurityPolicyProfile profile = securityPolicy.getProfile();
+
+      if (profile.publicKeyAlgorithm() == SecurityPolicyProfile.PublicKeyAlgorithm.ECC) {
+        NodeId certificateTypeId =
+            profile
+                .preferredCertificateTypeId()
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "ECC security policy has no certificate type: " + securityPolicy));
+
+        supportedCertificateTypeIds.add(certificateTypeId);
+      }
+    }
+
     DefaultApplicationGroup defaultApplicationGroup =
-        new DefaultApplicationGroup(
+        DefaultApplicationGroup.createAndInitialize(
             trustListManager,
             certificateStore,
-            new RsaSha256CertificateFactoryImpl(
-                applicationUri, () -> getCertificateHostnames(config)),
-            certificateValidator);
-
-    defaultApplicationGroup.initialize();
+            new DemoCertificateFactory(applicationUri, () -> getCertificateHostnames(config)),
+            certificateValidator,
+            List.copyOf(supportedCertificateTypeIds));
 
     CertificateManager certificateManager =
         new DefaultCertificateManager(certificateQuarantine, defaultApplicationGroup);
 
-    Supplier<X509Certificate> certificateSupplier =
-        () -> {
-          X509Certificate[] certificateChain =
-              certificateManager
-                  .getDefaultApplicationGroup()
-                  .orElseThrow()
-                  .getCertificateChain(NodeIds.RsaSha256ApplicationCertificateType)
-                  .orElseThrow();
+    X509Certificate rsaCertificate =
+        defaultApplicationGroup.getCertificateChain(NodeIds.RsaSha256ApplicationCertificateType)
+            .orElseThrow()[0];
 
-          return certificateChain[0];
-        };
-
-    Set<EndpointConfig> endpointConfigs = createEndpointConfigs(config, certificateSupplier);
+    Set<EndpointConfig> endpointConfigs = createEndpointConfigs(config, rsaCertificate);
 
     if (!reverseConnectConfig.targets().isEmpty()) {
       // Cross-validate each target's endpoint-url against the endpoints this server actually
@@ -366,39 +379,42 @@ public class OpcUaDemoServer extends AbstractLifecycle {
         PRODUCT_URI, manufacturerName, productName, softwareVersion, buildNumber, buildDate);
   }
 
-  private Set<EndpointConfig> createEndpointConfigs(
-      Config config, Supplier<X509Certificate> certificate) {
+  private Set<EndpointConfig> createEndpointConfigs(Config config, X509Certificate rsaCertificate) {
     var endpointConfigs = new LinkedHashSet<EndpointConfig>();
 
     List<String> bindAddresses = config.getStringList("bind-address-list");
     int bindPort = config.getInt("bind-port");
-    List<String> securityPolicies = config.getStringList("security-policy-list");
+    List<SecurityPolicy> securityPolicies = getSecurityPolicies(config);
     List<String> securityModes = config.getStringList("security-mode-list");
 
     for (String bindAddress : bindAddresses) {
       Set<String> hostnames = getEndpointHostnames(config);
 
       for (String hostname : hostnames) {
-        EndpointConfig.Builder builder = EndpointConfig.newBuilder();
-        builder
+        EndpointConfig.Builder baseBuilder = EndpointConfig.newBuilder();
+        baseBuilder
             .setTransportProfile(TransportProfile.TCP_UASC_UABINARY)
             .setBindAddress(bindAddress)
             .setBindPort(bindPort)
             .setHostname(hostname)
-            .setPath("/milo")
-            .setCertificate(certificate)
-            .addTokenPolicies(
-                USER_TOKEN_POLICY_ANONYMOUS, USER_TOKEN_POLICY_USERNAME, USER_TOKEN_POLICY_X509);
+            .setPath("/milo");
 
-        for (String securityPolicyString : securityPolicies) {
-          SecurityPolicy securityPolicy = SecurityPolicy.valueOf(securityPolicyString);
+        for (SecurityPolicy securityPolicy : securityPolicies) {
+          EndpointConfig.Builder policyBuilder = baseBuilder.copy();
+          policyBuilder.setSecurityPolicy(securityPolicy);
+          addTokenPolicies(policyBuilder, securityPolicy);
 
           if (securityPolicy == SecurityPolicy.None) {
             // No need to iterate over security modes for the None policy.
-            builder.setSecurityPolicy(securityPolicy).setSecurityMode(MessageSecurityMode.None);
-
-            endpointConfigs.add(builder.build());
+            endpointConfigs.add(
+                policyBuilder
+                    .setCertificate(rsaCertificate)
+                    .setSecurityMode(MessageSecurityMode.None)
+                    .build());
           } else {
+            policyBuilder.setEndpointCertificateConfig(
+                EndpointCertificateConfig.newBuilder().build());
+
             for (String securityModeString : securityModes) {
               MessageSecurityMode securityMode = MessageSecurityMode.valueOf(securityModeString);
 
@@ -407,9 +423,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
                 continue;
               }
 
-              builder.setSecurityPolicy(securityPolicy).setSecurityMode(securityMode);
-
-              endpointConfigs.add(builder.build());
+              endpointConfigs.add(policyBuilder.copy().setSecurityMode(securityMode).build());
             }
           }
         }
@@ -418,16 +432,46 @@ public class OpcUaDemoServer extends AbstractLifecycle {
         // Usage of the "/discovery" suffix is defined by OPC UA Part 6.
 
         EndpointConfig.Builder discoveryBuilder =
-            builder
+            baseBuilder
+                .copy()
                 .setPath("/milo/discovery")
+                .setCertificate(rsaCertificate)
                 .setSecurityPolicy(SecurityPolicy.None)
-                .setSecurityMode(MessageSecurityMode.None);
+                .setSecurityMode(MessageSecurityMode.None)
+                .addTokenPolicies(
+                    USER_TOKEN_POLICY_ANONYMOUS,
+                    USER_TOKEN_POLICY_USERNAME,
+                    USER_TOKEN_POLICY_X509);
 
         endpointConfigs.add(discoveryBuilder.build());
       }
     }
 
     return endpointConfigs;
+  }
+
+  private static List<SecurityPolicy> getSecurityPolicies(Config config) {
+    return config.getStringList("security-policy-list").stream()
+        .map(SecurityPolicy::valueOf)
+        .toList();
+  }
+
+  private static void addTokenPolicies(
+      EndpointConfig.Builder builder, SecurityPolicy securityPolicy) {
+
+    if (securityPolicy.getProfile().publicKeyAlgorithm()
+        == SecurityPolicyProfile.PublicKeyAlgorithm.ECC) {
+
+      builder.addTokenPolicies(
+          USER_TOKEN_POLICY_ANONYMOUS,
+          new UserTokenPolicy(
+              "username", UserTokenType.UserName, null, null, securityPolicy.getUri()),
+          new UserTokenPolicy(
+              "certificate", UserTokenType.Certificate, null, null, securityPolicy.getUri()));
+    } else {
+      builder.addTokenPolicies(
+          USER_TOKEN_POLICY_ANONYMOUS, USER_TOKEN_POLICY_USERNAME, USER_TOKEN_POLICY_X509);
+    }
   }
 
   private Set<String> getEndpointHostnames(Config config) {
