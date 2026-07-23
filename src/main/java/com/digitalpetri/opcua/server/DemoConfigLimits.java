@@ -24,7 +24,7 @@ public class DemoConfigLimits implements OpcUaServerConfigLimits {
 
   @Override
   public Double getMaxSessionTimeout() {
-    return 30_000.0;
+    return 300_000.0;
   }
 
   @Override
