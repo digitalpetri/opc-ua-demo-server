@@ -17,10 +17,12 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.subscriptions.OpcUaSubscription;
@@ -52,6 +54,8 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.FilterOperator;
+import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodRequest;
+import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.ContentFilter;
 import org.eclipse.milo.opcua.stack.core.types.structured.ContentFilterElement;
 import org.eclipse.milo.opcua.stack.core.types.structured.EventFilter;
@@ -74,6 +78,9 @@ class AlarmsAndConditionsIT {
 
   /** How long notifications are counted for, once the subscription has settled. */
   private static final Duration SAMPLE_WINDOW = Duration.ofSeconds(2);
+
+  /** Long enough to disable every retained fixture before the trajectory advances. */
+  private static final Duration ENABLE_HOLD_DWELL_TIME = Duration.ofMillis(500);
 
   /**
    * The fewest events a {@link #SAMPLE_WINDOW} of {@link #FAST_DWELL_TIME} dwells has to produce
@@ -181,6 +188,112 @@ class AlarmsAndConditionsIT {
       }
 
       assertEmittedEvents(server, inputsByCondition);
+    } finally {
+      demoServer.shutdown();
+    }
+  }
+
+  @Test
+  void disabledFixturesHoldTheirActiveInputAndEmitWhenReenabled(@TempDir Path tempDir)
+      throws Exception {
+
+    Config config =
+        ConfigFactory.parseMap(
+            Map.of(
+                "address-space.ctt.enabled",
+                true,
+                "address-space.ctt.alarms-and-conditions.enabled",
+                true,
+                "address-space.ctt.alarms-and-conditions.dwell-time",
+                ENABLE_HOLD_DWELL_TIME.toMillis() + " ms"));
+
+    OpcUaDemoServer demoServer =
+        OpcUaTestServerBuilder.builder().withDataDir(tempDir).withConfig(config).build();
+
+    try {
+      demoServer.startup();
+      OpcUaServer server = demoServer.getServer();
+      Map<NodeId, Condition> conditions = new ConcurrentHashMap<>();
+      Map<NodeId, UaVariableNode> inputs = new ConcurrentHashMap<>();
+
+      for (FixtureSpec fixture : FIXTURES) {
+        NodeId conditionId = nodeId(fixture.conditionIdentifier());
+        conditions.put(
+            conditionId,
+            server
+                .getConditionManager()
+                .findCondition(conditionId)
+                .orElseThrow(() -> new AssertionError("condition not registered: " + conditionId)));
+        inputs.put(
+            conditionId, (UaVariableNode) managedNode(server, nodeId(fixture.inputIdentifier())));
+      }
+
+      awaitTrue(
+          () -> conditions.values().stream().allMatch(Condition::isRetained),
+          "fixtures never entered their shared retained state");
+
+      OpcUaClient client = OpcUaTestClient.create(server);
+      try {
+        client.connect();
+
+        for (NodeId conditionId : conditions.keySet()) {
+          CallMethodResult result = call(client, conditionId, NodeIds.ConditionType_Disable);
+          assertTrue(
+              result.getStatusCode().isGood(),
+              () -> "Disable failed for " + conditionId + ": " + result.getStatusCode());
+        }
+
+        Map<NodeId, Object> heldValues = new ConcurrentHashMap<>();
+        inputs.forEach(
+            (conditionId, input) ->
+                heldValues.put(conditionId, input.getValue().getValue().getValue()));
+
+        Thread.sleep(ENABLE_HOLD_DWELL_TIME.multipliedBy(3).toMillis());
+
+        for (NodeId conditionId : conditions.keySet()) {
+          Condition condition = conditions.get(conditionId);
+          assertFalse(condition.isEnabled(), "fixture unexpectedly enabled: " + conditionId);
+          assertFalse(condition.isRetained(), "disabled fixture retained: " + conditionId);
+          assertEquals(
+              heldValues.get(conditionId),
+              inputs.get(conditionId).getValue().getValue().getValue(),
+              "disabled fixture input advanced: " + conditionId);
+        }
+
+        Set<NodeId> enabledEvents = ConcurrentHashMap.newKeySet();
+        CountDownLatch enabledEventLatch = new CountDownLatch(FIXTURES.size());
+        EventListener listener =
+            event -> {
+              NodeId conditionId = event.getNodeId();
+              Condition condition = conditions.get(conditionId);
+              if (condition != null
+                  && condition.isEnabled()
+                  && condition.isRetained()
+                  && enabledEvents.add(conditionId)) {
+                enabledEventLatch.countDown();
+              }
+            };
+
+        server.getEventNotifier().register(listener);
+        try {
+          for (NodeId conditionId : conditions.keySet()) {
+            CallMethodResult result = call(client, conditionId, NodeIds.ConditionType_Enable);
+            assertTrue(
+                result.getStatusCode().isGood(),
+                () -> "Enable failed for " + conditionId + ": " + result.getStatusCode());
+          }
+
+          assertTrue(
+              enabledEventLatch.await(EVENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+              () ->
+                  "missing retained Enable events for "
+                      + missingConditionIds(conditions, enabledEvents));
+        } finally {
+          server.getEventNotifier().unregister(listener);
+        }
+      } finally {
+        client.disconnect();
+      }
     } finally {
       demoServer.shutdown();
     }
@@ -390,6 +503,35 @@ class AlarmsAndConditionsIT {
         .map(fixture -> nodeId(fixture.conditionIdentifier()))
         .filter(conditionId -> !snapshots.containsKey(conditionId))
         .toList();
+  }
+
+  private static List<NodeId> missingConditionIds(
+      Map<NodeId, Condition> conditions, Set<NodeId> receivedConditionIds) {
+
+    return conditions.keySet().stream()
+        .filter(conditionId -> !receivedConditionIds.contains(conditionId))
+        .toList();
+  }
+
+  private static CallMethodResult call(
+      OpcUaClient client, NodeId objectId, NodeId methodId, Variant... arguments) throws Exception {
+
+    return client.call(List.of(new CallMethodRequest(objectId, methodId, arguments)))
+        .getResults()[0];
+  }
+
+  private static void awaitTrue(BooleanSupplier condition, String message)
+      throws InterruptedException {
+
+    long deadline = System.nanoTime() + EVENT_TIMEOUT.toNanos();
+    while (System.nanoTime() < deadline) {
+      if (condition.getAsBoolean()) {
+        return;
+      }
+      Thread.sleep(20);
+    }
+
+    throw new AssertionError(message + " (waited " + EVENT_TIMEOUT + ")");
   }
 
   private static EventFilter exclusiveLimitEventFilter() {

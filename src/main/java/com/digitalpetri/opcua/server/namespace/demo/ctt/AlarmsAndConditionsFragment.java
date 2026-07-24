@@ -446,31 +446,59 @@ public final class AlarmsAndConditionsFragment extends ManagedAddressSpaceFragme
   }
 
   private void updateDiscrete(boolean value) {
-    publish(discreteInput, Variant.ofBoolean(value), () -> discreteAlarm.evaluate(value, false));
+    publishIfEnabled(
+        discreteAlarm,
+        discreteInput,
+        Variant.ofBoolean(value),
+        () -> discreteAlarm.evaluate(value, false));
   }
 
   private void updateExclusiveLimit(double value) {
-    publish(
-        exclusiveLimitInput, Variant.ofDouble(value), () -> exclusiveLimitAlarm.evaluate(value));
+    publishIfEnabled(
+        exclusiveLimitAlarm,
+        exclusiveLimitInput,
+        Variant.ofDouble(value),
+        () -> exclusiveLimitAlarm.evaluate(value));
   }
 
   private void updateExclusiveLevel(double value) {
-    publish(
-        exclusiveLevelInput, Variant.ofDouble(value), () -> exclusiveLevelAlarm.evaluate(value));
+    publishIfEnabled(
+        exclusiveLevelAlarm,
+        exclusiveLevelInput,
+        Variant.ofDouble(value),
+        () -> exclusiveLevelAlarm.evaluate(value));
   }
 
   private void updateNonExclusiveLimit(double value) {
-    publish(
+    publishIfEnabled(
+        nonExclusiveLimitAlarm,
         nonExclusiveLimitInput,
         Variant.ofDouble(value),
         () -> nonExclusiveLimitAlarm.evaluate(value));
   }
 
   private void updateNonExclusiveLevel(double value) {
-    publish(
+    publishIfEnabled(
+        nonExclusiveLevelAlarm,
         nonExclusiveLevelInput,
         Variant.ofDouble(value),
         () -> nonExclusiveLevelAlarm.evaluate(value));
+  }
+
+  /**
+   * Hold a disabled fixture at the input that made it interesting.
+   *
+   * <p>The CTT Enable test explicitly requires its selected alarm to remain active while disabled.
+   * A production process may continue changing under a disabled Condition, but this deterministic
+   * test fixture must preserve that precondition so enabling the Condition produces its retained
+   * state notification.
+   */
+  private static void publishIfEnabled(
+      Condition condition, UaVariableNode input, Variant value, Runnable evaluate) {
+
+    if (condition.isEnabled()) {
+      publish(input, value, evaluate);
+    }
   }
 
   /**
