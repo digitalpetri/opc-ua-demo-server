@@ -163,6 +163,13 @@ public class OpcUaTestServerBuilder {
     addressSpace.put("ctt.enabled", false);
     addressSpace.put("ctt.alarms-and-conditions.enabled", false);
     addressSpace.put("ctt.alarms-and-conditions.dwell-time", "6 seconds");
+    String optionalStateFixtures = "ctt.alarms-and-conditions.optional-state-fixtures.";
+    addressSpace.put(optionalStateFixtures + "enabled", false);
+    addressSpace.put(optionalStateFixtures + "confirm-dwell-time", "20 seconds");
+    addressSpace.put(optionalStateFixtures + "shelving-dwell-time", "20 seconds");
+    addressSpace.put(optionalStateFixtures + "shelving-heartbeat-interval", "10 seconds");
+    addressSpace.put(optionalStateFixtures + "shelving-cycling-max-time-shelved", "90 seconds");
+    addressSpace.put(optionalStateFixtures + "shelving-steady-max-time-shelved", "30 seconds");
     addressSpace.put("data-type-test.enabled", false);
     addressSpace.put("dynamic.enabled", false);
     addressSpace.put("mass.enabled", false);

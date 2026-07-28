@@ -1,6 +1,8 @@
 package com.digitalpetri.opcua.server.namespace.demo.ctt;
 
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
+import com.digitalpetri.opcua.server.namespace.demo.ctt.AlarmsAndConditionsFragment.OptionalStateConfig;
+import com.typesafe.config.Config;
 import java.time.Duration;
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.core.Reference;
@@ -22,6 +24,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
+import org.jspecify.annotations.Nullable;
 
 public class CttNodes extends AddressSpaceComposite implements Lifecycle {
 
@@ -64,16 +67,41 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
         new SecurityAccessFragment(server, this, rootFragment.getCttFolderNodeId(), namespaceIndex);
     lifecycleManager.addLifecycle(securityAccessFragment);
 
+    Config config = namespace.getConfig();
+
     boolean alarmsAndConditionsEnabled =
-        namespace.getConfig().getBoolean("address-space.ctt.alarms-and-conditions.enabled");
+        config.getBoolean("address-space.ctt.alarms-and-conditions.enabled");
     if (alarmsAndConditionsEnabled) {
-      Duration dwellTime =
-          namespace.getConfig().getDuration("address-space.ctt.alarms-and-conditions.dwell-time");
+      Duration dwellTime = config.getDuration("address-space.ctt.alarms-and-conditions.dwell-time");
       var alarmsAndConditionsFragment =
           new AlarmsAndConditionsFragment(
-              server, this, rootFragment.getCttFolderNodeId(), namespaceIndex, dwellTime);
+              server,
+              this,
+              rootFragment.getCttFolderNodeId(),
+              namespaceIndex,
+              dwellTime,
+              optionalStateConfig(config));
       lifecycleManager.addLifecycle(alarmsAndConditionsFragment);
     }
+  }
+
+  /**
+   * Read the optional-state (Confirm, Shelving) fixture configuration, or {@code null} when those
+   * fixtures are disabled.
+   */
+  private static @Nullable OptionalStateConfig optionalStateConfig(Config config) {
+    String prefix = "address-space.ctt.alarms-and-conditions.optional-state-fixtures.";
+
+    if (!config.getBoolean(prefix + "enabled")) {
+      return null;
+    }
+
+    return new OptionalStateConfig(
+        config.getDuration(prefix + "confirm-dwell-time"),
+        config.getDuration(prefix + "shelving-dwell-time"),
+        config.getDuration(prefix + "shelving-heartbeat-interval"),
+        config.getDuration(prefix + "shelving-cycling-max-time-shelved"),
+        config.getDuration(prefix + "shelving-steady-max-time-shelved"));
   }
 
   public NodeId getCttFolderNodeId() {
