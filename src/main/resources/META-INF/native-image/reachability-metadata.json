@@ -2526,6 +2526,9 @@
       "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
     },
     {
+      "glob": "com/digitalpetri/opcua/server/build-info.properties"
+    },
+    {
       "glob": "default-logback.xml"
     },
     {

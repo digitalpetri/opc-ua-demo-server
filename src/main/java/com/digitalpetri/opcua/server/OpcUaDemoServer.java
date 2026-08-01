@@ -27,6 +27,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -361,10 +362,11 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     var manufacturerName = "digitalpetri";
     var productName = "Eclipse Milo OPC UA Demo Server";
 
-    var softwareVersion = ManifestUtil.read(PROPERTY_SOFTWARE_VERSION).orElse("dev");
-    var buildNumber = ManifestUtil.read(PROPERTY_BUILD_NUMBER).orElse("dev");
-    var buildDate =
-        ManifestUtil.read(PROPERTY_BUILD_DATE)
+    String softwareVersion = readSoftwareVersion().orElse("dev");
+    String buildNumber =
+        readBuildProperty(BuildProperties.BUILD_NUMBER, PROPERTY_BUILD_NUMBER).orElse("dev");
+    DateTime buildDate =
+        readBuildProperty(BuildProperties.BUILD_DATE, PROPERTY_BUILD_DATE)
             .map(
                 date -> {
                   try {
@@ -377,6 +379,22 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     return new BuildInfo(
         PRODUCT_URI, manufacturerName, productName, softwareVersion, buildNumber, buildDate);
+  }
+
+  private static Optional<String> readSoftwareVersion() {
+    return readBuildProperty(BuildProperties.SOFTWARE_VERSION, PROPERTY_SOFTWARE_VERSION);
+  }
+
+  /**
+   * Reads build metadata, preferring the filtered {@code build-info.properties} resource and
+   * falling back to the shaded JAR's manifest.
+   *
+   * @param propertyKey the {@link BuildProperties} key.
+   * @param manifestAttribute the manifest attribute holding the same value.
+   * @return the value, or empty if neither source has it.
+   */
+  private static Optional<String> readBuildProperty(String propertyKey, String manifestAttribute) {
+    return BuildProperties.read(propertyKey).or(() -> ManifestUtil.read(manifestAttribute));
   }
 
   private Set<EndpointConfig> createEndpointConfigs(Config config, X509Certificate rsaCertificate) {
@@ -638,8 +656,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     long startupDuration =
         TimeUnit.MILLISECONDS.convert(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
 
-    String version =
-        ManifestUtil.read(PROPERTY_SOFTWARE_VERSION).map("v%s"::formatted).orElse("(dev version)");
+    String version = readSoftwareVersion().map("v%s"::formatted).orElse("(dev version)");
 
     Logger logger = LoggerFactory.getLogger(OpcUaDemoServer.class);
     logger.info("Eclipse Milo OPC UA Demo Server {} started in {}ms", version, startupDuration);

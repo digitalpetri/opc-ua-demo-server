@@ -64,6 +64,29 @@
   </properties>
 
   <build>
+    <!--
+      build-info.properties carries the build metadata into target/classes, where every packaging
+      form can see it: the shaded JAR, an exploded classpath run, and the GraalVM native image.
+      The native image is the reason this exists at all - native-maven-plugin compiles from the
+      project's classes and dependency JARs, so the manifest entries the shade plugin writes into
+      the uber JAR are never visible to it.
+    -->
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <excludes>
+          <exclude>com/digitalpetri/opcua/server/build-info.properties</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>com/digitalpetri/opcua/server/build-info.properties</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
