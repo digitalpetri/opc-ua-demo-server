@@ -1,13 +1,22 @@
 package com.digitalpetri.opcua.server;
 
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.NamedParameterSpec;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.security.AbstractCertificateFactory;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateBuilder;
 import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateGenerator;
 
@@ -43,6 +52,89 @@ public class DemoCertificateFactory extends AbstractCertificateFactory {
   @Override
   protected KeyPair createRsaSha256KeyPair() throws NoSuchAlgorithmException {
     return SelfSignedCertificateGenerator.generateRsaKeyPair(RSA_KEY_LENGTH);
+  }
+
+  /**
+   * Create a key pair using system entropy supplemented by caller-provided entropy.
+   *
+   * <p>This overload supports the {@code Nonce} supplied to the Part 12 CreateSigningRequest Method
+   * without requiring a change to Milo's {@code CertificateFactory} interface. The {@link
+   * SecureRandom} is forced to seed itself from its configured system source before {@link
+   * SecureRandom#setSeed(byte[])} mixes in the additional entropy, so caller-controlled bytes never
+   * replace system entropy.
+   *
+   * @param certificateTypeId the certificate type for the new key pair.
+   * @param additionalEntropy at least 32 bytes of additional entropy.
+   * @return the generated key pair.
+   * @throws GeneralSecurityException if the key pair cannot be generated.
+   */
+  public KeyPair createKeyPair(NodeId certificateTypeId, byte[] additionalEntropy)
+      throws GeneralSecurityException {
+
+    if (additionalEntropy == null || additionalEntropy.length < 32) {
+      throw new IllegalArgumentException("additionalEntropy must contain at least 32 bytes");
+    }
+
+    SecureRandom secureRandom = createSecureRandom(additionalEntropy);
+
+    if (NodeIds.RsaSha256ApplicationCertificateType.equals(certificateTypeId)) {
+      KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+      generator.initialize(RSA_KEY_LENGTH, secureRandom);
+      return generator.generateKeyPair();
+    } else if (NodeIds.EccNistP256ApplicationCertificateType.equals(certificateTypeId)) {
+      return generateEcKeyPair("secp256r1", secureRandom, false);
+    } else if (NodeIds.EccNistP384ApplicationCertificateType.equals(certificateTypeId)) {
+      return generateEcKeyPair("secp384r1", secureRandom, false);
+    } else if (NodeIds.EccBrainpoolP256r1ApplicationCertificateType.equals(certificateTypeId)) {
+      return generateEcKeyPair("brainpoolP256r1", secureRandom, true);
+    } else if (NodeIds.EccBrainpoolP384r1ApplicationCertificateType.equals(certificateTypeId)) {
+      return generateEcKeyPair("brainpoolP384r1", secureRandom, true);
+    } else if (NodeIds.EccCurve25519ApplicationCertificateType.equals(certificateTypeId)) {
+      return generateEdKeyPair("Ed25519", NamedParameterSpec.ED25519, secureRandom);
+    } else if (NodeIds.EccCurve448ApplicationCertificateType.equals(certificateTypeId)) {
+      return generateEdKeyPair("Ed448", NamedParameterSpec.ED448, secureRandom);
+    } else {
+      throw new UnsupportedOperationException("certificateTypeId: " + certificateTypeId);
+    }
+  }
+
+  private static SecureRandom createSecureRandom(byte[] additionalEntropy) {
+    var secureRandom = new SecureRandom();
+    byte[] systemSeedProbe = new byte[32];
+    byte[] entropyCopy = Arrays.copyOf(additionalEntropy, additionalEntropy.length);
+
+    try {
+      // Force platform self-seeding before setSeed() supplements that state with caller entropy.
+      secureRandom.nextBytes(systemSeedProbe);
+      secureRandom.setSeed(entropyCopy);
+    } finally {
+      Arrays.fill(systemSeedProbe, (byte) 0);
+      Arrays.fill(entropyCopy, (byte) 0);
+    }
+
+    return secureRandom;
+  }
+
+  private static KeyPair generateEcKeyPair(
+      String curveName, SecureRandom secureRandom, boolean useBouncyCastle)
+      throws GeneralSecurityException {
+
+    KeyPairGenerator generator =
+        useBouncyCastle
+            ? KeyPairGenerator.getInstance("EC", new BouncyCastleProvider())
+            : KeyPairGenerator.getInstance("EC");
+
+    generator.initialize(new ECGenParameterSpec(curveName), secureRandom);
+    return generator.generateKeyPair();
+  }
+
+  private static KeyPair generateEdKeyPair(
+      String algorithm, NamedParameterSpec parameters, SecureRandom secureRandom)
+      throws GeneralSecurityException {
+
+    KeyPairGenerator generator = KeyPairGenerator.getInstance(algorithm);
+    generator.initialize(parameters, secureRandom);
+    return generator.generateKeyPair();
   }
 
   @Override

@@ -2,6 +2,7 @@ package com.digitalpetri.opcua.server.objects;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
+import com.digitalpetri.opcua.server.DemoCertificateFactory;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.security.*;
@@ -52,12 +53,14 @@ public class ServerConfigurationObject extends AbstractLifecycle {
 
   /**
    * Temporary storage of PrivateKeys generated during CreateSigningRequest, for subsequent use in
-   * UpdateCertificate.
+   * UpdateCertificate, keyed by the affected CertificateGroup and CertificateType slot.
    */
-  private final Map<NodeId, PrivateKey> regeneratedPrivateKeys = new ConcurrentHashMap<>();
+  private final Map<CertificateSlot, PrivateKey> regeneratedPrivateKeys = new ConcurrentHashMap<>();
 
   private final OpcUaServer server;
   private final ServerConfigurationTypeNode serverConfigurationTypeNode;
+
+  private record CertificateSlot(NodeId certificateGroupId, NodeId certificateTypeId) {}
 
   public ServerConfigurationObject(
       OpcUaServer server, ServerConfigurationTypeNode serverConfigurationTypeNode) {
@@ -241,6 +244,9 @@ public class ServerConfigurationObject extends AbstractLifecycle {
               .orElseThrow(
                   () -> new UaException(StatusCodes.Bad_InvalidArgument, "certificateGroupId"));
 
+      CertificateSlot certificateSlot =
+          new CertificateSlot(certificateGroup.getCertificateGroupId(), certificateTypeId);
+
       var certificateChain = new ArrayList<X509Certificate>();
 
       try {
@@ -260,10 +266,12 @@ public class ServerConfigurationObject extends AbstractLifecycle {
       }
 
       KeyPair newKeyPair;
+      PrivateKey regeneratedPrivateKey = null;
       if (privateKey == null || privateKey.isNullOrEmpty()) {
         PrivateKey key;
-        if ((key = regeneratedPrivateKeys.remove(certificateTypeId)) != null) {
+        if ((key = regeneratedPrivateKeys.get(certificateSlot)) != null) {
           // Use previously generated PrivateKey + new certificate PublicKey
+          regeneratedPrivateKey = key;
           newKeyPair = new KeyPair(certificateChain.get(0).getPublicKey(), key);
         } else {
           // Use current PrivateKey + new certificate PublicKey
@@ -297,6 +305,10 @@ public class ServerConfigurationObject extends AbstractLifecycle {
             certificateTypeId, newKeyPair, certificateChain.toArray(new X509Certificate[0]));
       } catch (Exception e) {
         throw new UaException(StatusCodes.Bad_InvalidArgument, "certificateTypeId", e);
+      }
+
+      if (regeneratedPrivateKey != null) {
+        regeneratedPrivateKeys.remove(certificateSlot, regeneratedPrivateKey);
       }
 
       // TODO force existing clients to reconnect?
@@ -362,8 +374,8 @@ public class ServerConfigurationObject extends AbstractLifecycle {
   }
 
   /**
-   * @see <a href="https://reference.opcfoundation.org/GDS/v105/docs/7.10.7">h
-   *     ttps://reference.opcfoundation.org/GDS/v105/docs/7.10.7</a>
+   * @see <a href="https://reference.opcfoundation.org/specs/OPC-10000-12/7.10.10/">
+   *     https://reference.opcfoundation.org/specs/OPC-10000-12/7.10.10/</a>
    */
   public class CreateSigningRequestMethodImpl
       extends ServerConfigurationTypeNode.CreateSigningRequestMethod {
@@ -389,6 +401,8 @@ public class ServerConfigurationObject extends AbstractLifecycle {
           != MessageSecurityMode.SignAndEncrypt) {
         throw new UaException(StatusCodes.Bad_SecurityModeInsufficient);
       }
+
+      validateRegeneratePrivateKeyNonce(regeneratePrivateKey, nonce);
 
       if (certificateGroupId == null || certificateGroupId.isNull()) {
         certificateGroupId = NodeIds.ServerConfiguration_CertificateGroups_DefaultApplicationGroup;
@@ -418,9 +432,26 @@ public class ServerConfigurationObject extends AbstractLifecycle {
 
         if (regeneratePrivateKey) {
           try {
-            keyPair = certificateGroup.getCertificateFactory().createKeyPair(certificateTypeId);
+            var certificateFactory = certificateGroup.getCertificateFactory();
 
-            regeneratedPrivateKeys.put(certificateTypeId, keyPair.getPrivate());
+            if (certificateFactory instanceof DemoCertificateFactory demoCertificateFactory) {
+              keyPair =
+                  demoCertificateFactory.createKeyPair(certificateTypeId, nonce.bytesOrEmpty());
+            } else {
+              logger.warn(
+                  "CertificateFactory {} cannot incorporate the CreateSigningRequest nonce; "
+                      + "falling back to factory-provided entropy for certificate type {}",
+                  certificateFactory.getClass().getName(),
+                  certificateTypeId);
+
+              keyPair = certificateFactory.createKeyPair(certificateTypeId);
+            }
+
+            var certificateSlot =
+                new CertificateSlot(certificateGroup.getCertificateGroupId(), certificateTypeId);
+            regeneratedPrivateKeys.put(certificateSlot, keyPair.getPrivate());
+          } catch (UnsupportedOperationException e) {
+            throw new UaException(StatusCodes.Bad_NotSupported, e);
           } catch (Exception e) {
             throw new UaException(StatusCodes.Bad_UnexpectedError, e);
           }
@@ -446,9 +477,23 @@ public class ServerConfigurationObject extends AbstractLifecycle {
                     CertificateUtil.getSanIpAddresses(certificate));
 
         certificateRequest.set(csr);
+      } catch (UaException e) {
+        throw e;
       } catch (Exception e) {
         throw new UaException(StatusCodes.Bad_UnexpectedError, e);
       }
+    }
+  }
+
+  static void validateRegeneratePrivateKeyNonce(Boolean regeneratePrivateKey, ByteString nonce)
+      throws UaException {
+
+    if (regeneratePrivateKey == null) {
+      throw new UaException(StatusCodes.Bad_InvalidArgument, "regeneratePrivateKey");
+    }
+
+    if (regeneratePrivateKey && (nonce == null || nonce.length() < 32)) {
+      throw new UaException(StatusCodes.Bad_InvalidArgument, "nonce");
     }
   }
 
