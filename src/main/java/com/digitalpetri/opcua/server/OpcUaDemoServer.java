@@ -24,6 +24,9 @@ import java.nio.file.StandardOpenOption;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.zone.ZoneRules;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -51,6 +54,8 @@ import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.X509IdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.model.objects.ServerConfigurationTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters;
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.Stack;
@@ -68,12 +73,15 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicyProfile;
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager;
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.UserTokenType;
 import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo;
+import org.eclipse.milo.opcua.stack.core.types.structured.TimeZoneDataType;
 import org.eclipse.milo.opcua.stack.core.types.structured.UserTokenPolicy;
 import org.eclipse.milo.opcua.stack.core.util.ManifestUtil;
 import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck;
@@ -92,6 +100,32 @@ public class OpcUaDemoServer extends AbstractLifecycle {
   private static final String PROPERTY_BUILD_DATE = "X-Server-Build-Date";
   private static final String PROPERTY_BUILD_NUMBER = "X-Server-Build-Number";
   private static final String PROPERTY_SOFTWARE_VERSION = "X-Server-Software-Version";
+
+  /*
+   * These well-known instances are optional or conditional entry points for functionality the
+   * demo server does not provide. Keeping the standard ObjectTypes and DataTypes in namespace 0
+   * does not require exposing the corresponding Server Object instances.
+   */
+  private static final List<NodeId> UNSUPPORTED_STANDARD_SERVER_NODES =
+      List.of(
+          // OPC 10000-5 §6.3.1: optional SessionlessInvoke/versioning and state-change features.
+          NodeIds.Server_UrisVersion,
+          NodeIds.Server_EstimatedReturnTime,
+          NodeIds.Server_SetSubscriptionDurable,
+          NodeIds.Server_RequestServerStateChange,
+          // OPC 10000-19 §8.1: optional dictionary browse entry point.
+          NodeIds.Dictionaries,
+          // OPC 10000-8 §6.2: entry point for server-managed QuantityType/UnitType instances.
+          NodeIds.Quantities,
+          // OPC 10000-11 §5.7.3: required only for historical nodes without own configuration.
+          NodeIds.DefaultHAConfiguration,
+          NodeIds.DefaultHEConfiguration,
+          // OPC 10000-14 §9.1.3.1: root of PubSub configuration and operation.
+          NodeIds.PublishSubscribe,
+          // OPC 10000-22 §5.4.1: entry point for exposed physical or logical resources.
+          NodeIds.Resources,
+          // OPC 10000-26 §7.2: aggregate LogObject for server log records.
+          NodeIds.ServerLog);
 
   private final OpcUaServer server;
   private final DemoNamespace demoNamespace;
@@ -273,6 +307,8 @@ public class OpcUaDemoServer extends AbstractLifecycle {
       serverConfigurationObject.startup();
     }
 
+    configureStandardServerNodes(gdsPushEnabled);
+
     server.getAddressSpaceManager().getManagedNode(NodeIds.Aliases).ifPresent(UaNode::delete);
     server.getAddressSpaceManager().getManagedNode(NodeIds.Locations).ifPresent(UaNode::delete);
   }
@@ -313,6 +349,46 @@ public class OpcUaDemoServer extends AbstractLifecycle {
    */
   public OpcUaServer getServer() {
     return server;
+  }
+
+  private void configureStandardServerNodes(boolean gdsPushEnabled) {
+    /*
+     * OPC 10000-5 §6.3.1 defines LocalTime as an optional TimeZoneDataType. OPC 10000-3 §8.28
+     * defines its UTC offset in minutes and whether daylight saving time is included in that
+     * offset. A read filter keeps both fields current when the JVM default time zone or DST state
+     * changes.
+     */
+    UaVariableNode localTimeNode =
+        server
+            .getAddressSpaceManager()
+            .getManagedNode(NodeIds.Server_LocalTime)
+            .map(UaVariableNode.class::cast)
+            .orElseThrow();
+
+    localTimeNode
+        .getFilterChain()
+        .addLast(
+            AttributeFilters.getValue(
+                context ->
+                    new DataValue(new Variant(localTime(ZoneId.systemDefault(), Instant.now())))));
+
+    UNSUPPORTED_STANDARD_SERVER_NODES.forEach(
+        nodeId -> server.getAddressSpaceManager().getManagedNode(nodeId).ifPresent(UaNode::delete));
+
+    // OPC 10000-12 §7.10.4 ties this well-known instance to Push Management support.
+    if (!gdsPushEnabled) {
+      server
+          .getAddressSpaceManager()
+          .getManagedNode(NodeIds.ServerConfiguration)
+          .ifPresent(UaNode::delete);
+    }
+  }
+
+  static TimeZoneDataType localTime(ZoneId zoneId, Instant instant) {
+    ZoneRules rules = zoneId.getRules();
+    short offsetMinutes = (short) (rules.getOffset(instant).getTotalSeconds() / 60);
+
+    return new TimeZoneDataType(offsetMinutes, rules.isDaylightSavings(instant));
   }
 
   private UsernameIdentityValidator createUsernameIdentityValidator() {

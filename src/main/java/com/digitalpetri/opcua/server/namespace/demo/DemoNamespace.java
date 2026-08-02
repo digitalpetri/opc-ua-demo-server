@@ -18,14 +18,19 @@ import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.items.DataItem;
 import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
+import org.eclipse.milo.opcua.sdk.server.model.objects.NamespaceMetadataTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.instantiation.InstantiationRequest;
 import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.IdType;
 
 public class DemoNamespace extends AddressSpaceComposite implements Namespace, Lifecycle {
 
@@ -149,6 +154,7 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
     private final AddressSpaceFilter filter =
         SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);
 
+    private final UShort namespaceIndex;
     private final UaFolderNode demoFolder;
 
     private final SubscriptionModel subscriptionModel;
@@ -157,9 +163,12 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
         OpcUaServer server, AddressSpaceComposite composite, UShort namespaceIndex) {
 
       super(server, composite);
+      this.namespaceIndex = namespaceIndex;
 
       subscriptionModel = new SubscriptionModel(server, composite);
       getLifecycleManager().addLifecycle(subscriptionModel);
+
+      getLifecycleManager().addStartupTask(this::addNamespaceMetadataNodes);
 
       demoFolder =
           new UaFolderNode(
@@ -199,6 +208,60 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
                         ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Matrix"),
                         Direction.FORWARD));
               });
+    }
+
+    private void addNamespaceMetadataNodes() {
+      String applicationUri = getServer().getConfig().getApplicationUri();
+      UShort applicationNamespaceIndex = getServer().getNamespaceTable().getIndex(applicationUri);
+
+      if (applicationNamespaceIndex == null) {
+        throw new IllegalStateException(
+            "application namespace is not registered: " + applicationUri);
+      }
+
+      try {
+        addDynamicNamespaceMetadata(
+            "NamespaceMetadata.Application", applicationNamespaceIndex, applicationUri, false);
+        addDynamicNamespaceMetadata("NamespaceMetadata.Demo", namespaceIndex, NAMESPACE_URI, true);
+      } catch (UaException e) {
+        throw new IllegalStateException("failed to instantiate namespace metadata", e);
+      }
+    }
+
+    /**
+     * Add complete metadata for a dynamic namespace.
+     *
+     * <p>Part 5 §6.3.13 requires all seven Properties to have readable values. These namespaces
+     * have no formal version, publication date, or declared static NodeIds, so the corresponding
+     * values are null or empty while still carrying a Good StatusCode. The subset flag reflects
+     * whether configuration can omit Nodes belonging to the represented namespace.
+     */
+    private void addDynamicNamespaceMetadata(
+        String nodeIdentifier,
+        UShort representedNamespaceIndex,
+        String namespaceUri,
+        boolean isNamespaceSubset)
+        throws UaException {
+
+      InstantiationRequest<NamespaceMetadataTypeNode> request =
+          InstantiationRequest.of(NamespaceMetadataTypeNode.class, NodeIds.NamespaceMetadataType)
+              .nodeId(new NodeId(namespaceIndex, nodeIdentifier))
+              .browseName(new QualifiedName(representedNamespaceIndex, namespaceUri))
+              .displayName(new LocalizedText(namespaceUri))
+              .parent(NodeIds.Server_Namespaces, NodeIds.HasComponent)
+              .target(getNodeManager())
+              .build();
+
+      NamespaceMetadataTypeNode metadataNode =
+          getServer().getNodeInstantiator().instantiate(request).root();
+
+      metadataNode.setNamespaceUri(namespaceUri);
+      metadataNode.setNamespaceVersion(null);
+      metadataNode.setNamespacePublicationDate(DateTime.NULL_VALUE);
+      metadataNode.setIsNamespaceSubset(isNamespaceSubset);
+      metadataNode.setStaticNodeIdTypes(new IdType[0]);
+      metadataNode.setStaticNumericNodeIdRange(new String[0]);
+      metadataNode.setStaticStringNodeIdPattern("");
     }
 
     public UaFolderNode getDemoFolder() {

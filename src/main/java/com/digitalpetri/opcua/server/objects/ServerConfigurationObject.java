@@ -39,6 +39,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.ApplicationType;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.core.util.CertificateUtil;
 import org.slf4j.Logger;
@@ -67,6 +68,12 @@ public class ServerConfigurationObject extends AbstractLifecycle {
 
   @Override
   protected void onStartup() {
+    // OPC 10000-12 7.10.3 defines these as optional. The generated standard instance includes
+    // them, so publish the configured application identity instead of leaving null values.
+    serverConfigurationTypeNode.setApplicationUri(server.getConfig().getApplicationUri());
+    serverConfigurationTypeNode.setProductUri(server.getConfig().getProductUri());
+    serverConfigurationTypeNode.setApplicationType(ApplicationType.Server);
+
     { // UpdateCertificateMethod
       UaMethodNode methodNode = serverConfigurationTypeNode.getUpdateCertificateMethodNode();
       methodNode.getFilterChain().addLast(new SecurityAdminFilter());
@@ -91,11 +98,24 @@ public class ServerConfigurationObject extends AbstractLifecycle {
       methodNode.setInvocationHandler(new GetRejectedListMethodImpl(methodNode));
     }
 
-    serverConfigurationTypeNode.setServerCapabilities(new String[] {""});
+    // OPC 10000-12 Annex D: this demo provides current data and live Alarms & Conditions. RCP is
+    // for Client/ClientAndServer applications that accept Server-initiated reverse connections;
+    // this pure Server only initiates its configured outbound targets.
+    serverConfigurationTypeNode.setServerCapabilities(new String[] {"DA", "AC"});
     serverConfigurationTypeNode.setSupportedPrivateKeyFormats(new String[] {"PEM", "PFX"});
+    // OPC 10000-12 7.10.3 defines 0 as no TrustList-specific size limit.
     serverConfigurationTypeNode.setMaxTrustListSize(uint(0));
     serverConfigurationTypeNode.setMulticastDnsEnabled(false);
+    // The demo stores PrivateKeys in software-backed keystores, not hardware secure storage.
     serverConfigurationTypeNode.setHasSecureElement(false);
+
+    // These optional components are generated into the standard instance but the demo does not
+    // implement transaction cancellation, restoring defaults, transaction diagnostics, or a
+    // remotely editable application configuration file. UaNode.delete() removes descendants too.
+    deleteIfPresent(NodeIds.ServerConfiguration_CancelChanges);
+    deleteIfPresent(NodeIds.ServerConfiguration_ResetToServerDefaults);
+    deleteIfPresent(NodeIds.ServerConfiguration_TransactionDiagnostics);
+    deleteIfPresent(NodeIds.ServerConfiguration_ConfigurationFile);
 
     List<CertificateGroup> certificateGroups =
         server.getConfig().getCertificateManager().getCertificateGroups();
@@ -157,6 +177,10 @@ public class ServerConfigurationObject extends AbstractLifecycle {
     logger.debug("ServerConfigurationObject started: {}", serverConfigurationTypeNode.getNodeId());
   }
 
+  private void deleteIfPresent(NodeId nodeId) {
+    server.getAddressSpaceManager().getManagedNode(nodeId).ifPresent(UaNode::delete);
+  }
+
   @Override
   protected void onShutdown() {
     serverConfigurationTypeNode
@@ -176,8 +200,8 @@ public class ServerConfigurationObject extends AbstractLifecycle {
   }
 
   /**
-   * @see <a href="https://reference.opcfoundation.org/GDS/v105/docs/7.10.4">
-   *     https://reference.opcfoundation.org/GDS/v105/docs/7.10.4</a>
+   * @see <a href="https://reference.opcfoundation.org/specs/OPC-10000-12/7.10.5/">
+   *     https://reference.opcfoundation.org/specs/OPC-10000-12/7.10.5/</a>
    */
   public class UpdateCertificateMethodImpl
       extends ServerConfigurationTypeNode.UpdateCertificateMethod {
@@ -310,8 +334,8 @@ public class ServerConfigurationObject extends AbstractLifecycle {
   }
 
   /**
-   * @see <a href="https://reference.opcfoundation.org/GDS/v105/docs/7.10.6">
-   *     https://reference.opcfoundation.org/GDS/v105/docs/7.10.6</a>
+   * @see <a href="https://reference.opcfoundation.org/specs/OPC-10000-12/7.10.9/">
+   *     https://reference.opcfoundation.org/specs/OPC-10000-12/7.10.9/</a>
    */
   public static class ApplyChangesMethodImpl
       extends ServerConfigurationTypeNode.ApplyChangesMethod {
@@ -331,7 +355,9 @@ public class ServerConfigurationObject extends AbstractLifecycle {
         throw new UaException(StatusCodes.Bad_SecurityModeInsufficient);
       }
 
-      // nothing else to do here; changes are applied immediately.
+      // UpdateCertificate and TrustList CloseAndUpdate apply changes immediately and return
+      // ApplyChangesRequired=false, so the demo never creates an active transaction.
+      throw new UaException(StatusCodes.Bad_NothingToDo);
     }
   }
 
@@ -427,8 +453,8 @@ public class ServerConfigurationObject extends AbstractLifecycle {
   }
 
   /**
-   * @see <a href="https://reference.opcfoundation.org/GDS/v105/docs/7.10.9">
-   *     https://reference.opcfoundation.org/GDS/v105/docs/7.10.9</a>
+   * @see <a href="https://reference.opcfoundation.org/specs/OPC-10000-12/7.10.12/">
+   *     https://reference.opcfoundation.org/specs/OPC-10000-12/7.10.12/</a>
    */
   public class GetRejectedListMethodImpl extends ServerConfigurationTypeNode.GetRejectedListMethod {
 
