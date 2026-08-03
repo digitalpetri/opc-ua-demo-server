@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -128,13 +129,11 @@ public class OpcUaDemoServer extends AbstractLifecycle {
           NodeIds.ServerLog);
 
   private final OpcUaServer server;
-  private final DemoNamespace demoNamespace;
-  private final ReverseConnectConfig reverseConnectConfig;
 
   public OpcUaDemoServer(Path dataDirPath, Config config) throws Exception {
     // Parse and validate the reverse-connect section before any server construction so an invalid
     // target fails fast with an error identifying the target index and field.
-    reverseConnectConfig = ReverseConnectConfig.fromConfig(config);
+    ReverseConnectConfig reverseConnectConfig = ReverseConnectConfig.fromConfig(config);
 
     Path securityDirPath = dataDirPath.resolve("security");
     Path pkiDirPath = securityDirPath.resolve("pki");
@@ -282,15 +281,21 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     server.getNamespaceTable().set(2, DemoNamespace.NAMESPACE_URI);
 
-    boolean dataTypeTestEnabled = config.getBoolean("address-space.data-type-test.enabled");
-    if (dataTypeTestEnabled) {
+    /*
+     * Every component this server owns is registered as an SDK lifecycle participant. The server
+     * starts them in registration order once the standard address space and event facilities are
+     * ready but before any endpoint binds, so clients never observe a partially built address
+     * space, and it stops the ones that started, in reverse order, during startup rollback or
+     * shutdown.
+     */
+
+    if (config.getBoolean("address-space.data-type-test.enabled")) {
       server.getNamespaceTable().set(3, DataTypeTestNamespace.NAMESPACE_URI);
-      var dataTypeTestNamespace = DataTypeTestNamespace.create(server);
-      dataTypeTestNamespace.startup();
+      server.addLifecycleParticipant(DataTypeTestNamespace.create(server));
     }
 
-    demoNamespace = new DemoNamespace(server, config);
-    demoNamespace.startup();
+    var demoNamespace = new DemoNamespace(server, config);
+    server.addLifecycleParticipant(demoNamespace);
 
     boolean gdsPushEnabled = config.getBoolean("gds-push-enabled");
 
@@ -302,9 +307,8 @@ public class OpcUaDemoServer extends AbstractLifecycle {
               .map(ServerConfigurationTypeNode.class::cast)
               .orElseThrow();
 
-      var serverConfigurationObject =
-          new ServerConfigurationObject(server, serverConfigurationNode);
-      serverConfigurationObject.startup();
+      server.addLifecycleParticipant(
+          new ServerConfigurationObject(server, serverConfigurationNode));
     }
 
     configureStandardServerNodes(gdsPushEnabled);
@@ -315,31 +319,29 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
   @Override
   protected void onStartup() {
-    if (reverseConnectConfig.targets().isEmpty()) {
-      // Preserve pre-Reverse-Connect behavior: the startup future is not joined, so problems
-      // such as individual endpoint bind failures are logged by the SDK and tolerated.
-      server.startup();
-    } else {
-      // OpcUaServer.startup() re-validates Reverse Connect targets against the bound transports
-      // and endpoints; join the future so a validation failure aborts demo server startup.
-      try {
-        server.startup().join();
-      } catch (CompletionException e) {
-        Throwable cause = e.getCause() != null ? e.getCause() : e;
-        throw new RuntimeException("OPC UA server startup failed: " + cause.getMessage(), cause);
-      }
-    }
+    // The SDK starts every registered participant and rolls the started ones back if any of them,
+    // or the rest of startup, fails. Joining is what makes such a failure, or a configuration that
+    // binds no endpoint at all, visible here instead of only in the log.
+    await(server.startup(), "startup");
   }
 
   @Override
   protected void onShutdown() {
-    // User namespace lifecycles are not owned by OpcUaServer and must be stopped explicitly.
-    demoNamespace.shutdown();
+    // OpcUaServer.shutdown() stops reverse-connect activity, unbinds transports, closes sessions,
+    // then stops the participants in reverse registration order while the standard address space
+    // is still in place.
+    await(server.shutdown(), "shutdown");
+  }
 
-    // OpcUaServer.shutdown() shuts down the SDK ReverseConnectTargetManager (cancelling scheduled
-    // attempts, closing in-flight attempts and reverse-opened channels) before unbinding
-    // transports, so no additional Reverse Connect wiring is needed here.
-    server.shutdown();
+  private static void await(CompletableFuture<OpcUaServer> future, String operation) {
+    try {
+      future.join();
+    } catch (CompletionException e) {
+      Throwable cause = e.getCause() != null ? e.getCause() : e;
+
+      throw new RuntimeException(
+          "OPC UA server %s failed: %s".formatted(operation, cause.getMessage()), cause);
+    }
   }
 
   /**
