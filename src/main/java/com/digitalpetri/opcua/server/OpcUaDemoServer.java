@@ -7,6 +7,7 @@ import static org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig.USER_TOKEN_POL
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.util.StatusPrinter2;
+import com.digitalpetri.opcua.server.aliases.AliasSupport;
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
 import com.digitalpetri.opcua.server.namespace.test.DataTypeTestNamespace;
 import com.digitalpetri.opcua.server.objects.ServerConfigurationObject;
@@ -131,6 +132,12 @@ public class OpcUaDemoServer extends AbstractLifecycle {
   private final OpcUaServer server;
 
   public OpcUaDemoServer(Path dataDirPath, Config config) throws Exception {
+    this(dataDirPath, config, createDefaultTransportFactory());
+  }
+
+  OpcUaDemoServer(Path dataDirPath, Config config, OpcServerTransportFactory transportFactory)
+      throws Exception {
+
     // Parse and validate the reverse-connect section before any server construction so an invalid
     // target fails fast with an error identifying the target index and field.
     ReverseConnectConfig reverseConnectConfig = ReverseConnectConfig.fromConfig(config);
@@ -256,17 +263,6 @@ public class OpcUaDemoServer extends AbstractLifecycle {
       serverConfigBuilder.setReverseConnectTargets(reverseConnectConfig.toTargets());
     }
 
-    OpcServerTransportFactory transportFactory =
-        transportProfile -> {
-          if (transportProfile == TransportProfile.TCP_UASC_UABINARY) {
-            OpcTcpServerTransportConfig transportConfig =
-                OpcTcpServerTransportConfig.newBuilder().build();
-
-            return new OpcTcpServerTransport(transportConfig);
-          }
-          return null;
-        };
-
     server = new OpcUaServer(serverConfigBuilder.build(), transportFactory);
 
     if (!reverseConnectConfig.targets().isEmpty()) {
@@ -311,10 +307,38 @@ public class OpcUaDemoServer extends AbstractLifecycle {
           new ServerConfigurationObject(server, serverConfigurationNode));
     }
 
+    boolean aliasesEnabled = config.getBoolean("address-space.aliases.enabled");
+
+    if (aliasesEnabled) {
+      // Registered after the demo namespace because AliasManager rejects an alias whose target
+      // Node does not exist yet.
+      server.addLifecycleParticipant(
+          new AliasSupport(
+              server,
+              demoNamespace,
+              dataDirPath,
+              config.getBoolean("address-space.aliases.find-alias-verbose-enabled"),
+              config.getBoolean("address-space.dynamic.enabled")));
+    }
+
     configureStandardServerNodes(gdsPushEnabled);
 
-    server.getAddressSpaceManager().getManagedNode(NodeIds.Aliases).ifPresent(UaNode::delete);
+    if (!aliasesEnabled) {
+      server.getAddressSpaceManager().getManagedNode(NodeIds.Aliases).ifPresent(UaNode::delete);
+    }
     server.getAddressSpaceManager().getManagedNode(NodeIds.Locations).ifPresent(UaNode::delete);
+  }
+
+  private static OpcServerTransportFactory createDefaultTransportFactory() {
+    return transportProfile -> {
+      if (transportProfile == TransportProfile.TCP_UASC_UABINARY) {
+        OpcTcpServerTransportConfig transportConfig =
+            OpcTcpServerTransportConfig.newBuilder().build();
+
+        return new OpcTcpServerTransport(transportConfig);
+      }
+      return null;
+    };
   }
 
   @Override

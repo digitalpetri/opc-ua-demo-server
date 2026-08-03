@@ -2,6 +2,7 @@ package com.digitalpetri.opcua.server;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import org.eclipse.milo.opcua.stack.transport.server.OpcServerTransportFactory;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -99,21 +101,31 @@ public class OpcUaTestServerBuilder {
    * @throws Exception if server creation fails.
    */
   public OpcUaDemoServer build() throws Exception {
-    // Create a data directory if not provided
+    return new OpcUaDemoServer(resolveDataDir(), buildTestConfig());
+  }
+
+  /**
+   * Build the OPC UA Demo Server with a test-supplied transport factory.
+   *
+   * @param transportFactory the transport factory used by the SDK server.
+   * @return configured server instance.
+   * @throws Exception if server creation fails.
+   */
+  public OpcUaDemoServer build(OpcServerTransportFactory transportFactory) throws Exception {
+    return new OpcUaDemoServer(resolveDataDir(), buildTestConfig(), transportFactory);
+  }
+
+  private Path resolveDataDir() throws IOException {
     Path effectiveDataDir = dataDir;
     if (effectiveDataDir == null) {
       effectiveDataDir = Files.createTempDirectory("opcua-test-");
     }
 
-    // Ensure data directory exists
     if (!Files.exists(effectiveDataDir)) {
       Files.createDirectories(effectiveDataDir);
     }
 
-    // Build test configuration
-    Config config = buildTestConfig();
-
-    return new OpcUaDemoServer(effectiveDataDir, config);
+    return effectiveDataDir;
   }
 
   /**
@@ -158,6 +170,8 @@ public class OpcUaTestServerBuilder {
 
     // Address space configuration - disable all optional features for faster startup
     var addressSpace = new HashMap<String, Object>();
+    addressSpace.put("aliases.enabled", true);
+    addressSpace.put("aliases.find-alias-verbose-enabled", true);
     addressSpace.put("alarms.enabled", false);
     addressSpace.put("alarms.tick-interval", "1 second");
     addressSpace.put("ctt.enabled", false);

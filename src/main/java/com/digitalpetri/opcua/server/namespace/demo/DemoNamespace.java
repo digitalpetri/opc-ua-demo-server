@@ -16,6 +16,7 @@ import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycl
 import org.eclipse.milo.opcua.sdk.server.Namespace;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
+import org.eclipse.milo.opcua.sdk.server.UaNodeManager;
 import org.eclipse.milo.opcua.sdk.server.items.DataItem;
 import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.model.objects.NamespaceMetadataTypeNode;
@@ -147,6 +148,15 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
 
   public UaFolderNode getDemoFolder() {
     return demoFragment.getDemoFolder();
+  }
+
+  /**
+   * Get the NodeManager that hosts the core demo nodes.
+   *
+   * @return the core demo fragment's NodeManager.
+   */
+  public UaNodeManager getDemoNodeManager() {
+    return demoFragment.getNodeManager();
   }
 
   private static class DemoFragment extends ManagedAddressSpaceFragmentWithLifecycle {

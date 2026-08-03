@@ -88,6 +88,25 @@ On startup the server loads its configuration from the active data directory. Wh
 The server configuration file is in HOCON format and its configuration keys and values are
 documented with comments.
 
+### Alias Names
+
+OPC UA Part 17 Alias Names support is enabled by default. The server publishes two categories under
+the standard `TagVariables` category:
+
+- `MiloDemoStatic` contains `Demo.Static.<Type>` aliases for fixed, writable Variables under
+  `ns=2;s=Demo.Variants.Scalar.<Type>`.
+- `MiloDemoDynamic` contains `Demo.Dynamic.<Type>` aliases for changing, read-only Variables under
+  `ns=2;s=Demo.Dynamic.<Type>`. This category follows `address-space.dynamic.enabled`.
+
+Both categories cover `Boolean`, `Int32`, `UInt32`, `Double`, `String`, and `DateTime`, for twelve
+aliases with the default configuration.
+
+Clients can search from the standard `Aliases` Object with `FindAlias` or the optional
+`FindAliasVerbose` Method. Client-driven Add/Delete Methods are not enabled. The category
+`LastChange` versions are stored at `aliases/versions.properties` under the active data directory.
+Set `address-space.aliases.enabled=false` to remove the standard Aliases entry point and disable the
+feature.
+
 ### Security
 
 The server's application instance certificate is stored in the KeyStore at
