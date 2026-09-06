@@ -64,7 +64,7 @@ import org.eclipse.milo.opcua.stack.core.Stack;
 import org.eclipse.milo.opcua.stack.core.security.CertificateManager;
 import org.eclipse.milo.opcua.stack.core.security.CertificateQuarantine;
 import org.eclipse.milo.opcua.stack.core.security.CertificateValidator;
-import org.eclipse.milo.opcua.stack.core.security.DefaultApplicationGroup;
+import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateGroup;
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager;
 import org.eclipse.milo.opcua.stack.core.security.DefaultServerCertificateValidator;
 import org.eclipse.milo.opcua.stack.core.security.FileBasedCertificateQuarantine;
@@ -219,16 +219,22 @@ public class OpcUaDemoServer extends AbstractLifecycle {
       }
     }
 
-    DefaultApplicationGroup defaultApplicationGroup =
-        DefaultApplicationGroup.createAndInitialize(
+    var certificateFactory =
+        new DemoCertificateFactory(applicationUri, () -> getCertificateHostnames(config));
+
+    var defaultApplicationGroup =
+        new DefaultCertificateGroup(
             trustListManager,
             certificateStore,
-            new DemoCertificateFactory(applicationUri, () -> getCertificateHostnames(config)),
+            certificateQuarantine,
             certificateValidator,
             List.copyOf(supportedCertificateTypeIds));
 
-    CertificateManager certificateManager =
-        new DefaultCertificateManager(certificateQuarantine, defaultApplicationGroup);
+    // The group exposes whatever its store holds; provisioning missing self-signed material is the
+    // application's call, made here so a first start has certificates for every supported type.
+    certificateFactory.createMissingCertificates(defaultApplicationGroup);
+
+    CertificateManager certificateManager = new DefaultCertificateManager(defaultApplicationGroup);
 
     X509Certificate rsaCertificate =
         defaultApplicationGroup.getCertificateChain(NodeIds.RsaSha256ApplicationCertificateType)
@@ -304,7 +310,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
               .orElseThrow();
 
       server.addLifecycleParticipant(
-          new ServerConfigurationObject(server, serverConfigurationNode));
+          new ServerConfigurationObject(server, serverConfigurationNode, certificateFactory));
     }
 
     boolean aliasesEnabled = config.getBoolean("address-space.aliases.enabled");

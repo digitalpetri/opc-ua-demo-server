@@ -35,7 +35,7 @@ import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.security.CertificateGroup;
-import org.eclipse.milo.opcua.stack.core.security.CertificateQuarantine;
+import org.eclipse.milo.opcua.stack.core.security.CertificateManager;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
@@ -59,14 +59,18 @@ public class ServerConfigurationObject extends AbstractLifecycle {
 
   private final OpcUaServer server;
   private final ServerConfigurationTypeNode serverConfigurationTypeNode;
+  private final DemoCertificateFactory certificateFactory;
 
   private record CertificateSlot(NodeId certificateGroupId, NodeId certificateTypeId) {}
 
   public ServerConfigurationObject(
-      OpcUaServer server, ServerConfigurationTypeNode serverConfigurationTypeNode) {
+      OpcUaServer server,
+      ServerConfigurationTypeNode serverConfigurationTypeNode,
+      DemoCertificateFactory certificateFactory) {
 
     this.server = server;
     this.serverConfigurationTypeNode = serverConfigurationTypeNode;
+    this.certificateFactory = certificateFactory;
   }
 
   @Override
@@ -120,12 +124,12 @@ public class ServerConfigurationObject extends AbstractLifecycle {
     deleteIfPresent(NodeIds.ServerConfiguration_TransactionDiagnostics);
     deleteIfPresent(NodeIds.ServerConfiguration_ConfigurationFile);
 
-    List<CertificateGroup> certificateGroups =
-        server.getConfig().getCertificateManager().getCertificateGroups();
+    CertificateManager certificateManager = server.getConfig().getCertificateManager();
+    List<CertificateGroup> certificateGroups = certificateManager.getCertificateGroups();
 
     Set<NodeId> supportedGroups =
         certificateGroups.stream()
-            .map(CertificateGroup::getCertificateGroupId)
+            .flatMap(group -> certificateManager.getCertificateGroupId(group).stream())
             .collect(Collectors.toSet());
 
     if (!supportedGroups.contains(
@@ -146,36 +150,37 @@ public class ServerConfigurationObject extends AbstractLifecycle {
           .ifPresent(UaNode::delete);
     }
 
-    certificateGroups.forEach(
-        group -> {
-          CertificateGroupTypeNode groupNode =
-              server
-                  .getAddressSpaceManager()
-                  .getManagedNode(group.getCertificateGroupId())
-                  .filter(node -> node instanceof CertificateGroupTypeNode)
-                  .map(CertificateGroupTypeNode.class::cast)
-                  .orElse(null);
+    for (CertificateGroup group : certificateGroups) {
+      NodeId certificateGroupId = certificateManager.getCertificateGroupId(group).orElseThrow();
 
-          if (groupNode != null) {
-            var trustListObject =
-                new TrustListObject(
-                    server.getConfig().getCertificateManager().getCertificateQuarantine(),
-                    group.getTrustListManager(),
-                    groupNode.getTrustListNode());
-            trustListObject.startup();
+      CertificateGroupTypeNode groupNode =
+          server
+              .getAddressSpaceManager()
+              .getManagedNode(certificateGroupId)
+              .filter(node -> node instanceof CertificateGroupTypeNode)
+              .map(CertificateGroupTypeNode.class::cast)
+              .orElse(null);
 
-            groupNode
-                .getCertificateTypesNode()
-                .getFilterChain()
-                .addLast(
-                    AttributeFilters.getValue(
-                        ctx -> {
-                          NodeId[] certificateTypeIds =
-                              group.getSupportedCertificateTypeIds().toArray(NodeId[]::new);
-                          return new DataValue(new Variant(certificateTypeIds));
-                        }));
-          }
-        });
+      if (groupNode != null) {
+        var trustListObject =
+            new TrustListObject(
+                group.getCertificateQuarantine(),
+                group.getTrustListManager(),
+                groupNode.getTrustListNode());
+        trustListObject.startup();
+
+        groupNode
+            .getCertificateTypesNode()
+            .getFilterChain()
+            .addLast(
+                AttributeFilters.getValue(
+                    ctx -> {
+                      NodeId[] certificateTypeIds =
+                          group.getSupportedCertificateTypeIds().toArray(NodeId[]::new);
+                      return new DataValue(new Variant(certificateTypeIds));
+                    }));
+      }
+    }
 
     logger.debug("ServerConfigurationObject started: {}", serverConfigurationTypeNode.getNodeId());
   }
@@ -244,8 +249,7 @@ public class ServerConfigurationObject extends AbstractLifecycle {
               .orElseThrow(
                   () -> new UaException(StatusCodes.Bad_InvalidArgument, "certificateGroupId"));
 
-      CertificateSlot certificateSlot =
-          new CertificateSlot(certificateGroup.getCertificateGroupId(), certificateTypeId);
+      CertificateSlot certificateSlot = new CertificateSlot(certificateGroupId, certificateTypeId);
 
       var certificateChain = new ArrayList<X509Certificate>();
 
@@ -432,23 +436,9 @@ public class ServerConfigurationObject extends AbstractLifecycle {
 
         if (regeneratePrivateKey) {
           try {
-            var certificateFactory = certificateGroup.getCertificateFactory();
+            keyPair = certificateFactory.createKeyPair(certificateTypeId, nonce.bytesOrEmpty());
 
-            if (certificateFactory instanceof DemoCertificateFactory demoCertificateFactory) {
-              keyPair =
-                  demoCertificateFactory.createKeyPair(certificateTypeId, nonce.bytesOrEmpty());
-            } else {
-              logger.warn(
-                  "CertificateFactory {} cannot incorporate the CreateSigningRequest nonce; "
-                      + "falling back to factory-provided entropy for certificate type {}",
-                  certificateFactory.getClass().getName(),
-                  certificateTypeId);
-
-              keyPair = certificateFactory.createKeyPair(certificateTypeId);
-            }
-
-            var certificateSlot =
-                new CertificateSlot(certificateGroup.getCertificateGroupId(), certificateTypeId);
+            var certificateSlot = new CertificateSlot(certificateGroupId, certificateTypeId);
             regeneratedPrivateKeys.put(certificateSlot, keyPair.getPrivate());
           } catch (UnsupportedOperationException e) {
             throw new UaException(StatusCodes.Bad_NotSupported, e);
@@ -465,16 +455,14 @@ public class ServerConfigurationObject extends AbstractLifecycle {
         }
 
         ByteString csr =
-            certificateGroup
-                .getCertificateFactory()
-                .createSigningRequest(
-                    certificateTypeId,
-                    keyPair,
-                    subject,
-                    CertificateUtil.getSanUri(certificate)
-                        .orElse(server.getConfig().getApplicationUri()),
-                    CertificateUtil.getSanDnsNames(certificate),
-                    CertificateUtil.getSanIpAddresses(certificate));
+            certificateFactory.createSigningRequest(
+                certificateTypeId,
+                keyPair,
+                subject,
+                CertificateUtil.getSanUri(certificate)
+                    .orElse(server.getConfig().getApplicationUri()),
+                CertificateUtil.getSanDnsNames(certificate),
+                CertificateUtil.getSanIpAddresses(certificate));
 
         certificateRequest.set(csr);
       } catch (UaException e) {
@@ -522,10 +510,11 @@ public class ServerConfigurationObject extends AbstractLifecycle {
 
       var certificateBytes = new ArrayList<ByteString>();
 
-      CertificateQuarantine certificateQuarantine =
-          server.getConfig().getCertificateManager().getCertificateQuarantine();
+      // The server-wide rejected list is the union of every registered group's quarantine.
+      List<X509Certificate> rejectedCertificates =
+          server.getConfig().getCertificateManager().getRejectedCertificates();
 
-      for (X509Certificate certificate : certificateQuarantine.getRejectedCertificates()) {
+      for (X509Certificate certificate : rejectedCertificates) {
         try {
           certificateBytes.add(ByteString.of(certificate.getEncoded()));
         } catch (CertificateEncodingException e) {

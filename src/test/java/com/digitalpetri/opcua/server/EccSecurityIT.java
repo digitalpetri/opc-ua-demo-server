@@ -12,10 +12,9 @@ import java.util.Set;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.identity.UsernameProvider;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
-import org.eclipse.milo.opcua.stack.core.security.CertificateManager;
+import org.eclipse.milo.opcua.stack.core.security.CertificateGroup;
 import org.eclipse.milo.opcua.stack.core.security.CertificateValidator;
-import org.eclipse.milo.opcua.stack.core.security.DefaultApplicationGroup;
-import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager;
+import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateGroup;
 import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateQuarantine;
 import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateStore;
 import org.eclipse.milo.opcua.stack.core.security.MemoryTrustListManager;
@@ -64,13 +63,13 @@ class EccSecurityIT {
 
     CertificateValidator certificateValidator =
         new CertificateValidator.InsecureCertificateValidator();
-    CertificateManager certificateManager = createClientCertificateManager(certificateValidator);
+    CertificateGroup certificateGroup = createClientCertificateGroup(certificateValidator);
 
     for (SecurityPolicy securityPolicy : SECURITY_POLICIES) {
       for (MessageSecurityMode securityMode : SECURITY_MODES) {
         OpcUaClient client =
             createClient(
-                securityPolicy, securityMode, certificateManager, certificateValidator, false);
+                securityPolicy, securityMode, certificateGroup, certificateValidator, false);
 
         try {
           assertServerStateReadable(client, securityPolicy, securityMode);
@@ -84,7 +83,7 @@ class EccSecurityIT {
         createClient(
             SecurityPolicy.ECC_nistP256_AesGcm,
             MessageSecurityMode.SignAndEncrypt,
-            certificateManager,
+            certificateGroup,
             certificateValidator,
             true);
 
@@ -99,7 +98,7 @@ class EccSecurityIT {
   private OpcUaClient createClient(
       SecurityPolicy securityPolicy,
       MessageSecurityMode securityMode,
-      CertificateManager certificateManager,
+      CertificateGroup certificateGroup,
       CertificateValidator certificateValidator,
       boolean useUsername)
       throws Exception {
@@ -112,7 +111,7 @@ class EccSecurityIT {
             builder -> {
               builder
                   .setApplicationUri(CLIENT_APPLICATION_URI)
-                  .setCertificateManager(certificateManager)
+                  .setCertificateGroup(certificateGroup)
                   .setCertificateValidator(certificateValidator);
 
               if (useUsername) {
@@ -124,7 +123,7 @@ class EccSecurityIT {
     return client;
   }
 
-  private static CertificateManager createClientCertificateManager(
+  private static CertificateGroup createClientCertificateGroup(
       CertificateValidator certificateValidator) throws Exception {
 
     List<NodeId> certificateTypeIds =
@@ -132,15 +131,18 @@ class EccSecurityIT {
             NodeIds.EccNistP256ApplicationCertificateType,
             NodeIds.EccCurve25519ApplicationCertificateType);
 
-    DefaultApplicationGroup applicationGroup =
-        DefaultApplicationGroup.createAndInitialize(
+    var certificateGroup =
+        new DefaultCertificateGroup(
             new MemoryTrustListManager(),
             new MemoryCertificateStore(),
-            new DemoCertificateFactory(CLIENT_APPLICATION_URI, () -> Set.of("localhost")),
+            new MemoryCertificateQuarantine(),
             certificateValidator,
             certificateTypeIds);
 
-    return new DefaultCertificateManager(new MemoryCertificateQuarantine(), applicationGroup);
+    new DemoCertificateFactory(CLIENT_APPLICATION_URI, () -> Set.of("localhost"))
+        .createMissingCertificates(certificateGroup);
+
+    return certificateGroup;
   }
 
   private static void assertServerStateReadable(
