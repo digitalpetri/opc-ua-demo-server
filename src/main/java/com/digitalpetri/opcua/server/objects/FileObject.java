@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle;
@@ -108,7 +109,7 @@ public class FileObject extends AbstractLifecycle {
                 new SessionListener() {
                   @Override
                   public void onSessionClosed(Session session) {
-                    handles.row(session.getSessionId()).clear();
+                    closeHandles(session.getSessionId(), false);
                   }
                 });
 
@@ -150,6 +151,29 @@ public class FileObject extends AbstractLifecycle {
   protected boolean isOpenForWriting() {
     return handles.values().stream()
         .anyMatch(handle -> (handle.mode.intValue() & MASK_WRITE) == MASK_WRITE);
+  }
+
+  /**
+   * Close and forget the file handles a Session holds.
+   *
+   * @param sessionId the id of the Session whose handles are closed.
+   * @param writeOnly {@code true} to close only handles opened with the Write bit.
+   */
+  protected void closeHandles(NodeId sessionId, boolean writeOnly) {
+    var row = new HashMap<>(handles.row(sessionId));
+
+    row.forEach(
+        (handleId, handle) -> {
+          if (writeOnly && (handle.mode.intValue() & MASK_WRITE) != MASK_WRITE) {
+            return;
+          }
+          handles.remove(sessionId, handleId);
+          try {
+            handle.file.close();
+          } catch (IOException e) {
+            logger.debug("Error closing file handle {} for Session {}", handleId, sessionId, e);
+          }
+        });
   }
 
   protected FileType.OpenMethod newOpenMethod(UaMethodNode methodNode) {

@@ -123,3 +123,20 @@ enabled.
 
 These directories are monitored by the server and changes will be picked up automatically.
 
+### GDS push management
+
+With `gds-push-enabled = true` (the default) the standard `ServerConfiguration` Object accepts
+certificate and trust list updates from a Global Discovery Server or any other client holding the
+`SecurityAdmin` role (user `SecurityAdmin`, password `password`), following the push model of
+OPC 10000-12 7.10.
+
+The server implements the OPC 10000-12 7.10.2 transaction model and reports `SupportsTransactions =
+true`. `UpdateCertificate` and a TrustList `CloseAndUpdate` stage their changes in the calling
+session's transaction and return `ApplyChangesRequired = true`. Nothing takes effect until that
+session calls `ApplyChanges`, which installs every staged change, re-resolves the advertised
+endpoints so `GetEndpoints` and new secure channels use the new certificates, and then, after a short
+grace period, closes sessions whose secure channel was established with a certificate that was
+replaced. Those clients must call `GetEndpoints` again and reconnect. `CancelChanges`, or closing the
+session, discards staged changes. The `TransactionDiagnostics` Object reports the outcome of the
+current or most recent transaction. No restart is needed after provisioning.
+
