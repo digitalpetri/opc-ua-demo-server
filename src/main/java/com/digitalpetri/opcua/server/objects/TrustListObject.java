@@ -4,10 +4,11 @@ import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
+import com.digitalpetri.opcua.server.objects.PushTransaction.TrustListUpdate;
 import java.io.*;
 import java.security.cert.*;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.eclipse.milo.opcua.sdk.server.Session;
 import org.eclipse.milo.opcua.sdk.server.methods.MethodInvocationHandler;
@@ -41,6 +42,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Implementation behavior for an instance of the {@link TrustListType} Object.
  *
+ * <p>Writes follow the PushManagement transaction model of OPC 10000-12 §7.10.2: opening the
+ * TrustList for writing starts or continues the calling Session's transaction, CloseAndUpdate
+ * stages the decoded contents, and nothing reaches the {@link TrustListManager} until the
+ * ServerConfiguration ApplyChanges Method applies the transaction.
+ *
  * @see <a href="https://reference.opcfoundation.org/GDS/v105/docs/7.8.2.1">
  *     https://reference.opcfoundation.org/GDS/v105/docs/7.8.2.1</a>
  */
@@ -58,17 +64,20 @@ public class TrustListObject extends FileObject {
   private final CertificateQuarantine certificateQuarantine;
   private final TrustListManager trustListManager;
   private final TrustListTypeNode trustListTypeNode;
+  private final PushTransactionManager transactions;
 
   public TrustListObject(
       CertificateQuarantine certificateQuarantine,
       TrustListManager trustListManager,
-      TrustListTypeNode fileNode) {
+      TrustListTypeNode fileNode,
+      PushTransactionManager transactions) {
 
     super(fileNode, () -> newTemporaryTrustListFile(trustListManager, MASK_ALL));
 
     this.certificateQuarantine = certificateQuarantine;
     this.trustListManager = trustListManager;
     this.trustListTypeNode = fileNode;
+    this.transactions = transactions;
   }
 
   @Override
@@ -142,6 +151,35 @@ public class TrustListObject extends FileObject {
     super.onShutdown();
   }
 
+  /**
+   * Replace the lists selected by {@code contents} in the {@link TrustListManager}.
+   *
+   * <p>Called when the transaction that staged {@code contents} is applied.
+   *
+   * @param contents the decoded contents staged by CloseAndUpdate.
+   */
+  void apply(Contents contents) {
+    if ((contents.specifiedLists() & MASK_TRUSTED_CERTIFICATES) != 0) {
+      trustListManager.setTrustedCertificates(contents.trustedCertificates());
+    }
+
+    if ((contents.specifiedLists() & MASK_TRUSTED_CRLS) != 0) {
+      trustListManager.setTrustedCrls(contents.trustedCrls());
+    }
+
+    if ((contents.specifiedLists() & MASK_ISSUER_CERTIFICATES) != 0) {
+      trustListManager.setIssuerCertificates(contents.issuerCertificates());
+    }
+
+    if ((contents.specifiedLists() & MASK_ISSUER_CRLS) != 0) {
+      trustListManager.setIssuerCrls(contents.issuerCrls());
+    }
+
+    trustListTypeNode.setLastUpdateTime(DateTime.now());
+
+    logger.info("TrustList {} updated", trustListTypeNode.getNodeId());
+  }
+
   @Override
   protected FileType.OpenMethod newOpenMethod(UaMethodNode methodNode) {
     return new OpenMethodImpl(methodNode);
@@ -157,6 +195,10 @@ public class TrustListObject extends FileObject {
   /**
    * Restricts the implementation of {@link FileObject.OpenMethodImpl} to only allow {@link
    * #MASK_READ} or {@link #MASK_WRITE} + {@link #MASK_ERASE_EXISTING}.
+   *
+   * <p>OPC 10000-12 §7.8.2.2: opening with the Write bit set starts or continues the calling
+   * Session's transaction, and fails with Bad_TransactionPending while another Session's
+   * transaction is active.
    */
   class OpenMethodImpl extends FileObject.OpenMethodImpl {
 
@@ -173,7 +215,24 @@ public class TrustListObject extends FileObject {
             StatusCodes.Bad_InvalidArgument, "mode must be Read or Write+EraseExisting");
       }
 
+      boolean write = (mode.intValue() & MASK_WRITE) == MASK_WRITE;
+      NodeId sessionId = context.getSession().orElseThrow().getSessionId();
+
+      if (write) {
+        transactions.requireNotPendingForOthers(sessionId);
+      }
+
       super.invoke(context, mode, fileHandle);
+
+      // Only a successful Open starts the transaction; a rejected one must leave nothing behind.
+      if (write) {
+        try {
+          transactions.beginOrContinue(sessionId);
+        } catch (UaException e) {
+          closeHandles(sessionId, true);
+          throw e;
+        }
+      }
     }
   }
 
@@ -219,6 +278,9 @@ public class TrustListObject extends FileObject {
   }
 
   /**
+   * Closes the file handle, decodes and validates the written TrustList, and stages it in the
+   * calling Session's transaction. The TrustListManager is not touched until ApplyChanges.
+   *
    * @see <a href="https://reference.opcfoundation.org/GDS/v105/docs/7.8.2.3">
    *     https://reference.opcfoundation.org/GDS/v105/docs/7.8.2.3</a>
    */
@@ -260,29 +322,13 @@ public class TrustListObject extends FileObject {
         UaStructuredType decoded = xo.decode(DefaultEncodingContext.INSTANCE);
 
         if (decoded instanceof TrustListDataType trustList) {
-          int specifiedLists = trustList.getSpecifiedLists().intValue();
+          Contents contents = Contents.decode(trustList);
 
-          if ((specifiedLists & MASK_TRUSTED_CERTIFICATES) != 0) {
-            updateTrustedCertificates(trustList, trustListManager);
-          }
+          PushTransaction transaction = transactions.beginOrContinue(session.getSessionId());
+          transaction.stage(
+              new TrustListUpdate(trustListTypeNode.getNodeId(), TrustListObject.this, contents));
 
-          if ((specifiedLists & MASK_TRUSTED_CRLS) != 0) {
-            updateTrustedCrls(trustList, trustListManager);
-          }
-
-          if ((specifiedLists & MASK_ISSUER_CERTIFICATES) != 0) {
-            updateIssuerCertificates(trustList, trustListManager);
-          }
-
-          if ((specifiedLists & MASK_ISSUER_CRLS) != 0) {
-            updateIssuerCrls(trustList, trustListManager);
-          }
-
-          trustListTypeNode.setLastUpdateTime(DateTime.now());
-
-          // TODO force existing clients to reconnect?
-
-          applyChangesRequired.set(false);
+          applyChangesRequired.set(true);
         } else {
           throw new UaException(StatusCodes.Bad_InvalidArgument);
         }
@@ -290,111 +336,13 @@ public class TrustListObject extends FileObject {
         throw new UaException(StatusCodes.Bad_UnexpectedError, e);
       }
     }
-
-    private static void updateTrustedCertificates(
-        TrustListDataType trustList, TrustListManager trustListManager) throws UaException {
-
-      var trustedCertificates = new ArrayList<X509Certificate>();
-
-      for (ByteString certificateBytes :
-          requireNonNullElse(trustList.getTrustedCertificates(), new ByteString[0])) {
-
-        try {
-          X509Certificate certificate =
-              CertificateUtil.decodeCertificate(certificateBytes.bytesOrEmpty());
-          trustedCertificates.add(certificate);
-        } catch (UaException e) {
-          throw new UaException(StatusCodes.Bad_InvalidArgument, e);
-        }
-      }
-
-      trustListManager.setTrustedCertificates(trustedCertificates);
-    }
-
-    private static void updateTrustedCrls(
-        TrustListDataType trustList, TrustListManager trustListManager) throws UaException {
-
-      try {
-        var factory = CertificateFactory.getInstance("X.509");
-
-        var trustedCrls = new ArrayList<X509CRL>();
-
-        for (ByteString crlBytes :
-            requireNonNullElse(trustList.getTrustedCrls(), new ByteString[0])) {
-
-          try {
-            Collection<? extends CRL> crls =
-                factory.generateCRLs(new ByteArrayInputStream(crlBytes.bytesOrEmpty()));
-            crls.forEach(
-                crl -> {
-                  if (crl instanceof X509CRL x509CRL) {
-                    trustedCrls.add(x509CRL);
-                  }
-                });
-          } catch (CRLException e) {
-            throw new UaException(StatusCodes.Bad_InvalidArgument, e);
-          }
-        }
-
-        trustListManager.setTrustedCrls(trustedCrls);
-      } catch (CertificateException e) {
-        throw new UaException(StatusCodes.Bad_UnexpectedError, e);
-      }
-    }
-
-    private static void updateIssuerCertificates(
-        TrustListDataType trustList, TrustListManager trustListManager) throws UaException {
-
-      var issuerCertificates = new ArrayList<X509Certificate>();
-
-      for (ByteString certificateBytes :
-          requireNonNullElse(trustList.getIssuerCertificates(), new ByteString[0])) {
-
-        try {
-          X509Certificate certificate =
-              CertificateUtil.decodeCertificate(certificateBytes.bytesOrEmpty());
-          issuerCertificates.add(certificate);
-        } catch (UaException e) {
-          throw new UaException(StatusCodes.Bad_InvalidArgument, e);
-        }
-      }
-
-      trustListManager.setIssuerCertificates(issuerCertificates);
-    }
-
-    private static void updateIssuerCrls(
-        TrustListDataType trustList, TrustListManager trustListManager) throws UaException {
-
-      try {
-        var factory = CertificateFactory.getInstance("X.509");
-
-        var issuerCrls = new ArrayList<X509CRL>();
-
-        for (ByteString crlBytes :
-            requireNonNullElse(trustList.getIssuerCrls(), new ByteString[0])) {
-
-          try {
-            Collection<? extends CRL> crls =
-                factory.generateCRLs(new ByteArrayInputStream(crlBytes.bytesOrEmpty()));
-            crls.forEach(
-                crl -> {
-                  if (crl instanceof X509CRL x509CRL) {
-                    issuerCrls.add(x509CRL);
-                  }
-                });
-          } catch (CRLException e) {
-            throw new UaException(StatusCodes.Bad_InvalidArgument, e);
-          }
-        }
-
-        trustListManager.setIssuerCrls(issuerCrls);
-      } catch (CertificateException e) {
-        throw new UaException(StatusCodes.Bad_UnexpectedError, e);
-      }
-    }
   }
 
   /**
+   * Applies immediately when no transaction is active. OPC 10000-12 §7.8.2.6 returns
+   * Bad_TransactionPending while a transaction has started and ApplyChanges or CancelChanges has
+   * not been called.
+   *
    * @see <a href="https://reference.opcfoundation.org/GDS/v105/docs/7.8.2.4">
    *     https://reference.opcfoundation.org/GDS/v105/docs/7.8.2.4</a>
    */
@@ -408,6 +356,8 @@ public class TrustListObject extends FileObject {
     protected void invoke(
         InvocationContext context, ByteString certificate, Boolean isTrustedCertificate)
         throws UaException {
+
+      requireNoActiveTransaction();
 
       try {
         X509Certificate x509Certificate =
@@ -427,6 +377,10 @@ public class TrustListObject extends FileObject {
   }
 
   /**
+   * Applies immediately when no transaction is active. OPC 10000-12 §7.8.2.7 returns
+   * Bad_TransactionPending while a transaction has started and ApplyChanges or CancelChanges has
+   * not been called.
+   *
    * @see <a href="https://reference.opcfoundation.org/GDS/v105/docs/7.8.2.5">
    *     https://reference.opcfoundation.org/GDS/v105/docs/7.8.2.5</a>
    */
@@ -441,6 +395,8 @@ public class TrustListObject extends FileObject {
         InvocationContext context, String thumbprint, Boolean isTrustedCertificate)
         throws UaException {
 
+      requireNoActiveTransaction();
+
       ByteString thumbprintBytes = ByteString.of(Hex.decode(thumbprint));
 
       if (isTrustedCertificate) {
@@ -452,6 +408,98 @@ public class TrustListObject extends FileObject {
           throw new UaException(StatusCodes.Bad_InvalidArgument);
         }
       }
+    }
+  }
+
+  private void requireNoActiveTransaction() throws UaException {
+    if (transactions.isActive()) {
+      throw new UaException(
+          StatusCodes.Bad_TransactionPending,
+          "transaction has started; call ApplyChanges or CancelChanges first");
+    }
+  }
+
+  /**
+   * The decoded, validated contents of a written {@link TrustListDataType}.
+   *
+   * @param specifiedLists the {@link TrustListMasks} bits selecting which lists to replace.
+   * @param trustedCertificates the trusted certificates, empty unless selected.
+   * @param trustedCrls the trusted CRLs, empty unless selected.
+   * @param issuerCertificates the issuer certificates, empty unless selected.
+   * @param issuerCrls the issuer CRLs, empty unless selected.
+   */
+  public record Contents(
+      int specifiedLists,
+      List<X509Certificate> trustedCertificates,
+      List<X509CRL> trustedCrls,
+      List<X509Certificate> issuerCertificates,
+      List<X509CRL> issuerCrls) {
+
+    /**
+     * Decode every list selected by {@code SpecifiedLists} so that malformed input is rejected in
+     * CloseAndUpdate rather than discovered when the transaction is applied.
+     *
+     * @param trustList the written TrustList.
+     * @return the decoded contents.
+     * @throws UaException with Bad_InvalidArgument if a certificate or CRL cannot be decoded.
+     */
+    static Contents decode(TrustListDataType trustList) throws UaException {
+      int specifiedLists = trustList.getSpecifiedLists().intValue();
+
+      List<X509Certificate> trustedCertificates = List.of();
+      List<X509CRL> trustedCrls = List.of();
+      List<X509Certificate> issuerCertificates = List.of();
+      List<X509CRL> issuerCrls = List.of();
+
+      if ((specifiedLists & MASK_TRUSTED_CERTIFICATES) != 0) {
+        trustedCertificates = decodeCertificates(trustList.getTrustedCertificates());
+      }
+
+      if ((specifiedLists & MASK_TRUSTED_CRLS) != 0) {
+        trustedCrls = decodeCrls(trustList.getTrustedCrls());
+      }
+
+      if ((specifiedLists & MASK_ISSUER_CERTIFICATES) != 0) {
+        issuerCertificates = decodeCertificates(trustList.getIssuerCertificates());
+      }
+
+      if ((specifiedLists & MASK_ISSUER_CRLS) != 0) {
+        issuerCrls = decodeCrls(trustList.getIssuerCrls());
+      }
+
+      return new Contents(
+          specifiedLists, trustedCertificates, trustedCrls, issuerCertificates, issuerCrls);
+    }
+
+    private static List<X509Certificate> decodeCertificates(ByteString[] encodedCertificates)
+        throws UaException {
+
+      var certificates = new ArrayList<X509Certificate>();
+
+      for (ByteString certificateBytes :
+          requireNonNullElse(encodedCertificates, new ByteString[0])) {
+        try {
+          certificates.add(CertificateUtil.decodeCertificate(certificateBytes.bytesOrEmpty()));
+        } catch (UaException e) {
+          throw new UaException(StatusCodes.Bad_InvalidArgument, e);
+        }
+      }
+
+      return List.copyOf(certificates);
+    }
+
+    private static List<X509CRL> decodeCrls(ByteString[] encodedCrls) throws UaException {
+      var crls = new ArrayList<X509CRL>();
+
+      for (ByteString crlBytes : requireNonNullElse(encodedCrls, new ByteString[0])) {
+        try {
+          crls.addAll(CertificateUtil.decodeCrls(crlBytes.bytesOrEmpty()));
+        } catch (UaException e) {
+          throw new UaException(StatusCodes.Bad_InvalidArgument, e);
+        }
+      }
+
+      return List.copyOf(crls);
     }
   }
 

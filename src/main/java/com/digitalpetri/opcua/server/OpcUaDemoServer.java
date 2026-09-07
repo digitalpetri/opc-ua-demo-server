@@ -236,11 +236,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     CertificateManager certificateManager = new DefaultCertificateManager(defaultApplicationGroup);
 
-    X509Certificate rsaCertificate =
-        defaultApplicationGroup.getCertificateChain(NodeIds.RsaSha256ApplicationCertificateType)
-            .orElseThrow()[0];
-
-    Set<EndpointConfig> endpointConfigs = createEndpointConfigs(config, rsaCertificate);
+    Set<EndpointConfig> endpointConfigs = createEndpointConfigs(config);
 
     if (!reverseConnectConfig.targets().isEmpty()) {
       // Cross-validate each target's endpoint-url against the endpoints this server actually
@@ -505,7 +501,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     return BuildProperties.read(propertyKey).or(() -> ManifestUtil.read(manifestAttribute));
   }
 
-  private Set<EndpointConfig> createEndpointConfigs(Config config, X509Certificate rsaCertificate) {
+  private Set<EndpointConfig> createEndpointConfigs(Config config) {
     var endpointConfigs = new LinkedHashSet<EndpointConfig>();
 
     List<String> bindAddresses = config.getStringList("bind-address-list");
@@ -530,16 +526,17 @@ public class OpcUaDemoServer extends AbstractLifecycle {
           policyBuilder.setSecurityPolicy(securityPolicy);
           addTokenPolicies(policyBuilder, securityPolicy);
 
+          // No endpoint gets a fixed certificate. A managed identity is re-selected from the
+          // DefaultApplicationGroup whenever the endpoint cache is reset, so a certificate pushed
+          // by
+          // a GDS reaches every endpoint; a fixed certificate would stay stale until restart.
           if (securityPolicy == SecurityPolicy.None) {
-            // No need to iterate over security modes for the None policy.
-            endpointConfigs.add(
-                policyBuilder
-                    .setCertificate(rsaCertificate)
-                    .setSecurityMode(MessageSecurityMode.None)
-                    .build());
+            // Left implicit: the SDK selects the RSA certificate encrypted UserName tokens need
+            // and,
+            // if none is available, still advertises the endpoint without one.
+            endpointConfigs.add(policyBuilder.setSecurityMode(MessageSecurityMode.None).build());
           } else {
-            // Let the configured CertificateManager/DefaultApplicationGroup choose the RSA or ECC
-            // certificate type preferred by this endpoint's security policy.
+            // Explicit: select the RSA or ECC type preferred by this endpoint's security policy.
             policyBuilder.setEndpointCertificateConfig(
                 EndpointCertificateConfig.newBuilder().build());
 
@@ -563,7 +560,6 @@ public class OpcUaDemoServer extends AbstractLifecycle {
             baseBuilder
                 .copy()
                 .setPath("/milo/discovery")
-                .setCertificate(rsaCertificate)
                 .setSecurityPolicy(SecurityPolicy.None)
                 .setSecurityMode(MessageSecurityMode.None)
                 .addTokenPolicies(
