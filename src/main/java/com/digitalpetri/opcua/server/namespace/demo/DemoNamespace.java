@@ -168,7 +168,8 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
       try {
         Thread.sleep(5000);
       } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+        Thread.currentThread().interrupt();
+        return;
       }
       while (keepPostingEvents) {
         fireEvent();

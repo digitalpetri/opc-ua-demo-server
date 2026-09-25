@@ -35,6 +35,7 @@ import java.util.function.Supplier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle;
 import org.eclipse.milo.opcua.sdk.server.EndpointConfig;
+import org.eclipse.milo.opcua.sdk.server.LifecycleManager;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig;
 import org.eclipse.milo.opcua.sdk.server.RoleMapper;
@@ -87,6 +88,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
   private static final String PROPERTY_SOFTWARE_VERSION = "X-Server-Software-Version";
 
   private final OpcUaServer server;
+  private final LifecycleManager componentLifecycleManager = new LifecycleManager();
 
   public OpcUaDemoServer(Path dataDirPath, Config config) throws Exception {
     Path securityDirPath = dataDirPath.resolve("security");
@@ -207,11 +209,11 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     if (dataTypeTestEnabled) {
       server.getNamespaceTable().set(3, DataTypeTestNamespace.NAMESPACE_URI);
       var dataTypeTestNamespace = DataTypeTestNamespace.create(server);
-      dataTypeTestNamespace.startup();
+      componentLifecycleManager.addLifecycle(dataTypeTestNamespace);
     }
 
     var demoNamespace = new DemoNamespace(server, config);
-    demoNamespace.startup();
+    componentLifecycleManager.addLifecycle(demoNamespace);
 
     boolean gdsPushEnabled = config.getBoolean("gds-push-enabled");
 
@@ -225,8 +227,10 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
       var serverConfigurationObject =
           new ServerConfigurationObject(server, serverConfigurationNode);
-      serverConfigurationObject.startup();
+      componentLifecycleManager.addLifecycle(serverConfigurationObject);
     }
+
+    componentLifecycleManager.startup();
 
     server.getAddressSpaceManager().getManagedNode(NodeIds.Aliases).ifPresent(UaNode::delete);
     server.getAddressSpaceManager().getManagedNode(NodeIds.Locations).ifPresent(UaNode::delete);
@@ -239,7 +243,11 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
   @Override
   protected void onShutdown() {
-    server.shutdown();
+    try {
+      componentLifecycleManager.shutdown();
+    } finally {
+      server.shutdown();
+    }
   }
 
   /**

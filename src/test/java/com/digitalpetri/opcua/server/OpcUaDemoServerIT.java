@@ -3,6 +3,7 @@ package com.digitalpetri.opcua.server;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -92,5 +93,27 @@ class OpcUaDemoServerIT {
       server1.shutdown();
       server2.shutdown();
     }
+  }
+
+  @Test
+  void testShutdownStopsNamespaceLifecycleComponents(@TempDir Path tempDir) throws Exception {
+    server = OpcUaTestServerBuilder.builder().withDataDir(tempDir).build();
+    server.startup();
+
+    server.shutdown();
+    server = null;
+
+    assertTimeoutPreemptively(
+        Duration.ofSeconds(1),
+        () -> {
+          while (isBogusEventNotifierRunning()) {
+            Thread.sleep(10);
+          }
+        });
+  }
+
+  private static boolean isBogusEventNotifierRunning() {
+    return Thread.getAllStackTraces().keySet().stream()
+        .anyMatch(thread -> thread.isAlive() && thread.getName().equals("bogus-event-notifier"));
   }
 }
