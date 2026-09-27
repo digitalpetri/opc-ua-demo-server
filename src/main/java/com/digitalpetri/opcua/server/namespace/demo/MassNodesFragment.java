@@ -113,8 +113,8 @@ public class MassNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle 
 
     int nestedQuantity1 = namespace.getConfig().getInt("address-space.mass.nested-quantity1");
     int nestedQuantity2 = namespace.getConfig().getInt("address-space.mass.nested-quantity2");
-    var formatString1 = "%%0%dd".formatted((int) Math.log10(nestedQuantity1 - 1) + 1);
-    var formatString2 = "%%0%dd".formatted((int) Math.log10(nestedQuantity2 - 1) + 1);
+    var formatString1 = nameFormat(nestedQuantity1);
+    var formatString2 = nameFormat(nestedQuantity2);
 
     for (int i = 0; i < nestedQuantity1; i++) {
       String outerName = formatString1.formatted(i);
@@ -177,7 +177,7 @@ public class MassNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle 
             Direction.INVERSE));
 
     int flatQuantity = namespace.getConfig().getInt("address-space.mass.flat-quantity");
-    var formatString = "%%0%dd".formatted((int) Math.log10(flatQuantity - 1) + 1);
+    var formatString = nameFormat(flatQuantity);
 
     for (int i = 0; i < flatQuantity; i++) {
       String name = formatString.formatted(i);
@@ -198,5 +198,17 @@ public class MassNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle 
               flatFolder.getNodeId().expanded(),
               Direction.INVERSE));
     }
+  }
+
+  /**
+   * Returns a format string that zero-pads node indices {@code 0..quantity-1} to the width of the
+   * largest index.
+   *
+   * @param quantity the number of nodes being named.
+   * @return a format string such as {@code "%02d"}.
+   */
+  static String nameFormat(int quantity) {
+    int width = String.valueOf(Math.max(quantity - 1, 0)).length();
+    return "%%0%dd".formatted(width);
   }
 }
