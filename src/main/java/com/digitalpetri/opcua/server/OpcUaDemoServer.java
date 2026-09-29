@@ -443,7 +443,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     var validator =
         new DefaultServerCertificateValidator(
             userTrustListManager,
-            Set.of(ValidationCheck.VALIDITY, ValidationCheck.REVOCATION),
+            Set.of(ValidationCheck.VALIDITY),
             new MemoryCertificateQuarantine());
 
     Predicate<X509Certificate> validate =
@@ -583,18 +583,17 @@ public class OpcUaDemoServer extends AbstractLifecycle {
   private static void addTokenPolicies(
       EndpointConfig.Builder builder, SecurityPolicy securityPolicy) {
 
-    if (securityPolicy.getProfile().publicKeyAlgorithm()
-        == SecurityPolicyProfile.PublicKeyAlgorithm.ECC) {
-
+    if (securityPolicy == SecurityPolicy.None) {
+      // Tokens still need RSA password encryption and certificate signatures on unsecured channels.
+      builder.addTokenPolicies(
+          USER_TOKEN_POLICY_ANONYMOUS, USER_TOKEN_POLICY_USERNAME, USER_TOKEN_POLICY_X509);
+    } else {
       builder.addTokenPolicies(
           USER_TOKEN_POLICY_ANONYMOUS,
           new UserTokenPolicy(
               "username", UserTokenType.UserName, null, null, securityPolicy.getUri()),
           new UserTokenPolicy(
               "certificate", UserTokenType.Certificate, null, null, securityPolicy.getUri()));
-    } else {
-      builder.addTokenPolicies(
-          USER_TOKEN_POLICY_ANONYMOUS, USER_TOKEN_POLICY_USERNAME, USER_TOKEN_POLICY_X509);
     }
   }
 
