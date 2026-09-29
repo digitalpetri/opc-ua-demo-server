@@ -348,6 +348,14 @@
     <dependency>
       <groupId>org.eclipse.milo</groupId>
       <artifactId>milo-sdk-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.milo</groupId>
+      <artifactId>milo-sdk-client-gds</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.milo</groupId>
+      <artifactId>milo-sdk-client-gds-testing</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

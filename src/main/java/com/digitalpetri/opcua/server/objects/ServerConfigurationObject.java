@@ -3,6 +3,7 @@ package com.digitalpetri.opcua.server.objects;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 import com.digitalpetri.opcua.server.DemoCertificateFactory;
+import com.digitalpetri.opcua.server.DemoServerCapabilities;
 import com.digitalpetri.opcua.server.objects.PushTransaction.CertificateUpdate;
 import com.digitalpetri.opcua.server.objects.PushTransaction.StagedChange;
 import com.digitalpetri.opcua.server.objects.PushTransactionManager.Diagnostics;
@@ -179,7 +180,8 @@ public class ServerConfigurationObject extends AbstractLifecycle {
     // OPC 10000-12 Annex D: this demo provides current data and live Alarms & Conditions. RCP is
     // for Client/ClientAndServer applications that accept Server-initiated reverse connections;
     // this pure Server only initiates its configured outbound targets.
-    serverConfigurationTypeNode.setServerCapabilities(new String[] {"DA", "AC"});
+    serverConfigurationTypeNode.setServerCapabilities(
+        DemoServerCapabilities.VALUES.toArray(String[]::new));
     serverConfigurationTypeNode.setSupportedPrivateKeyFormats(new String[] {"PEM", "PFX"});
     // OPC 10000-12 7.10.3 defines 0 as no TrustList-specific size limit.
     serverConfigurationTypeNode.setMaxTrustListSize(uint(0));
@@ -252,7 +254,7 @@ public class ServerConfigurationObject extends AbstractLifecycle {
             .getFilterChain()
             .addLast(
                 AttributeFilters.getValue(
-                    ctx -> {
+                    _ -> {
                       NodeId[] certificateTypeIds =
                           group.getSupportedCertificateTypeIds().toArray(NodeId[]::new);
                       return new DataValue(new Variant(certificateTypeIds));
@@ -287,7 +289,7 @@ public class ServerConfigurationObject extends AbstractLifecycle {
     node.getFilterChain()
         .addLast(
             AttributeFilters.getValue(
-                ctx -> new DataValue(new Variant(value.apply(transactions.getDiagnostics())))));
+                _ -> new DataValue(new Variant(value.apply(transactions.getDiagnostics())))));
   }
 
   private void deleteIfPresent(NodeId nodeId) {
@@ -396,7 +398,7 @@ public class ServerConfigurationObject extends AbstractLifecycle {
           // Use previously generated PrivateKey + new certificate PublicKey. The key stays
           // available until the staged update is applied, so a cancelled or abandoned transaction
           // does not strand the certificate that was issued for it.
-          newKeyPair = new KeyPair(certificateChain.get(0).getPublicKey(), key);
+          newKeyPair = new KeyPair(certificateChain.getFirst().getPublicKey(), key);
         } else {
           // Use current PrivateKey + new certificate PublicKey
           KeyPair keyPair =
@@ -405,7 +407,8 @@ public class ServerConfigurationObject extends AbstractLifecycle {
                   .orElseThrow(
                       () -> new UaException(StatusCodes.Bad_InvalidArgument, "certificateTypeId"));
 
-          newKeyPair = new KeyPair(certificateChain.get(0).getPublicKey(), keyPair.getPrivate());
+          newKeyPair =
+              new KeyPair(certificateChain.getFirst().getPublicKey(), keyPair.getPrivate());
         }
       } else {
         // Use new PrivateKey + new certificate PublicKey
@@ -419,7 +422,7 @@ public class ServerConfigurationObject extends AbstractLifecycle {
                   ? readPemEncodedPrivateKey(privateKey)
                   : readPfxEncodedPrivateKey(privateKey);
 
-          newKeyPair = new KeyPair(certificateChain.get(0).getPublicKey(), newPrivateKey);
+          newKeyPair = new KeyPair(certificateChain.getFirst().getPublicKey(), newPrivateKey);
         } catch (Exception e) {
           throw new UaException(StatusCodes.Bad_NotSupported, "privateKey", e);
         }
@@ -442,7 +445,7 @@ public class ServerConfigurationObject extends AbstractLifecycle {
           "Staged certificate update for group={} type={} subject={}",
           certificateGroupId.toParseableString(),
           certificateTypeId.toParseableString(),
-          certificateChain.get(0).getSubjectX500Principal().getName());
+          certificateChain.getFirst().getSubjectX500Principal().getName());
 
       applyChangesRequired.set(true);
     }

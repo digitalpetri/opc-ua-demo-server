@@ -123,6 +123,72 @@ enabled.
 
 These directories are monitored by the server and changes will be picked up automatically.
 
+### GDS application registration
+
+Application registration is opt-in and independent of `gds-push-enabled`. Add overrides to
+`data/server.conf` (or the active data directory):
+
+```hocon
+gds.registration {
+  enabled = true
+  endpoint-url = "opc.tcp://gds.example.com:58810/GlobalDiscoveryServer"
+  security-policy = "Basic256Sha256"
+  identity {
+    username = "demo-registration"
+    password = ${GDS_REGISTRATION_PASSWORD}
+  }
+  discovery-url-list = ["opc.tcp://demo.example.com:4840/milo"]
+}
+```
+
+The GDS account needs DiscoveryAdmin or ApplicationAdmin permission. Registration always uses
+SignAndEncrypt and the exact configured policy. Supported policies are `Basic256Sha256`,
+`Aes128_Sha256_RsaOaep`, and `Aes256_Sha256_RsaPss`. There is no anonymous or security downgrade
+fallback. These credentials authenticate to the GDS and do not change this server's incoming
+`SecurityAdmin` account.
+
+Before enabling registration, install the GDS certificate in `security/pki/trusted/certs`, or trust
+its issuing CA and supply the issuer chain and current CRLs in the application PKI directories.
+Trust the demo's application certificate at the GDS as well. Outgoing connections validate trust,
+ApplicationUri, hostname, validity, and certificate usage even when `trust-all-certificates=true`.
+Application certificates, including push replacements, must support client authentication as well
+as server authentication. Rejected GDS certificates appear in `security/rejected`; approving trust
+allows a later retry to succeed without restarting.
+
+An empty `discovery-url-list` uses the running server's discovery URLs. Supply an override for NAT
+or external DNS, and ensure those URLs are reachable from the GDS's clients. Duplicate URLs are
+removed. URL paths are preserved, and advertised GDS endpoint hostnames are not rewritten.
+
+After endpoint binding, a dedicated worker looks up this server's persistent ApplicationUri and
+registers it if absent. A matching record is reused. Identity conflicts or multiple matching
+records require operator action. Metadata differences report the field names; set
+`gds.registration.update-existing=true` only when this configuration should manage the existing
+record's names, discovery URLs, and capabilities. Identity conflicts cannot be overridden.
+
+Defaults are `request-timeout=10 seconds`, `attempt-timeout=60 seconds`, and
+`retry-interval=30 seconds`. Durations must be positive whole milliseconds; attempt timeout must
+be at least request timeout, which is limited to UInt32 milliseconds. Transport, timeout, trust,
+and temporary availability failures retry after the preceding attempt finishes. Authentication,
+authorization, unsupported methods/endpoints, and record conflicts stop registration until
+restart. Remote failures leave the demo server available. Repeated identical failures log at DEBUG
+following the first WARN.
+
+Successful registration saves credential-free JSON to `gds/registration.json` under the data
+directory using an atomic replacement. The ApplicationId includes its namespace URI. Every startup
+still looks up the remote record, so deleting or corrupting the local file cannot cause a duplicate
+registration. A local persistence failure retries lookup and persistence. There is no periodic
+renewal or unregister on shutdown; remove obsolete directory entries at the GDS. Remote deletion
+is repaired on the next startup.
+
+User configuration is merged with shipped defaults and resolved for environment substitutions.
+Unresolved required substitutions fail configuration loading even in a disabled section. Keep
+placeholder strings in disabled configurations or supply the referenced environment variables.
+An absent or disabled registration section creates no registration client, worker, or state file.
+
+Directory registration does not select the application for push management or configure the GDS's
+credentials for incoming management sessions. Configure those separately at the GDS. Certificate
+pulling, multiple GDS targets, and configuration reload are not supported.
+
 ### GDS push management
 
 With `gds-push-enabled = true` (the default) the standard `ServerConfiguration` Object accepts

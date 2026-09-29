@@ -8,17 +8,19 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.util.StatusPrinter2;
 import com.digitalpetri.opcua.server.aliases.AliasSupport;
+import com.digitalpetri.opcua.server.gds.GdsRegistrationConfig;
+import com.digitalpetri.opcua.server.gds.GdsRegistrationService;
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
 import com.digitalpetri.opcua.server.namespace.test.DataTypeTestNamespace;
 import com.digitalpetri.opcua.server.objects.ServerConfigurationObject;
 import com.digitalpetri.opcua.server.reverse.ReverseConnectConfig;
 import com.digitalpetri.opcua.server.reverse.ReverseConnectTargetLogger;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -90,6 +92,7 @@ import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck;
 import org.eclipse.milo.opcua.stack.transport.server.OpcServerTransportFactory;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransport;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransportConfig;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,6 +134,8 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
   private final OpcUaServer server;
 
+  private final @Nullable GdsRegistrationService registrationService;
+
   public OpcUaDemoServer(Path dataDirPath, Config config) throws Exception {
     this(dataDirPath, config, createDefaultTransportFactory());
   }
@@ -141,6 +146,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     // Parse and validate the reverse-connect section before any server construction so an invalid
     // target fails fast with an error identifying the target index and field.
     ReverseConnectConfig reverseConnectConfig = ReverseConnectConfig.fromConfig(config);
+    Optional<GdsRegistrationConfig> registrationConfig = GdsRegistrationConfig.fromConfig(config);
 
     Path securityDirPath = dataDirPath.resolve("security");
     Path pkiDirPath = securityDirPath.resolve("pki");
@@ -163,7 +169,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
             new KeyStoreCertificateStore.Settings(
                 pkiDirPath.resolve("certificates.pfx"),
                 "password"::toCharArray,
-                alias -> "password".toCharArray()));
+                _ -> "password".toCharArray()));
 
     Path rejectedDirPath = securityDirPath.resolve("rejected");
     if (!rejectedDirPath.toFile().exists() && !rejectedDirPath.toFile().mkdirs()) {
@@ -178,16 +184,14 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
     if (config.getBoolean("trust-all-certificates")) {
       certificateValidator =
-          (chain, uri, hostnames) -> {
+          (chain, _, _) -> {
 
-            // No validation, just accept all certificates.
+            // Accept incoming certificates without granting trust to outgoing GDS connections.
             LoggerFactory.getLogger(OpcUaDemoServer.class)
                 .info("Skipping validation for certificate chain:");
 
             for (int i = 0; i < chain.size(); i++) {
               X509Certificate certificate = chain.get(i);
-
-              trustListManager.addTrustedCertificate(certificate);
 
               LoggerFactory.getLogger(OpcUaDemoServer.class)
                   .info("  certificate[{}]: {}", i, certificate.getSubjectX500Principal());
@@ -266,6 +270,10 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     }
 
     server = new OpcUaServer(serverConfigBuilder.build(), transportFactory);
+    registrationService =
+        registrationConfig
+            .map(c -> new GdsRegistrationService(server, c, dataDirPath))
+            .orElse(null);
 
     if (!reverseConnectConfig.targets().isEmpty()) {
       // The SDK does not emit onTargetAdded for targets supplied via the initial server config, so
@@ -280,11 +288,11 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     server.getNamespaceTable().set(2, DemoNamespace.NAMESPACE_URI);
 
     /*
-     * Every component this server owns is registered as an SDK lifecycle participant. The server
-     * starts them in registration order once the standard address space and event facilities are
-     * ready but before any endpoint binds, so clients never observe a partially built address
-     * space, and it stops the ones that started, in reverse order, during startup rollback or
-     * shutdown.
+     * Address-space components are registered as SDK lifecycle participants. Registration runs
+     * separately after endpoint binding. The server starts participants in registration order once
+     * the standard address space and event facilities are ready but before any endpoint binds, so
+     * clients never observe a partially built address space, and it stops the ones that started, in
+     * reverse order, during startup rollback or shutdown.
      */
 
     if (config.getBoolean("address-space.data-type-test.enabled")) {
@@ -349,6 +357,22 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     // or the rest of startup, fails. Joining is what makes such a failure, or a configuration that
     // binds no endpoint at all, visible here instead of only in the log.
     await(server.startup(), "startup");
+    try {
+      if (registrationService != null) {
+        registrationService.start();
+      }
+    } catch (RuntimeException | Error e) {
+      try {
+        registrationService.close();
+      } finally {
+        try {
+          await(server.shutdown(), "startup rollback");
+        } catch (RuntimeException cleanup) {
+          e.addSuppressed(cleanup);
+        }
+      }
+      throw e;
+    }
   }
 
   @Override
@@ -356,7 +380,13 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     // OpcUaServer.shutdown() stops reverse-connect activity, unbinds transports, closes sessions,
     // then stops the participants in reverse registration order while the standard address space
     // is still in place.
-    await(server.shutdown(), "shutdown");
+    try {
+      if (registrationService != null) {
+        registrationService.close();
+      }
+    } finally {
+      await(server.shutdown(), "shutdown");
+    }
   }
 
   private static void await(CompletableFuture<OpcUaServer> future, String operation) {
@@ -397,8 +427,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
         .getFilterChain()
         .addLast(
             AttributeFilters.getValue(
-                context ->
-                    new DataValue(new Variant(localTime(ZoneId.systemDefault(), Instant.now())))));
+                _ -> new DataValue(new Variant(localTime(ZoneId.systemDefault(), Instant.now())))));
 
     UNSUPPORTED_STANDARD_SERVER_NODES.forEach(
         nodeId -> server.getAddressSpaceManager().getManagedNode(nodeId).ifPresent(UaNode::delete));
@@ -698,7 +727,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
   // region Bootstrap
 
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] ignoredArgs) throws Exception {
     // start running this static initializer ASAP, it measurably affects startup time.
     new Thread(
             () -> {
@@ -734,24 +763,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     // Load configuration
     Path configFilePath = dataDirPath.resolve("server.conf");
 
-    InputStream defaultConfigInputStream =
-        OpcUaDemoServer.class.getClassLoader().getResourceAsStream("default-server.conf");
-
-    assert defaultConfigInputStream != null;
-
-    // If the config file doesn't exist, copy the default from the classpath.
-    if (!configFilePath.toFile().exists()) {
-      Files.copy(defaultConfigInputStream, configFilePath);
-    }
-
-    Config defaultConfig =
-        ConfigFactory.parseReader(new InputStreamReader(defaultConfigInputStream));
-
-    Config userConfig = ConfigFactory.parseFile(configFilePath.toFile());
-
-    // Load the user config and merge it with the default config in case anything is missing.
-    // This also allows the user config to contain only override values.
-    Config config = userConfig.withFallback(defaultConfig);
+    Config config = loadConfiguration(configFilePath);
 
     var server = new OpcUaDemoServer(dataDirPath, config);
     server.startup();
@@ -769,6 +781,33 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     logger.info("security pki dir: {}", dataDirPath.resolve("security").resolve("pki"));
 
     waitForShutdownHook(server);
+  }
+
+  /**
+   * Loads user overrides with independent classpath defaults and resolves environment
+   * substitutions.
+   *
+   * @param configFilePath the configuration file to create on first use or read.
+   * @return the resolved configuration.
+   * @throws IOException if the default file cannot be copied.
+   */
+  public static Config loadConfiguration(Path configFilePath) throws IOException {
+    if (Files.notExists(configFilePath)) {
+      try (InputStream defaults =
+          OpcUaDemoServer.class.getClassLoader().getResourceAsStream("default-server.conf")) {
+        if (defaults == null) throw new IOException("Missing default-server.conf");
+        Files.copy(defaults, configFilePath);
+      }
+    }
+    try {
+      return ConfigFactory.parseFile(configFilePath.toFile())
+          .withFallback(ConfigFactory.parseResources("default-server.conf"))
+          .resolve();
+    } catch (ConfigException e) {
+      // HOCON diagnostics may render identity values. Do not attach the original exception.
+      throw new IllegalArgumentException(
+          "Unable to load server.conf; check syntax and required substitutions, including gds.registration.identity.password");
+    }
   }
 
   private static void waitForShutdownHook(OpcUaDemoServer server) throws InterruptedException {
