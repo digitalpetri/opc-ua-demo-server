@@ -141,10 +141,12 @@ gds.registration {
 }
 ```
 
-The GDS account needs DiscoveryAdmin or ApplicationAdmin permission. Registration always uses
-SignAndEncrypt and the exact configured policy. Supported policies are `Basic256Sha256`,
-`Aes128_Sha256_RsaOaep`, and `Aes256_Sha256_RsaPss`. There is no anonymous or security downgrade
-fallback. These credentials authenticate to the GDS and do not change this server's incoming
+The GDS account needs DiscoveryAdmin or ApplicationAdmin permission. For a GDS that grants
+registration to anonymous sessions, set `identity.type = "anonymous"`; `username` and `password`
+are then ignored. Registration always uses SignAndEncrypt and the exact configured policy, including
+for anonymous sessions. Supported policies are `Basic256Sha256`, `Aes128_Sha256_RsaOaep`, and
+`Aes256_Sha256_RsaPss`. A failed username login never falls back to anonymous, and there is no
+security downgrade fallback. These credentials authenticate to the GDS and do not change this server's incoming
 `SecurityAdmin` account.
 
 Before enabling registration, install the GDS certificate in `security/pki/trusted/certs`, or trust

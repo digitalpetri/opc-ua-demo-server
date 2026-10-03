@@ -25,6 +25,8 @@ import org.eclipse.milo.opcua.sdk.client.DiscoveryClient;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClientConfig;
 import org.eclipse.milo.opcua.sdk.client.gds.GdsClient;
+import org.eclipse.milo.opcua.sdk.client.identity.AnonymousProvider;
+import org.eclipse.milo.opcua.sdk.client.identity.IdentityProvider;
 import org.eclipse.milo.opcua.sdk.client.identity.UsernameProvider;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.stack.core.Stack;
@@ -317,16 +319,7 @@ public final class GdsRegistrationService implements AutoCloseable {
             .setEndpoint(endpoint)
             .setCertificateGroup(group)
             .setCertificateValidator(validator)
-            .setIdentityProvider(
-                new UsernameProvider(
-                    config.identity().username(),
-                    config.identity().password(),
-                    validator,
-                    policies ->
-                        policies.stream()
-                            .filter(p -> compatibleToken(p, endpoint))
-                            .findFirst()
-                            .orElseThrow()))
+            .setIdentityProvider(identityProvider(endpoint, validator))
             .setRequestTimeout(uint(config.requestTimeoutMillis()))
             .build();
     return OpcUaClient.create(
@@ -337,8 +330,35 @@ public final class GdsRegistrationService implements AutoCloseable {
                 .setAcknowledgeTimeout(uint(config.requestTimeoutMillis())));
   }
 
-  static boolean compatibleToken(UserTokenPolicy token, EndpointDescription endpoint) {
-    if (token.getTokenType() != UserTokenType.UserName) return false;
+  private IdentityProvider identityProvider(
+      EndpointDescription endpoint, DefaultClientCertificateValidator validator) {
+    return switch (config.identity()) {
+      case GdsRegistrationConfig.Anonymous _ -> AnonymousProvider.INSTANCE;
+      case GdsRegistrationConfig.Credentials credentials ->
+          new UsernameProvider(
+              credentials.username(),
+              credentials.password(),
+              validator,
+              policies ->
+                  policies.stream()
+                      .filter(p -> compatibleToken(p, endpoint, UserTokenType.UserName))
+                      .findFirst()
+                      .orElseThrow());
+    };
+  }
+
+  static UserTokenType tokenType(GdsRegistrationConfig.Identity identity) {
+    return switch (identity) {
+      case GdsRegistrationConfig.Anonymous _ -> UserTokenType.Anonymous;
+      case GdsRegistrationConfig.Credentials _ -> UserTokenType.UserName;
+    };
+  }
+
+  static boolean compatibleToken(
+      UserTokenPolicy token, EndpointDescription endpoint, UserTokenType tokenType) {
+    if (token.getTokenType() != tokenType) return false;
+    // Anonymous tokens carry no secret, so no token security policy applies.
+    if (tokenType == UserTokenType.Anonymous) return true;
     String uri = token.getSecurityPolicyUri();
     boolean explicit = uri != null && !uri.isEmpty();
     try {
@@ -354,7 +374,8 @@ public final class GdsRegistrationService implements AutoCloseable {
   }
 
   static EndpointDescription selectEndpoint(
-      List<EndpointDescription> endpoints, SecurityPolicy policy) throws RegistrationException {
+      List<EndpointDescription> endpoints, SecurityPolicy policy, UserTokenType tokenType)
+      throws RegistrationException {
     return endpoints.stream()
         .filter(
             e ->
@@ -363,12 +384,14 @@ public final class GdsRegistrationService implements AutoCloseable {
                     && Stack.TCP_UASC_UABINARY_TRANSPORT_URI.equals(e.getTransportProfileUri())
                     && e.getUserIdentityTokens() != null
                     && Arrays.stream(e.getUserIdentityTokens())
-                        .anyMatch(t -> compatibleToken(t, e)))
+                        .anyMatch(t -> compatibleToken(t, e, tokenType)))
         .findFirst()
         .orElseThrow(
             () ->
                 new RegistrationException(
-                    "No endpoint supports configured policy, SignAndEncrypt, UA TCP binary, and username authentication"));
+                    "No endpoint supports configured policy, SignAndEncrypt, UA TCP binary, and "
+                        + (tokenType == UserTokenType.Anonymous ? "anonymous" : "username")
+                        + " authentication"));
   }
 
   static boolean retryable(Throwable failure) {
@@ -516,7 +539,9 @@ public final class GdsRegistrationService implements AutoCloseable {
       await(candidate.disconnectAsync());
       EndpointDescription[] endpoints = response.getEndpoints();
       return selectEndpoint(
-          endpoints == null ? List.of() : Arrays.asList(endpoints), config.securityPolicy());
+          endpoints == null ? List.of() : Arrays.asList(endpoints),
+          config.securityPolicy(),
+          tokenType(config.identity()));
     }
 
     void connect(OpcUaClient candidate) throws Exception {

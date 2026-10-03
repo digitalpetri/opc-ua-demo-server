@@ -72,6 +72,7 @@ class GdsRegistrationConfigTest {
                     "opc.tcp://host#secret-value",
                     "opc.tcp://host:"),
             "security-policy", List.of("None", "ECC_nistP256", "unknown"),
+            "identity.type", List.of("none", "Anonymous", Map.of("secret-value", "x")),
             "identity.username", List.of(" ", Map.of("secret-value", "x")),
             "identity.password", List.of("", Map.of("secret-value", "x")),
             "request-timeout",
@@ -96,6 +97,24 @@ class GdsRegistrationConfigTest {
                   assertFalse(error.toString().contains("secret-value"));
                   assertNull(error.getCause());
                 }));
+  }
+
+  @Test
+  void anonymousIdentityIsExplicitAndIgnoresCredentials() {
+    GdsRegistrationConfig username = GdsRegistrationConfig.fromConfig(enabled()).orElseThrow();
+    assertInstanceOf(GdsRegistrationConfig.Credentials.class, username.identity());
+    Config anonymous =
+        ConfigFactory.parseString(
+                """
+                gds.registration.identity {
+                  type = "anonymous"
+                  username = ""
+                  password = ""
+                }
+                """)
+            .withFallback(enabled());
+    GdsRegistrationConfig parsed = GdsRegistrationConfig.fromConfig(anonymous).orElseThrow();
+    assertInstanceOf(GdsRegistrationConfig.Anonymous.class, parsed.identity());
   }
 
   @Test

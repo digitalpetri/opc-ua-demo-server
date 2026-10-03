@@ -86,12 +86,53 @@ class GdsRegistrationServiceTest {
     assertSame(
         secure,
         GdsRegistrationService.selectEndpoint(
-            List.of(weak, anonymous, signed, secure), SecurityPolicy.Basic256Sha256));
+            List.of(weak, anonymous, signed, secure),
+            SecurityPolicy.Basic256Sha256,
+            UserTokenType.UserName));
     assertThrows(
         GdsRegistrationService.RegistrationException.class,
         () ->
             GdsRegistrationService.selectEndpoint(
-                List.of(weak, anonymous, signed), SecurityPolicy.Basic256Sha256));
+                List.of(weak, anonymous, signed),
+                SecurityPolicy.Basic256Sha256,
+                UserTokenType.UserName));
+  }
+
+  @Test
+  void anonymousEndpointSelectionStillRequiresConfiguredPolicyAndSignAndEncrypt() throws Exception {
+    var weak = endpoint(SecurityPolicy.None, MessageSecurityMode.None, UserTokenType.Anonymous);
+    var signed =
+        endpoint(SecurityPolicy.Basic256Sha256, MessageSecurityMode.Sign, UserTokenType.Anonymous);
+    var otherPolicy =
+        endpoint(
+            SecurityPolicy.Aes256_Sha256_RsaPss,
+            MessageSecurityMode.SignAndEncrypt,
+            UserTokenType.Anonymous);
+    var username =
+        endpoint(
+            SecurityPolicy.Basic256Sha256,
+            MessageSecurityMode.SignAndEncrypt,
+            UserTokenType.UserName);
+    var secure =
+        endpoint(
+            SecurityPolicy.Basic256Sha256,
+            MessageSecurityMode.SignAndEncrypt,
+            UserTokenType.Anonymous);
+    assertSame(
+        secure,
+        GdsRegistrationService.selectEndpoint(
+            List.of(weak, signed, otherPolicy, username, secure),
+            SecurityPolicy.Basic256Sha256,
+            UserTokenType.Anonymous));
+    var error =
+        assertThrows(
+            GdsRegistrationService.RegistrationException.class,
+            () ->
+                GdsRegistrationService.selectEndpoint(
+                    List.of(weak, signed, otherPolicy, username),
+                    SecurityPolicy.Basic256Sha256,
+                    UserTokenType.Anonymous));
+    assertTrue(error.getMessage().contains("anonymous authentication"));
   }
 
   @Test
@@ -105,7 +146,8 @@ class GdsRegistrationServiceTest {
         GdsRegistrationService.compatibleToken(
             new UserTokenPolicy(
                 "legacy-rsa", UserTokenType.UserName, null, null, SecurityPolicy.Basic256.getUri()),
-            endpoint));
+            endpoint,
+            UserTokenType.UserName));
     assertFalse(
         GdsRegistrationService.compatibleToken(
             new UserTokenPolicy(
@@ -114,12 +156,14 @@ class GdsRegistrationServiceTest {
                 null,
                 null,
                 SecurityPolicy.ECC_nistP256_AesGcm.getUri()),
-            endpoint));
+            endpoint,
+            UserTokenType.UserName));
     assertFalse(
         GdsRegistrationService.compatibleToken(
             new UserTokenPolicy(
                 "unknown", UserTokenType.UserName, null, null, "urn:unsupported-policy"),
-            endpoint));
+            endpoint,
+            UserTokenType.UserName));
   }
 
   @Test

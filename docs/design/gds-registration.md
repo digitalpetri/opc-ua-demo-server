@@ -33,7 +33,9 @@ gds.registration {
   # Require an exact policy match and SignAndEncrypt. No automatic downgrade.
   security-policy = "Basic256Sha256"
 
+  # "username" or "anonymous". Anonymous ignores username and password.
   identity {
+    type = "username"
     username = ""
     password = ""
   }
@@ -78,8 +80,10 @@ Parsing rules:
 - Initially support `Basic256Sha256`, `Aes128_Sha256_RsaOaep`, and `Aes256_Sha256_RsaPss`. These use
   the RSA application identity the demo already creates. Reject other policies explicitly. ECC
   registration can be added without changing the schema.
-- Require nonblank username and nonempty password. Support username authentication initially.
-  Do not offer an anonymous fallback if authentication fails.
+- Accept `identity.type` of `username` (the default) or `anonymous`. For `username`, require a
+  nonblank username and nonempty password. Anonymous registration exists for GDS deployments that
+  grant registration to anonymous sessions. It must be selected explicitly and is never a fallback
+  when username authentication fails.
 - Validate each discovery URL using the same URL rules. Remove duplicates while preserving order.
   Overrides may represent NAT or external DNS and need not exactly match local advertised URLs.
   An empty effective URL list is a registration error.
@@ -112,7 +116,8 @@ authentication as well as the demo's server role.
 
 Create a fresh client for each registration attempt so endpoint discovery and certificate selection
 use current information after a push update. Select an endpoint with the configured policy,
-SignAndEncrypt, UA TCP binary transport, and a compatible username token policy. Fail explicitly
+SignAndEncrypt, UA TCP binary transport, and a token policy for the configured identity type. A
+username token policy must also satisfy Milo's token security rules. Fail explicitly
 when none matches. Use advertised endpoints without automatic hostname rewriting.
 
 ## Application record
@@ -239,7 +244,7 @@ first registration, restart reuse, allowed updates, refused conflicts, duplicate
 registration response, GDS namespace-index changes, and changing the configured GDS. Assert the
 registered URI matches the running demo and the discovery URL serves `GetEndpoints`.
 
-Exercise secure username authentication, untrusted certificates, denied registration, recovery
+Exercise secure username and explicit anonymous authentication, untrusted certificates, denied registration, recovery
 after trust approval, attempt timeout, startup bind failure, and shutdown during connect/retry.
 Verify the demo remains usable during GDS failure, no client reconnects after shutdown, and a
 subsequent attempt selects certificates replaced through push management. Verify a GDS can still

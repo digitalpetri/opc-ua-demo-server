@@ -420,6 +420,23 @@ class GdsRegistrationIT {
     assertEquals(2, namespace.getRegisterApplicationCallCount());
   }
 
+  // Anonymous registration is explicit, keeps SignAndEncrypt, and needs a GDS that grants it.
+  @Test
+  void anonymousIdentityRegistersOnlyWhenGdsGrantsAnonymousSessions() throws Exception {
+    Config anonymous = ConfigFactory.parseString("gds.registration.identity.type=anonymous");
+    GdsRegistrationService denied = service(anonymous);
+    denied.start();
+    assertThrows(ExecutionException.class, () -> denied.completion().get(10, TimeUnit.SECONDS));
+    assertFalse(Files.exists(stateFile()));
+    namespace.setRegisterApplicationAccess(FakeGdsNamespace.MethodAccess.ANYONE);
+    register(anonymous);
+    assertTrue(Files.isRegularFile(stateFile()));
+    assertTrue(gdsServer.getServer().getSessionManager().getAllSessions().isEmpty());
+    ApplicationRecordDataType[] records =
+        inspector().findApplications(demo.getServer().getConfig().getApplicationUri());
+    assertEquals(1, records.length);
+  }
+
   @Test
   void namespaceIndexChangeAndGdsIdentityChangeInvalidateRememberedState() throws Exception {
     register(ConfigFactory.empty());

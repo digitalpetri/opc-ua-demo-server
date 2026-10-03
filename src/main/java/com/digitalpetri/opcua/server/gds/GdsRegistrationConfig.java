@@ -16,7 +16,7 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 public record GdsRegistrationConfig(
     String endpointUrl,
     SecurityPolicy securityPolicy,
-    Credentials identity,
+    Identity identity,
     List<String> discoveryUrls,
     boolean updateExisting,
     long requestTimeoutMillis,
@@ -30,8 +30,14 @@ public record GdsRegistrationConfig(
           SecurityPolicy.Aes128_Sha256_RsaOaep,
           SecurityPolicy.Aes256_Sha256_RsaPss);
 
-  /** Credentials used only for outgoing GDS sessions. */
-  public record Credentials(String username, String password) {
+  /** Identity used only for outgoing GDS sessions. */
+  public sealed interface Identity {}
+
+  /** An anonymous session, used only when configured explicitly. */
+  public record Anonymous() implements Identity {}
+
+  /** Username credentials. */
+  public record Credentials(String username, String password) implements Identity {
     @Override
     public String toString() {
       return "Credentials[redacted]";
@@ -56,10 +62,18 @@ public record GdsRegistrationConfig(
     if (!POLICIES.contains(policy)) {
       throw invalid("security-policy", "expected a supported RSA policy");
     }
-    String username = string(merged, "identity.username");
-    String password = string(merged, "identity.password");
-    if (username.isBlank()) throw invalid("identity.username", "must not be blank");
-    if (password.isEmpty()) throw invalid("identity.password", "must not be empty");
+    Identity identity =
+        switch (string(merged, "identity.type")) {
+          case "anonymous" -> new Anonymous();
+          case "username" -> {
+            String username = string(merged, "identity.username");
+            String password = string(merged, "identity.password");
+            if (username.isBlank()) throw invalid("identity.username", "must not be blank");
+            if (password.isEmpty()) throw invalid("identity.password", "must not be empty");
+            yield new Credentials(username, password);
+          }
+          default -> throw invalid("identity.type", "expected username or anonymous");
+        };
     List<String> urls =
         read("discovery-url-list", () -> merged.getStringList(PREFIX + "discovery-url-list"));
     for (int i = 0; i < urls.size(); i++) {
@@ -73,7 +87,7 @@ public record GdsRegistrationConfig(
         new GdsRegistrationConfig(
             endpoint,
             policy,
-            new Credentials(username, password),
+            identity,
             List.copyOf(new LinkedHashSet<>(urls)),
             read("update-existing", () -> merged.getBoolean(PREFIX + "update-existing")),
             request,
