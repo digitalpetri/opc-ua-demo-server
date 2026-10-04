@@ -108,10 +108,10 @@ public final class GdsRegistrationService implements AutoCloseable {
       attempt = new Attempt();
       active = attempt;
     }
-    Exception failure = null;
+    Throwable failure = null;
     try {
       register(attempt);
-    } catch (Exception e) {
+    } catch (Exception | Error e) {
       failure = e;
     } finally {
       attempt.cleanup();
@@ -396,8 +396,9 @@ public final class GdsRegistrationService implements AutoCloseable {
 
   static boolean retryable(Throwable failure) {
     for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
-      if (cause instanceof RegistrationException || cause instanceof IllegalArgumentException)
-        return false;
+      if (cause instanceof Error
+          || cause instanceof RegistrationException
+          || cause instanceof IllegalArgumentException) return false;
     }
     long code = status(failure);
     if (code != 0 && code != StatusCodes.Bad_UnexpectedError) {
@@ -438,7 +439,7 @@ public final class GdsRegistrationService implements AutoCloseable {
     return 0;
   }
 
-  private static String diagnostic(Exception failure) {
+  private static String diagnostic(Throwable failure) {
     if (failure instanceof RegistrationException) return failure.getMessage();
     if (failure instanceof IOException
         && "Remote registration succeeded but local persistence failed"

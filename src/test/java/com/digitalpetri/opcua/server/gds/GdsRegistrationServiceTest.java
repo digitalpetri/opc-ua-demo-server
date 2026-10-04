@@ -3,11 +3,18 @@ package com.digitalpetri.opcua.server.gds;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.typesafe.config.ConfigFactory;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
+import org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig;
 import org.eclipse.milo.opcua.stack.core.Stack;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.gds.types.ApplicationRecordDataType;
+import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
@@ -16,8 +23,10 @@ import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.UserTokenType;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.UserTokenPolicy;
+import org.eclipse.milo.opcua.stack.transport.server.ServerApplicationContext;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class GdsRegistrationServiceTest {
   @Test
@@ -168,6 +177,9 @@ class GdsRegistrationServiceTest {
 
   @Test
   void retriesOnlyRecoverableFailures() {
+    assertFalse(
+        GdsRegistrationService.retryable(
+            new LinkageError("missing codec", new java.io.IOException("wrapped I/O failure"))));
     assertTrue(GdsRegistrationService.retryable(new UaException(new java.net.ConnectException())));
     for (long code :
         List.of(
@@ -191,6 +203,43 @@ class GdsRegistrationServiceTest {
       assertFalse(
           GdsRegistrationService.retryable(new UaException(code)),
           new UaException(code).toString());
+    }
+  }
+
+  // A linkage failure is captured by the scheduled task Future unless the worker reports it.
+  // Completion must fail instead of leaving callers waiting forever for registration.
+  @Test
+  void workerReportsLinkageFailure(@TempDir Path directory) throws Exception {
+    var failure = new NoClassDefFoundError("missing GDS codec");
+    OpcUaServer server =
+        new OpcUaServer(
+            OpcUaServerConfig.builder()
+                .setCertificateManager(new DefaultCertificateManager())
+                .build(),
+            _ -> null) {
+          @Override
+          public ServerApplicationContext getApplicationContext() {
+            throw failure;
+          }
+        };
+    GdsRegistrationConfig config =
+        GdsRegistrationConfig.fromConfig(
+                ConfigFactory.parseString(
+                    """
+                    gds.registration {
+                      enabled = true
+                      endpoint-url = "opc.tcp://localhost:4840/gds"
+                      identity { username = "admin", password = "password" }
+                    }
+                    """))
+            .orElseThrow();
+    try (var service = new GdsRegistrationService(server, config, directory)) {
+      service.start();
+      ExecutionException error =
+          assertThrows(
+              ExecutionException.class, () -> service.completion().get(2, TimeUnit.SECONDS));
+      assertSame(failure, error.getCause());
+      assertFalse(GdsRegistrationService.retryable(failure));
     }
   }
 
