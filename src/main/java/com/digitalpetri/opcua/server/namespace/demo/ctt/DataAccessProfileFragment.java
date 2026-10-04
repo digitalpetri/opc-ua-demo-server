@@ -16,8 +16,6 @@ import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.items.DataItem;
-import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.model.variables.AnalogItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.CubeItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.DataItemTypeNode;
@@ -31,7 +29,6 @@ import org.eclipse.milo.opcua.sdk.server.model.variables.YArrayItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.instantiation.InstantiationRequest;
-import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
@@ -56,7 +53,6 @@ public class DataAccessProfileFragment extends ManagedAddressSpaceFragmentWithLi
   private static final EUInformation MILLIMETRE_UNITS = CefactEngineeringUnits.CODE_MMT;
 
   private final SimpleAddressSpaceFilter filter;
-  private final SubscriptionModel subscriptionModel;
 
   private final NodeId parentNodeId;
   private final UShort namespaceIndex;
@@ -74,35 +70,12 @@ public class DataAccessProfileFragment extends ManagedAddressSpaceFragmentWithLi
 
     filter = SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);
 
-    subscriptionModel = new SubscriptionModel(server, composite);
-    getLifecycleManager().addLifecycle(subscriptionModel);
-
     getLifecycleManager().addStartupTask(this::addNodes);
   }
 
   @Override
   public AddressSpaceFilter getFilter() {
     return filter;
-  }
-
-  @Override
-  public void onDataItemsCreated(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsCreated(dataItems);
-  }
-
-  @Override
-  public void onDataItemsModified(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsModified(dataItems);
-  }
-
-  @Override
-  public void onDataItemsDeleted(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsDeleted(dataItems);
-  }
-
-  @Override
-  public void onMonitoringModeChanged(List<MonitoredItem> monitoredItems) {
-    subscriptionModel.onMonitoringModeChanged(monitoredItems);
   }
 
   private void addNodes() {

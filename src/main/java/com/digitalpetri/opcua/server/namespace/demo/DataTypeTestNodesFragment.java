@@ -28,7 +28,6 @@ import com.digitalpetri.opcua.test.types.TestEnumType;
 import com.digitalpetri.opcua.test.types.UnionOfArray;
 import com.digitalpetri.opcua.test.types.UnionOfMatrix;
 import com.digitalpetri.opcua.test.types.UnionOfScalar;
-import java.util.List;
 import java.util.UUID;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
@@ -38,12 +37,9 @@ import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.items.DataItem;
-import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode.UaVariableNodeBuilder;
-import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
@@ -75,7 +71,6 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
   private final UShort namespaceIndex;
 
   private final SimpleAddressSpaceFilter filter;
-  private final SubscriptionModel subscriptionModel;
 
   public DataTypeTestNodesFragment(OpcUaServer server, DemoNamespace namespace) {
     super(server, namespace);
@@ -85,35 +80,12 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
 
     filter = SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);
 
-    subscriptionModel = new SubscriptionModel(server, this);
-    getLifecycleManager().addLifecycle(subscriptionModel);
-
     getLifecycleManager().addStartupTask(this::addDataTypeTestNodes);
   }
 
   @Override
   public AddressSpaceFilter getFilter() {
     return filter;
-  }
-
-  @Override
-  public void onDataItemsCreated(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsCreated(dataItems);
-  }
-
-  @Override
-  public void onDataItemsModified(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsModified(dataItems);
-  }
-
-  @Override
-  public void onDataItemsDeleted(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsDeleted(dataItems);
-  }
-
-  @Override
-  public void onMonitoringModeChanged(List<MonitoredItem> monitoredItems) {
-    subscriptionModel.onMonitoringModeChanged(monitoredItems);
   }
 
   private void addDataTypeTestNodes() {
