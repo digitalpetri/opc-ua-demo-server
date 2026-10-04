@@ -7,6 +7,20 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 
 public class DemoConfigLimits implements OpcUaServerConfigLimits {
 
+  /**
+   * The fastest sampling interval the server supports, in milliseconds.
+   *
+   * <p>Milo's sampling framework revises every requested interval up to a multiple of its default
+   * 25 ms bucket, so nothing samples faster than this. Variables that can be sampled as fast as the
+   * server allows report it as their MinimumSamplingInterval.
+   */
+  public static final double MIN_SUPPORTED_SAMPLE_RATE = 25.0;
+
+  @Override
+  public Double getMinSupportedSampleRate() {
+    return MIN_SUPPORTED_SAMPLE_RATE;
+  }
+
   @Override
   public Double getMinPublishingInterval() {
     return 100.0;

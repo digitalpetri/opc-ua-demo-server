@@ -1,23 +1,20 @@
 package com.digitalpetri.opcua.server.namespace.demo.ctt;
 
+import static com.digitalpetri.opcua.server.DemoConfigLimits.MIN_SUPPORTED_SAMPLE_RATE;
 import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
 
-import java.util.List;
+import com.digitalpetri.opcua.server.namespace.demo.DemoAddressSpaceFragment;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.items.DataItem;
-import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode.UaVariableNodeBuilder;
-import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -27,10 +24,9 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 
-public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+public class SecurityAccessFragment extends DemoAddressSpaceFragment {
 
   private final SimpleAddressSpaceFilter filter;
-  private final SubscriptionModel subscriptionModel;
 
   private final NodeId parentNodeId;
   private final UShort namespaceIndex;
@@ -48,35 +44,12 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
 
     filter = SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);
 
-    subscriptionModel = new SubscriptionModel(server, composite);
-    getLifecycleManager().addLifecycle(subscriptionModel);
-
     getLifecycleManager().addStartupTask(this::addNodes);
   }
 
   @Override
   public AddressSpaceFilter getFilter() {
     return filter;
-  }
-
-  @Override
-  public void onDataItemsCreated(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsCreated(dataItems);
-  }
-
-  @Override
-  public void onDataItemsModified(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsModified(dataItems);
-  }
-
-  @Override
-  public void onDataItemsDeleted(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsDeleted(dataItems);
-  }
-
-  @Override
-  public void onMonitoringModeChanged(List<MonitoredItem> monitoredItems) {
-    subscriptionModel.onMonitoringModeChanged(monitoredItems);
   }
 
   private void addNodes() {
@@ -107,7 +80,7 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
           .setValueRank(ValueRanks.Scalar)
           .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead))
           .setUserAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead))
-          .setMinimumSamplingInterval(0.0);
+          .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
       builder.setValue(new DataValue(Variant.ofInt32(0)));
 
@@ -135,7 +108,7 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
           .setValueRank(ValueRanks.Scalar)
           .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentWrite))
           .setUserAccessLevel(AccessLevel.toValue(AccessLevel.CurrentWrite))
-          .setMinimumSamplingInterval(0.0);
+          .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
       builder.setValue(new DataValue(Variant.ofInt32(0)));
 
@@ -164,7 +137,7 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
           .setValueRank(ValueRanks.Scalar)
           .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead))
           .setUserAccessLevel(AccessLevel.toValue())
-          .setMinimumSamplingInterval(0.0);
+          .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
       builder.setValue(new DataValue(Variant.ofInt32(0)));
 
@@ -193,7 +166,7 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
           .setValueRank(ValueRanks.Scalar)
           .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentWrite))
           .setUserAccessLevel(AccessLevel.toValue())
-          .setMinimumSamplingInterval(0.0);
+          .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
       builder.setValue(new DataValue(Variant.ofInt32(0)));
 
@@ -223,7 +196,7 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
           .setValueRank(ValueRanks.Scalar)
           .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead, AccessLevel.CurrentWrite))
           .setUserAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead))
-          .setMinimumSamplingInterval(0.0);
+          .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
       builder.setValue(new DataValue(Variant.ofInt32(0)));
 
@@ -253,7 +226,7 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
           .setValueRank(ValueRanks.Scalar)
           .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentWrite, AccessLevel.CurrentRead))
           .setUserAccessLevel(AccessLevel.toValue(AccessLevel.CurrentWrite))
-          .setMinimumSamplingInterval(0.0);
+          .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
       builder.setValue(new DataValue(Variant.ofInt32(0)));
 

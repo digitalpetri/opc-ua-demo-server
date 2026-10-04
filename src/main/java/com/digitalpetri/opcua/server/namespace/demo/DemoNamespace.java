@@ -5,24 +5,19 @@ import com.digitalpetri.opcua.server.namespace.demo.ctt.CttNodes;
 import com.digitalpetri.opcua.server.namespace.demo.debug.DebugNodesFragment;
 import com.typesafe.config.Config;
 import java.time.Duration;
-import java.util.List;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.Lifecycle;
 import org.eclipse.milo.opcua.sdk.server.LifecycleManager;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.Namespace;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.UaNodeManager;
-import org.eclipse.milo.opcua.sdk.server.items.DataItem;
-import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.model.objects.NamespaceMetadataTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.instantiation.InstantiationRequest;
-import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -159,7 +154,7 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
     return demoFragment.getNodeManager();
   }
 
-  private static class DemoFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+  private static class DemoFragment extends DemoAddressSpaceFragment {
 
     private final AddressSpaceFilter filter =
         SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);
@@ -167,16 +162,11 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
     private final UShort namespaceIndex;
     private final UaFolderNode demoFolder;
 
-    private final SubscriptionModel subscriptionModel;
-
     public DemoFragment(
         OpcUaServer server, AddressSpaceComposite composite, UShort namespaceIndex) {
 
       super(server, composite);
       this.namespaceIndex = namespaceIndex;
-
-      subscriptionModel = new SubscriptionModel(server, composite);
-      getLifecycleManager().addLifecycle(subscriptionModel);
 
       getLifecycleManager().addStartupTask(this::addNamespaceMetadataNodes);
 
@@ -281,26 +271,6 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
     @Override
     public AddressSpaceFilter getFilter() {
       return filter;
-    }
-
-    @Override
-    public void onDataItemsCreated(List<DataItem> dataItems) {
-      subscriptionModel.onDataItemsCreated(dataItems);
-    }
-
-    @Override
-    public void onDataItemsModified(List<DataItem> dataItems) {
-      subscriptionModel.onDataItemsModified(dataItems);
-    }
-
-    @Override
-    public void onDataItemsDeleted(List<DataItem> dataItems) {
-      subscriptionModel.onDataItemsDeleted(dataItems);
-    }
-
-    @Override
-    public void onMonitoringModeChanged(List<MonitoredItem> monitoredItems) {
-      subscriptionModel.onMonitoringModeChanged(monitoredItems);
     }
   }
 }

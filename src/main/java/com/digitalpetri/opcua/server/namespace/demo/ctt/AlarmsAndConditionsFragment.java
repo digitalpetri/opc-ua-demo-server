@@ -1,8 +1,10 @@
 package com.digitalpetri.opcua.server.namespace.demo.ctt;
 
+import static com.digitalpetri.opcua.server.DemoConfigLimits.MIN_SUPPORTED_SAMPLE_RATE;
 import static java.util.Objects.requireNonNull;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 
+import com.digitalpetri.opcua.server.namespace.demo.DemoAddressSpaceFragment;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +17,6 @@ import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.conditions.AlarmCondition;
@@ -27,15 +28,12 @@ import org.eclipse.milo.opcua.sdk.server.conditions.NonExclusiveLevelAlarm;
 import org.eclipse.milo.opcua.sdk.server.conditions.NonExclusiveLimitAlarm;
 import org.eclipse.milo.opcua.sdk.server.conditions.OffNormalAlarm;
 import org.eclipse.milo.opcua.sdk.server.conditions.TripAlarm;
-import org.eclipse.milo.opcua.sdk.server.items.DataItem;
-import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode.UaObjectNodeBuilder;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode.UaVariableNodeBuilder;
-import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
 import org.eclipse.milo.opcua.stack.core.UaException;
@@ -52,7 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** CTT-only Alarms and Conditions fixtures with deterministic, continuously repeating inputs. */
-public final class AlarmsAndConditionsFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+public final class AlarmsAndConditionsFragment extends DemoAddressSpaceFragment {
 
   static final String ROOT_ID = "CTT.AlarmsAndConditions";
   static final String DISCRETE_INPUT_ID = ROOT_ID + ".Discrete.Input";
@@ -90,7 +88,6 @@ public final class AlarmsAndConditionsFragment extends ManagedAddressSpaceFragme
   private static final Logger LOGGER = LoggerFactory.getLogger(AlarmsAndConditionsFragment.class);
 
   private final AddressSpaceFilter filter;
-  private final SubscriptionModel subscriptionModel;
   private final NodeId parentNodeId;
   private final UShort namespaceIndex;
   private final Duration dwellTime;
@@ -163,9 +160,6 @@ public final class AlarmsAndConditionsFragment extends ManagedAddressSpaceFragme
 
     filter = SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);
 
-    subscriptionModel = new SubscriptionModel(server, composite);
-    getLifecycleManager().addLifecycle(subscriptionModel);
-
     getLifecycleManager().addStartupTask(this::startFixture);
     getLifecycleManager().addShutdownTask(this::stopFixture);
   }
@@ -173,26 +167,6 @@ public final class AlarmsAndConditionsFragment extends ManagedAddressSpaceFragme
   @Override
   public AddressSpaceFilter getFilter() {
     return filter;
-  }
-
-  @Override
-  public void onDataItemsCreated(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsCreated(dataItems);
-  }
-
-  @Override
-  public void onDataItemsModified(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsModified(dataItems);
-  }
-
-  @Override
-  public void onDataItemsDeleted(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsDeleted(dataItems);
-  }
-
-  @Override
-  public void onMonitoringModeChanged(List<MonitoredItem> monitoredItems) {
-    subscriptionModel.onMonitoringModeChanged(monitoredItems);
   }
 
   static Duration cycleTime(Duration dwellTime) {
@@ -547,7 +521,7 @@ public final class AlarmsAndConditionsFragment extends ManagedAddressSpaceFragme
             .setValueRank(ValueRanks.Scalar)
             .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead))
             .setUserAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead))
-            .setMinimumSamplingInterval(0.0)
+            .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE)
             .setValue(new DataValue(initialValue))
             .buildAndAdd();
     addComponent(variable, source.getNodeId());

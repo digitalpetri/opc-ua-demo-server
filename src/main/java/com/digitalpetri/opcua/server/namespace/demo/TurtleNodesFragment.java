@@ -11,15 +11,11 @@ import org.eclipse.milo.opcua.sdk.core.nodes.ObjectNodeProperties;
 import org.eclipse.milo.opcua.sdk.server.AddressSpace.ReferenceResult.ReferenceList;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.AttributeReader;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.items.DataItem;
-import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode;
-import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
@@ -33,11 +29,10 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ViewDescription;
 import org.jspecify.annotations.Nullable;
 
-public class TurtleNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+public class TurtleNodesFragment extends DemoAddressSpaceFragment {
 
   private final long depth;
   private final AddressSpaceFilter filter;
-  private final SubscriptionModel subscriptionModel;
 
   private final DemoNamespace namespace;
 
@@ -51,9 +46,6 @@ public class TurtleNodesFragment extends ManagedAddressSpaceFragmentWithLifecycl
     filter =
         SimpleAddressSpaceFilter.create(
             nodeId -> getNodeManager().containsNode(nodeId) || validTurtleNode(nodeId, depth));
-
-    subscriptionModel = new SubscriptionModel(server, this);
-    getLifecycleManager().addLifecycle(subscriptionModel);
 
     getLifecycleManager().addStartupTask(this::addTurtleNodes);
   }
@@ -127,26 +119,6 @@ public class TurtleNodesFragment extends ManagedAddressSpaceFragmentWithLifecycl
     }
 
     return values;
-  }
-
-  @Override
-  public void onDataItemsCreated(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsCreated(dataItems);
-  }
-
-  @Override
-  public void onDataItemsModified(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsModified(dataItems);
-  }
-
-  @Override
-  public void onDataItemsDeleted(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsDeleted(dataItems);
-  }
-
-  @Override
-  public void onMonitoringModeChanged(List<MonitoredItem> monitoredItems) {
-    subscriptionModel.onMonitoringModeChanged(monitoredItems);
   }
 
   private void addTurtleNodes() {

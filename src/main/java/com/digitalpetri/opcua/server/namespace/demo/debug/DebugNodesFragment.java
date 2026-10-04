@@ -4,20 +4,16 @@ import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeI
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
+import com.digitalpetri.opcua.server.namespace.demo.DemoAddressSpaceFragment;
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
-import java.util.List;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.items.DataItem;
-import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaMethodNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaObjectNode.UaObjectNodeBuilder;
-import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
@@ -25,10 +21,9 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
 
-public class DebugNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+public class DebugNodesFragment extends DemoAddressSpaceFragment {
 
   private final AddressSpaceFilter filter;
-  private final SubscriptionModel subscriptionModel;
 
   private final DemoNamespace namespace;
 
@@ -39,35 +34,12 @@ public class DebugNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle
 
     filter = SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);
 
-    subscriptionModel = new SubscriptionModel(server, this);
-    getLifecycleManager().addLifecycle(subscriptionModel);
-
     getLifecycleManager().addStartupTask(this::addDebugNodes);
   }
 
   @Override
   public AddressSpaceFilter getFilter() {
     return filter;
-  }
-
-  @Override
-  public void onDataItemsCreated(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsCreated(dataItems);
-  }
-
-  @Override
-  public void onDataItemsModified(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsModified(dataItems);
-  }
-
-  @Override
-  public void onDataItemsDeleted(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsDeleted(dataItems);
-  }
-
-  @Override
-  public void onMonitoringModeChanged(List<MonitoredItem> monitoredItems) {
-    subscriptionModel.onMonitoringModeChanged(monitoredItems);
   }
 
   private void addDebugNodes() {
