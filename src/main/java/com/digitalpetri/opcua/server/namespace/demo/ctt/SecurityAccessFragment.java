@@ -1,5 +1,6 @@
 package com.digitalpetri.opcua.server.namespace.demo.ctt;
 
+import static com.digitalpetri.opcua.server.DemoConfigLimits.MIN_SUPPORTED_SAMPLE_RATE;
 import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
 
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
@@ -79,7 +80,7 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
           .setValueRank(ValueRanks.Scalar)
           .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead))
           .setUserAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead))
-          .setMinimumSamplingInterval(0.0);
+          .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
       builder.setValue(new DataValue(Variant.ofInt32(0)));
 
@@ -107,7 +108,7 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
           .setValueRank(ValueRanks.Scalar)
           .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentWrite))
           .setUserAccessLevel(AccessLevel.toValue(AccessLevel.CurrentWrite))
-          .setMinimumSamplingInterval(0.0);
+          .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
       builder.setValue(new DataValue(Variant.ofInt32(0)));
 
@@ -136,7 +137,7 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
           .setValueRank(ValueRanks.Scalar)
           .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead))
           .setUserAccessLevel(AccessLevel.toValue())
-          .setMinimumSamplingInterval(0.0);
+          .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
       builder.setValue(new DataValue(Variant.ofInt32(0)));
 
@@ -165,7 +166,7 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
           .setValueRank(ValueRanks.Scalar)
           .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentWrite))
           .setUserAccessLevel(AccessLevel.toValue())
-          .setMinimumSamplingInterval(0.0);
+          .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
       builder.setValue(new DataValue(Variant.ofInt32(0)));
 
@@ -195,7 +196,7 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
           .setValueRank(ValueRanks.Scalar)
           .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead, AccessLevel.CurrentWrite))
           .setUserAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead))
-          .setMinimumSamplingInterval(0.0);
+          .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
       builder.setValue(new DataValue(Variant.ofInt32(0)));
 
@@ -225,7 +226,7 @@ public class SecurityAccessFragment extends ManagedAddressSpaceFragmentWithLifec
           .setValueRank(ValueRanks.Scalar)
           .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentWrite, AccessLevel.CurrentRead))
           .setUserAccessLevel(AccessLevel.toValue(AccessLevel.CurrentWrite))
-          .setMinimumSamplingInterval(0.0);
+          .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
       builder.setValue(new DataValue(Variant.ofInt32(0)));
 

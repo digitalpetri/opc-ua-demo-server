@@ -1,5 +1,6 @@
 package com.digitalpetri.opcua.server.namespace.demo.ctt;
 
+import static com.digitalpetri.opcua.server.DemoConfigLimits.MIN_SUPPORTED_SAMPLE_RATE;
 import static java.util.Objects.requireNonNull;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 
@@ -520,7 +521,7 @@ public final class AlarmsAndConditionsFragment extends ManagedAddressSpaceFragme
             .setValueRank(ValueRanks.Scalar)
             .setAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead))
             .setUserAccessLevel(AccessLevel.toValue(AccessLevel.CurrentRead))
-            .setMinimumSamplingInterval(0.0)
+            .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE)
             .setValue(new DataValue(initialValue))
             .buildAndAdd();
     addComponent(variable, source.getNodeId());

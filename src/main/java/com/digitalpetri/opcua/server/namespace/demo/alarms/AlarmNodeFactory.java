@@ -1,5 +1,6 @@
 package com.digitalpetri.opcua.server.namespace.demo.alarms;
 
+import static com.digitalpetri.opcua.server.DemoConfigLimits.MIN_SUPPORTED_SAMPLE_RATE;
 import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
@@ -246,7 +247,7 @@ final class AlarmNodeFactory {
             .rootAttribute(AttributeId.ValueRank, ValueRanks.Scalar)
             .rootAttribute(AttributeId.AccessLevel, accessLevel)
             .rootAttribute(AttributeId.UserAccessLevel, accessLevel)
-            .rootAttribute(AttributeId.MinimumSamplingInterval, 0.0)
+            .rootAttribute(AttributeId.MinimumSamplingInterval, MIN_SUPPORTED_SAMPLE_RATE)
             .value(goodValue(Variant.ofDouble(initialValue)));
 
     if (writable) {
@@ -323,7 +324,7 @@ final class AlarmNodeFactory {
             .setValueRank(ValueRanks.Scalar)
             .setAccessLevel(accessLevel)
             .setUserAccessLevel(accessLevel)
-            .setMinimumSamplingInterval(0.0)
+            .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE)
             .setValue(goodValue(initialValue))
             .buildAndAdd();
 

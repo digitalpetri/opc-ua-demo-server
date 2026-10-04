@@ -1,11 +1,14 @@
 package com.digitalpetri.opcua.server.namespace.test;
 
+import static com.digitalpetri.opcua.server.DemoConfigLimits.MIN_SUPPORTED_SAMPLE_RATE;
+
 import com.digitalpetri.opcua.test.DataTypeInitializer;
 import com.digitalpetri.opcua.uanodeset.namespace.NodeSetNamespace;
 import java.io.InputStream;
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.model.objects.NamespaceMetadataTypeNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.IdType;
@@ -19,6 +22,7 @@ public class DataTypeTestNamespace extends NodeSetNamespace {
     super(server, NAMESPACE_URI);
 
     getLifecycleManager().addStartupTask(this::configureNamespaceMetadataNode);
+    getLifecycleManager().addStartupTask(this::configureMinimumSamplingIntervals);
   }
 
   @Override
@@ -59,5 +63,14 @@ public class DataTypeTestNamespace extends NodeSetNamespace {
     metadataNode.setStaticNodeIdTypes(new IdType[] {IdType.Numeric});
     metadataNode.setStaticNumericNodeIdRange(new String[] {"3003:6070"});
     metadataNode.setStaticStringNodeIdPattern("");
+  }
+
+  private void configureMinimumSamplingIntervals() {
+    // The NodeSet declares no MinimumSamplingInterval, so every Variable would report the schema
+    // default of 0, an interval the server never samples at.
+    getNodeManager().getNodes().stream()
+        .filter(node -> node instanceof UaVariableNode)
+        .map(UaVariableNode.class::cast)
+        .forEach(node -> node.setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE));
   }
 }
