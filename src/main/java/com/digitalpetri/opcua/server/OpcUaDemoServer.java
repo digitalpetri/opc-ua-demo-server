@@ -186,165 +186,187 @@ public class OpcUaDemoServer extends AbstractLifecycle {
         new FileBasedCertificateQuarantine(rejectedDirPath.toFile());
 
     trustListManager = FileBasedTrustListManager.createAndInitialize(pkiDirPath);
-    userTrustListManager = FileBasedTrustListManager.createAndInitialize(userPkiDirPath);
-
-    final CertificateValidator certificateValidator;
-
-    if (config.getBoolean("trust-all-certificates")) {
-      certificateValidator =
-          (chain, _, _) -> {
-
-            // Accept incoming certificates without granting trust to outgoing GDS connections.
-            LoggerFactory.getLogger(OpcUaDemoServer.class)
-                .info("Skipping validation for certificate chain:");
-
-            for (int i = 0; i < chain.size(); i++) {
-              X509Certificate certificate = chain.get(i);
-
-              LoggerFactory.getLogger(OpcUaDemoServer.class)
-                  .info("  certificate[{}]: {}", i, certificate.getSubjectX500Principal());
-            }
-          };
-    } else {
-      certificateValidator =
-          new DefaultServerCertificateValidator(
-              trustListManager, ValidationCheck.ALL_OPTIONAL_CHECKS, certificateQuarantine);
+    try {
+      userTrustListManager = FileBasedTrustListManager.createAndInitialize(userPkiDirPath);
+    } catch (Exception | Error e) {
+      closeAfterConstructionFailure(e, trustListManager);
+      throw e;
     }
 
-    List<SecurityPolicy> configuredSecurityPolicies = getSecurityPolicies(config);
-    var supportedCertificateTypeIds = new LinkedHashSet<NodeId>();
-    supportedCertificateTypeIds.add(NodeIds.RsaSha256ApplicationCertificateType);
+    try {
+      final CertificateValidator certificateValidator;
 
-    for (SecurityPolicy securityPolicy : configuredSecurityPolicies) {
-      SecurityPolicyProfile profile = securityPolicy.getProfile();
+      if (config.getBoolean("trust-all-certificates")) {
+        certificateValidator =
+            (chain, _, _) -> {
 
-      if (profile.publicKeyAlgorithm() == SecurityPolicyProfile.PublicKeyAlgorithm.ECC) {
-        NodeId certificateTypeId =
-            profile
-                .preferredCertificateTypeId()
-                .orElseThrow(
-                    () ->
-                        new IllegalStateException(
-                            "ECC security policy has no certificate type: " + securityPolicy));
+              // Accept incoming certificates without granting trust to outgoing GDS connections.
+              LoggerFactory.getLogger(OpcUaDemoServer.class)
+                  .info("Skipping validation for certificate chain:");
 
-        supportedCertificateTypeIds.add(certificateTypeId);
+              for (int i = 0; i < chain.size(); i++) {
+                X509Certificate certificate = chain.get(i);
+
+                LoggerFactory.getLogger(OpcUaDemoServer.class)
+                    .info("  certificate[{}]: {}", i, certificate.getSubjectX500Principal());
+              }
+            };
+      } else {
+        certificateValidator =
+            new DefaultServerCertificateValidator(
+                trustListManager, ValidationCheck.ALL_OPTIONAL_CHECKS, certificateQuarantine);
+      }
+
+      List<SecurityPolicy> configuredSecurityPolicies = getSecurityPolicies(config);
+      var supportedCertificateTypeIds = new LinkedHashSet<NodeId>();
+      supportedCertificateTypeIds.add(NodeIds.RsaSha256ApplicationCertificateType);
+
+      for (SecurityPolicy securityPolicy : configuredSecurityPolicies) {
+        SecurityPolicyProfile profile = securityPolicy.getProfile();
+
+        if (profile.publicKeyAlgorithm() == SecurityPolicyProfile.PublicKeyAlgorithm.ECC) {
+          NodeId certificateTypeId =
+              profile
+                  .preferredCertificateTypeId()
+                  .orElseThrow(
+                      () ->
+                          new IllegalStateException(
+                              "ECC security policy has no certificate type: " + securityPolicy));
+
+          supportedCertificateTypeIds.add(certificateTypeId);
+        }
+      }
+
+      var certificateFactory =
+          new DemoCertificateFactory(applicationUri, () -> getCertificateHostnames(config));
+
+      var defaultApplicationGroup =
+          new DefaultCertificateGroup(
+              trustListManager,
+              certificateStore,
+              certificateQuarantine,
+              certificateValidator,
+              List.copyOf(supportedCertificateTypeIds));
+
+      // Provisioning is the application's responsibility. A first start needs certificates for
+      // every supported type.
+      certificateFactory.createMissingCertificates(defaultApplicationGroup);
+
+      CertificateManager certificateManager =
+          new DefaultCertificateManager(defaultApplicationGroup);
+
+      Set<EndpointConfig> endpointConfigs = createEndpointConfigs(config);
+
+      if (!reverseConnectConfig.targets().isEmpty()) {
+        // Cross-validate each target's endpoint-url against the endpoints this server actually
+        // configures, mirroring the SDK-side validation that runs later at server startup.
+        reverseConnectConfig.validateEndpointUrls(
+            endpointConfigs.stream().map(EndpointConfig::getEndpointUrl).toList());
+      }
+
+      var serverConfigBuilder = OpcUaServerConfig.builder();
+      serverConfigBuilder
+          .setProductUri(PRODUCT_URI)
+          .setApplicationUri(applicationUri)
+          .setApplicationName(LocalizedText.english("Eclipse Milo OPC UA Demo Server"))
+          .setBuildInfo(createBuildInfo())
+          .setEndpoints(endpointConfigs)
+          .setCertificateManager(certificateManager)
+          .setIdentityValidator(
+              new CompositeValidator(
+                  AnonymousIdentityValidator.INSTANCE,
+                  createUsernameIdentityValidator(),
+                  createX509IdentityValidator(userTrustListManager)))
+          .setRoleMapper(new DemoRoleMapper())
+          .setLimits(new DemoConfigLimits());
+
+      if (!reverseConnectConfig.targets().isEmpty()) {
+        serverConfigBuilder.setReverseConnectTargets(reverseConnectConfig.toTargets());
+      }
+
+      server = new OpcUaServer(serverConfigBuilder.build(), transportFactory);
+      registrationService =
+          registrationConfig
+              .map(c -> new GdsRegistrationService(server, c, dataDirPath))
+              .orElse(null);
+
+      if (!reverseConnectConfig.targets().isEmpty()) {
+        // Initial targets do not emit onTargetAdded. Replay their snapshots before registering
+        // the listener so registration, scheduling, and attempt events are all logged.
+        var reverseConnectTargetLogger = new ReverseConnectTargetLogger();
+        server
+            .getReverseConnectTargetSnapshots()
+            .forEach(reverseConnectTargetLogger::onTargetAdded);
+        server.addReverseConnectTargetListener(reverseConnectTargetLogger);
+      }
+
+      server.getNamespaceTable().set(2, DemoNamespace.NAMESPACE_URI);
+
+      /*
+       * Address-space components are registered as SDK lifecycle participants. Registration runs
+       * separately after endpoint binding. The server starts participants in registration order once
+       * the standard address space and event facilities are ready but before any endpoint binds, so
+       * clients never observe a partially built address space, and it stops the ones that started, in
+       * reverse order, during startup rollback or shutdown.
+       */
+
+      if (config.getBoolean("address-space.data-type-test.enabled")) {
+        server.getNamespaceTable().set(3, DataTypeTestNamespace.NAMESPACE_URI);
+        server.addLifecycleParticipant(DataTypeTestNamespace.create(server));
+      }
+
+      var demoNamespace = new DemoNamespace(server, config);
+      server.addLifecycleParticipant(demoNamespace);
+
+      boolean gdsPushEnabled = config.getBoolean("gds-push-enabled");
+
+      if (gdsPushEnabled) {
+        ServerConfigurationTypeNode serverConfigurationNode =
+            server
+                .getAddressSpaceManager()
+                .getManagedNode(NodeIds.ServerConfiguration)
+                .map(ServerConfigurationTypeNode.class::cast)
+                .orElseThrow();
+
+        server.addLifecycleParticipant(
+            new ServerConfigurationObject(server, serverConfigurationNode, certificateFactory));
+      }
+
+      boolean aliasesEnabled = config.getBoolean("address-space.aliases.enabled");
+
+      if (aliasesEnabled) {
+        // Registered after the demo namespace because AliasManager rejects an alias whose target
+        // Node does not exist yet.
+        server.addLifecycleParticipant(
+            new AliasSupport(
+                server,
+                demoNamespace,
+                dataDirPath,
+                config.getBoolean("address-space.aliases.find-alias-verbose-enabled"),
+                config.getBoolean("address-space.dynamic.enabled")));
+      }
+
+      configureStandardServerNodes(gdsPushEnabled);
+
+      if (!aliasesEnabled) {
+        server.getAddressSpaceManager().getManagedNode(NodeIds.Aliases).ifPresent(UaNode::delete);
+      }
+      server.getAddressSpaceManager().getManagedNode(NodeIds.Locations).ifPresent(UaNode::delete);
+    } catch (Exception | Error e) {
+      closeAfterConstructionFailure(e, trustListManager, userTrustListManager);
+      throw e;
+    }
+  }
+
+  private static void closeAfterConstructionFailure(
+      Throwable failure, FileBasedTrustListManager... managers) {
+    for (FileBasedTrustListManager manager : managers) {
+      try {
+        manager.close();
+      } catch (IOException e) {
+        failure.addSuppressed(e);
       }
     }
-
-    var certificateFactory =
-        new DemoCertificateFactory(applicationUri, () -> getCertificateHostnames(config));
-
-    var defaultApplicationGroup =
-        new DefaultCertificateGroup(
-            trustListManager,
-            certificateStore,
-            certificateQuarantine,
-            certificateValidator,
-            List.copyOf(supportedCertificateTypeIds));
-
-    // The group exposes whatever its store holds; provisioning missing self-signed material is the
-    // application's call, made here so a first start has certificates for every supported type.
-    certificateFactory.createMissingCertificates(defaultApplicationGroup);
-
-    CertificateManager certificateManager = new DefaultCertificateManager(defaultApplicationGroup);
-
-    Set<EndpointConfig> endpointConfigs = createEndpointConfigs(config);
-
-    if (!reverseConnectConfig.targets().isEmpty()) {
-      // Cross-validate each target's endpoint-url against the endpoints this server actually
-      // configures, mirroring the SDK-side validation that runs later at server startup.
-      reverseConnectConfig.validateEndpointUrls(
-          endpointConfigs.stream().map(EndpointConfig::getEndpointUrl).toList());
-    }
-
-    var serverConfigBuilder = OpcUaServerConfig.builder();
-    serverConfigBuilder
-        .setProductUri(PRODUCT_URI)
-        .setApplicationUri(applicationUri)
-        .setApplicationName(LocalizedText.english("Eclipse Milo OPC UA Demo Server"))
-        .setBuildInfo(createBuildInfo())
-        .setEndpoints(endpointConfigs)
-        .setCertificateManager(certificateManager)
-        .setIdentityValidator(
-            new CompositeValidator(
-                AnonymousIdentityValidator.INSTANCE,
-                createUsernameIdentityValidator(),
-                createX509IdentityValidator(userTrustListManager)))
-        .setRoleMapper(new DemoRoleMapper())
-        .setLimits(new DemoConfigLimits());
-
-    if (!reverseConnectConfig.targets().isEmpty()) {
-      serverConfigBuilder.setReverseConnectTargets(reverseConnectConfig.toTargets());
-    }
-
-    server = new OpcUaServer(serverConfigBuilder.build(), transportFactory);
-    registrationService =
-        registrationConfig
-            .map(c -> new GdsRegistrationService(server, c, dataDirPath))
-            .orElse(null);
-
-    if (!reverseConnectConfig.targets().isEmpty()) {
-      // The SDK does not emit onTargetAdded for targets supplied via the initial server config, so
-      // replay the initial snapshots through the logger to record each target's registration, then
-      // register the listener before startup() so the initial scheduling and attempt events are
-      // observed.
-      var reverseConnectTargetLogger = new ReverseConnectTargetLogger();
-      server.getReverseConnectTargetSnapshots().forEach(reverseConnectTargetLogger::onTargetAdded);
-      server.addReverseConnectTargetListener(reverseConnectTargetLogger);
-    }
-
-    server.getNamespaceTable().set(2, DemoNamespace.NAMESPACE_URI);
-
-    /*
-     * Address-space components are registered as SDK lifecycle participants. Registration runs
-     * separately after endpoint binding. The server starts participants in registration order once
-     * the standard address space and event facilities are ready but before any endpoint binds, so
-     * clients never observe a partially built address space, and it stops the ones that started, in
-     * reverse order, during startup rollback or shutdown.
-     */
-
-    if (config.getBoolean("address-space.data-type-test.enabled")) {
-      server.getNamespaceTable().set(3, DataTypeTestNamespace.NAMESPACE_URI);
-      server.addLifecycleParticipant(DataTypeTestNamespace.create(server));
-    }
-
-    var demoNamespace = new DemoNamespace(server, config);
-    server.addLifecycleParticipant(demoNamespace);
-
-    boolean gdsPushEnabled = config.getBoolean("gds-push-enabled");
-
-    if (gdsPushEnabled) {
-      ServerConfigurationTypeNode serverConfigurationNode =
-          server
-              .getAddressSpaceManager()
-              .getManagedNode(NodeIds.ServerConfiguration)
-              .map(ServerConfigurationTypeNode.class::cast)
-              .orElseThrow();
-
-      server.addLifecycleParticipant(
-          new ServerConfigurationObject(server, serverConfigurationNode, certificateFactory));
-    }
-
-    boolean aliasesEnabled = config.getBoolean("address-space.aliases.enabled");
-
-    if (aliasesEnabled) {
-      // Registered after the demo namespace because AliasManager rejects an alias whose target
-      // Node does not exist yet.
-      server.addLifecycleParticipant(
-          new AliasSupport(
-              server,
-              demoNamespace,
-              dataDirPath,
-              config.getBoolean("address-space.aliases.find-alias-verbose-enabled"),
-              config.getBoolean("address-space.dynamic.enabled")));
-    }
-
-    configureStandardServerNodes(gdsPushEnabled);
-
-    if (!aliasesEnabled) {
-      server.getAddressSpaceManager().getManagedNode(NodeIds.Aliases).ifPresent(UaNode::delete);
-    }
-    server.getAddressSpaceManager().getManagedNode(NodeIds.Locations).ifPresent(UaNode::delete);
   }
 
   private static OpcServerTransportFactory createDefaultTransportFactory() {
@@ -497,6 +519,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
   }
 
   private X509IdentityValidator createX509IdentityValidator(TrustListManager userTrustListManager) {
+    // Milo always enforces established revocation; this set controls only optional checks.
     var validator =
         new DefaultServerCertificateValidator(
             userTrustListManager,
