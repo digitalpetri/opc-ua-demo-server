@@ -1,9 +1,5 @@
-# Explicitly unset the text attribute.
-# When text is unset, Git will not perform any line ending conversions for
-# these files. It will treat them as binary for the purpose of line ending
-# handling, meaning it won't try to normalize them.
-* -text
+# Normalize all detected text files to LF in the repository and working tree.
+* text=auto eol=lf
 
-# Java and Kotlin files always normalized and converted on checkout
-*.java text eol=lf
-*.kt text eol=lf
+# Keep binary assets byte-for-byte unchanged.
+*.png binary

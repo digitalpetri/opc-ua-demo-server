@@ -1,46 +1,37 @@
 package com.digitalpetri.opcua.server.namespace.demo;
 
-import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
-
+import com.digitalpetri.opcua.server.namespace.demo.alarms.AlarmNodesFragment;
 import com.digitalpetri.opcua.server.namespace.demo.ctt.CttNodes;
 import com.digitalpetri.opcua.server.namespace.demo.debug.DebugNodesFragment;
 import com.typesafe.config.Config;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.time.Duration;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.Lifecycle;
 import org.eclipse.milo.opcua.sdk.server.LifecycleManager;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.Namespace;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.items.DataItem;
-import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
-import org.eclipse.milo.opcua.sdk.server.model.objects.BaseEventTypeNode;
+import org.eclipse.milo.opcua.sdk.server.UaNodeManager;
+import org.eclipse.milo.opcua.sdk.server.model.objects.NamespaceMetadataTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
-import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
-import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
+import org.eclipse.milo.opcua.sdk.server.nodes.instantiation.InstantiationRequest;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.IdType;
 
 public class DemoNamespace extends AddressSpaceComposite implements Namespace, Lifecycle {
 
   public static final String NAMESPACE_URI =
       "urn:opc:eclipse:milo:opc-ua-demo-server:namespace:demo";
-
-  private final Logger logger = LoggerFactory.getLogger(DemoNamespace.class);
 
   private final LifecycleManager lifecycleManager = new LifecycleManager();
 
@@ -72,6 +63,12 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
 
     demoFragment = new DemoFragment(server, this, namespaceIndex);
     lifecycleManager.addLifecycle(demoFragment);
+
+    boolean alarmsEnabled = config.getBoolean("address-space.alarms.enabled");
+    if (alarmsEnabled) {
+      Duration tickInterval = config.getDuration("address-space.alarms.tick-interval");
+      lifecycleManager.addLifecycle(new AlarmNodesFragment(server, this, tickInterval));
+    }
 
     boolean cttEnabled = config.getBoolean("address-space.ctt.enabled");
     if (cttEnabled) {
@@ -118,8 +115,6 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
 
     var variantFragment = new VariantNodesFragment(server, this);
     lifecycleManager.addLifecycle(variantFragment);
-
-    lifecycleManager.addLifecycle(new BogusEventNotifier());
   }
 
   @Override
@@ -150,98 +145,30 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
     return demoFragment.getDemoFolder();
   }
 
-  private class BogusEventNotifier implements Lifecycle {
-
-    private final Random random = new Random();
-
-    private volatile Thread eventThread;
-    private volatile boolean keepPostingEvents;
-
-    @Override
-    public void startup() {
-      keepPostingEvents = true;
-      eventThread = new Thread(this::fireEventLoop, "bogus-event-notifier");
-      eventThread.start();
-    }
-
-    private void fireEventLoop() {
-      try {
-        Thread.sleep(5000);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-      while (keepPostingEvents) {
-        fireEvent();
-      }
-    }
-
-    private void fireEvent() {
-      try {
-        UaNode serverNode =
-            getServer().getAddressSpaceManager().getManagedNode(NodeIds.Server).orElseThrow();
-
-        BaseEventTypeNode eventNode =
-            getServer()
-                .getEventFactory()
-                .createEvent(new NodeId(namespaceIndex, UUID.randomUUID()), NodeIds.BaseEventType);
-
-        byte[] eventId = new byte[4];
-        random.nextBytes(eventId);
-
-        eventNode.setBrowseName(new QualifiedName(1, "foo"));
-        eventNode.setDisplayName(LocalizedText.english("foo"));
-        eventNode.setEventId(ByteString.of(eventId));
-        eventNode.setEventType(NodeIds.BaseEventType);
-        eventNode.setSourceNode(serverNode.getNodeId());
-        eventNode.setSourceName(serverNode.getDisplayName().text());
-        eventNode.setTime(DateTime.now());
-        eventNode.setReceiveTime(DateTime.NULL_VALUE);
-        eventNode.setMessage(LocalizedText.english("event message!"));
-        eventNode.setSeverity(ushort(random.nextInt(10)));
-
-        getServer().getEventNotifier().fire(eventNode);
-
-        eventNode.delete();
-      } catch (Throwable e) {
-        logger.error("Error creating EventNode: {}", e.getMessage(), e);
-      }
-
-      try {
-        Thread.sleep(2_000);
-      } catch (InterruptedException ignored) {
-      }
-    }
-
-    @Override
-    public void shutdown() {
-      keepPostingEvents = false;
-      if (eventThread != null) {
-        try {
-          eventThread.interrupt();
-          eventThread.join();
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-      }
-    }
+  /**
+   * Get the NodeManager that hosts the core demo nodes.
+   *
+   * @return the core demo fragment's NodeManager.
+   */
+  public UaNodeManager getDemoNodeManager() {
+    return demoFragment.getNodeManager();
   }
 
-  private static class DemoFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+  private static class DemoFragment extends DemoAddressSpaceFragment {
 
     private final AddressSpaceFilter filter =
         SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);
 
+    private final UShort namespaceIndex;
     private final UaFolderNode demoFolder;
-
-    private final SubscriptionModel subscriptionModel;
 
     public DemoFragment(
         OpcUaServer server, AddressSpaceComposite composite, UShort namespaceIndex) {
 
       super(server, composite);
+      this.namespaceIndex = namespaceIndex;
 
-      subscriptionModel = new SubscriptionModel(server, composite);
-      getLifecycleManager().addLifecycle(subscriptionModel);
+      getLifecycleManager().addStartupTask(this::addNamespaceMetadataNodes);
 
       demoFolder =
           new UaFolderNode(
@@ -283,6 +210,60 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
               });
     }
 
+    private void addNamespaceMetadataNodes() {
+      String applicationUri = getServer().getConfig().getApplicationUri();
+      UShort applicationNamespaceIndex = getServer().getNamespaceTable().getIndex(applicationUri);
+
+      if (applicationNamespaceIndex == null) {
+        throw new IllegalStateException(
+            "application namespace is not registered: " + applicationUri);
+      }
+
+      try {
+        addDynamicNamespaceMetadata(
+            "NamespaceMetadata.Application", applicationNamespaceIndex, applicationUri, false);
+        addDynamicNamespaceMetadata("NamespaceMetadata.Demo", namespaceIndex, NAMESPACE_URI, true);
+      } catch (UaException e) {
+        throw new IllegalStateException("failed to instantiate namespace metadata", e);
+      }
+    }
+
+    /**
+     * Add complete metadata for a dynamic namespace.
+     *
+     * <p>Part 5 §6.3.13 requires all seven Properties to have readable values. These namespaces
+     * have no formal version, publication date, or declared static NodeIds, so the corresponding
+     * values are null or empty while still carrying a Good StatusCode. The subset flag reflects
+     * whether configuration can omit Nodes belonging to the represented namespace.
+     */
+    private void addDynamicNamespaceMetadata(
+        String nodeIdentifier,
+        UShort representedNamespaceIndex,
+        String namespaceUri,
+        boolean isNamespaceSubset)
+        throws UaException {
+
+      InstantiationRequest<NamespaceMetadataTypeNode> request =
+          InstantiationRequest.of(NamespaceMetadataTypeNode.class, NodeIds.NamespaceMetadataType)
+              .nodeId(new NodeId(namespaceIndex, nodeIdentifier))
+              .browseName(new QualifiedName(representedNamespaceIndex, namespaceUri))
+              .displayName(new LocalizedText(namespaceUri))
+              .parent(NodeIds.Server_Namespaces, NodeIds.HasComponent)
+              .target(getNodeManager())
+              .build();
+
+      NamespaceMetadataTypeNode metadataNode =
+          getServer().getNodeInstantiator().instantiate(request).root();
+
+      metadataNode.setNamespaceUri(namespaceUri);
+      metadataNode.setNamespaceVersion(null);
+      metadataNode.setNamespacePublicationDate(DateTime.NULL_VALUE);
+      metadataNode.setIsNamespaceSubset(isNamespaceSubset);
+      metadataNode.setStaticNodeIdTypes(new IdType[0]);
+      metadataNode.setStaticNumericNodeIdRange(new String[0]);
+      metadataNode.setStaticStringNodeIdPattern("");
+    }
+
     public UaFolderNode getDemoFolder() {
       return demoFolder;
     }
@@ -290,26 +271,6 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
     @Override
     public AddressSpaceFilter getFilter() {
       return filter;
-    }
-
-    @Override
-    public void onDataItemsCreated(List<DataItem> dataItems) {
-      subscriptionModel.onDataItemsCreated(dataItems);
-    }
-
-    @Override
-    public void onDataItemsModified(List<DataItem> dataItems) {
-      subscriptionModel.onDataItemsModified(dataItems);
-    }
-
-    @Override
-    public void onDataItemsDeleted(List<DataItem> dataItems) {
-      subscriptionModel.onDataItemsDeleted(dataItems);
-    }
-
-    @Override
-    public void onMonitoringModeChanged(List<MonitoredItem> monitoredItems) {
-      subscriptionModel.onMonitoringModeChanged(monitoredItems);
     }
   }
 }

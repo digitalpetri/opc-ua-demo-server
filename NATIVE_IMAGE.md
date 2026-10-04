@@ -60,6 +60,17 @@ For better runtime compatibility, generate reflection configuration files by pro
 ./target/opc-ua-demo-server
 ```
 
+## Build Metadata
+
+The version, build number, and build date reported in the server's `BuildInfo` structure come from
+`src/main/resources/com/digitalpetri/opcua/server/build-info.properties`, which Maven resource
+filtering populates into `target/classes`.
+
+Do not move this metadata into the shaded JAR's manifest. `native-maven-plugin` compiles from
+`target/classes` plus the dependency JARs and never sees the uber JAR, so manifest-only values are
+lost in the native image and `BuildDate` degrades to `DateTime.NULL_VALUE` (`1601-01-01T00:00:00Z`).
+The manifest entries in `pom.xml` remain only as a fallback for the shaded JAR.
+
 ## Troubleshooting
 
 If you encounter missing reflection configuration errors at runtime, run the `generate-native-config.sh` script and exercise the problematic functionality before rebuilding.

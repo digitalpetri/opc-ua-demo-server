@@ -7,33 +7,44 @@ import static org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig.USER_TOKEN_POL
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.util.StatusPrinter2;
+import com.digitalpetri.opcua.server.aliases.AliasSupport;
+import com.digitalpetri.opcua.server.gds.GdsRegistrationConfig;
+import com.digitalpetri.opcua.server.gds.GdsRegistrationService;
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
 import com.digitalpetri.opcua.server.namespace.test.DataTypeTestNamespace;
 import com.digitalpetri.opcua.server.objects.ServerConfigurationObject;
+import com.digitalpetri.opcua.server.reverse.ReverseConnectConfig;
+import com.digitalpetri.opcua.server.reverse.ReverseConnectTargetLogger;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.zone.ZoneRules;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.eclipse.milo.opcua.sdk.server.AbstractLifecycle;
+import org.eclipse.milo.opcua.sdk.server.EndpointCertificateConfig;
 import org.eclipse.milo.opcua.sdk.server.EndpointConfig;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServerConfig;
@@ -47,13 +58,15 @@ import org.eclipse.milo.opcua.sdk.server.identity.UsernameIdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.identity.X509IdentityValidator;
 import org.eclipse.milo.opcua.sdk.server.model.objects.ServerConfigurationTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters;
 import org.eclipse.milo.opcua.sdk.server.util.HostnameUtil;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.Stack;
 import org.eclipse.milo.opcua.stack.core.security.CertificateManager;
 import org.eclipse.milo.opcua.stack.core.security.CertificateQuarantine;
 import org.eclipse.milo.opcua.stack.core.security.CertificateValidator;
-import org.eclipse.milo.opcua.stack.core.security.DefaultApplicationGroup;
+import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateGroup;
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager;
 import org.eclipse.milo.opcua.stack.core.security.DefaultServerCertificateValidator;
 import org.eclipse.milo.opcua.stack.core.security.FileBasedCertificateQuarantine;
@@ -61,18 +74,25 @@ import org.eclipse.milo.opcua.stack.core.security.FileBasedTrustListManager;
 import org.eclipse.milo.opcua.stack.core.security.KeyStoreCertificateStore;
 import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateQuarantine;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
+import org.eclipse.milo.opcua.stack.core.security.SecurityPolicyProfile;
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager;
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.UserTokenType;
 import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo;
+import org.eclipse.milo.opcua.stack.core.types.structured.TimeZoneDataType;
+import org.eclipse.milo.opcua.stack.core.types.structured.UserTokenPolicy;
 import org.eclipse.milo.opcua.stack.core.util.ManifestUtil;
 import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck;
 import org.eclipse.milo.opcua.stack.transport.server.OpcServerTransportFactory;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransport;
 import org.eclipse.milo.opcua.stack.transport.server.tcp.OpcTcpServerTransportConfig;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,9 +106,55 @@ public class OpcUaDemoServer extends AbstractLifecycle {
   private static final String PROPERTY_BUILD_NUMBER = "X-Server-Build-Number";
   private static final String PROPERTY_SOFTWARE_VERSION = "X-Server-Software-Version";
 
+  /*
+   * These well-known instances are optional or conditional entry points for functionality the
+   * demo server does not provide. Keeping the standard ObjectTypes and DataTypes in namespace 0
+   * does not require exposing the corresponding Server Object instances.
+   */
+  private static final List<NodeId> UNSUPPORTED_STANDARD_SERVER_NODES =
+      List.of(
+          // OPC 10000-5 §6.3.1: optional SessionlessInvoke/versioning and state-change features.
+          NodeIds.Server_UrisVersion,
+          NodeIds.Server_EstimatedReturnTime,
+          NodeIds.Server_SetSubscriptionDurable,
+          NodeIds.Server_RequestServerStateChange,
+          // OPC 10000-19 §8.1: optional dictionary browse entry point.
+          NodeIds.Dictionaries,
+          // OPC 10000-8 §6.2: entry point for server-managed QuantityType/UnitType instances.
+          NodeIds.Quantities,
+          // OPC 10000-11 §5.7.3: required only for historical nodes without own configuration.
+          NodeIds.DefaultHAConfiguration,
+          NodeIds.DefaultHEConfiguration,
+          // OPC 10000-14 §9.1.3.1: root of PubSub configuration and operation.
+          NodeIds.PublishSubscribe,
+          // OPC 10000-22 §5.4.1: entry point for exposed physical or logical resources.
+          NodeIds.Resources,
+          // OPC 10000-26 §7.2: aggregate LogObject for server log records.
+          NodeIds.ServerLog);
+
   private final OpcUaServer server;
 
+  private final @Nullable GdsRegistrationService registrationService;
+
+  /*
+   * Each of these watches its directories, holding an inotify instance and a thread, until it is
+   * closed. Nothing in the SDK closes them, so this lifecycle does.
+   */
+  private final FileBasedTrustListManager trustListManager;
+  private final FileBasedTrustListManager userTrustListManager;
+
   public OpcUaDemoServer(Path dataDirPath, Config config) throws Exception {
+    this(dataDirPath, config, createDefaultTransportFactory());
+  }
+
+  OpcUaDemoServer(Path dataDirPath, Config config, OpcServerTransportFactory transportFactory)
+      throws Exception {
+
+    // Parse and validate the reverse-connect section before any server construction so an invalid
+    // target fails fast with an error identifying the target index and field.
+    ReverseConnectConfig reverseConnectConfig = ReverseConnectConfig.fromConfig(config);
+    Optional<GdsRegistrationConfig> registrationConfig = GdsRegistrationConfig.fromConfig(config);
+
     Path securityDirPath = dataDirPath.resolve("security");
     Path pkiDirPath = securityDirPath.resolve("pki");
     Path userPkiDirPath = securityDirPath.resolve("pki-user");
@@ -110,7 +176,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
             new KeyStoreCertificateStore.Settings(
                 pkiDirPath.resolve("certificates.pfx"),
                 "password"::toCharArray,
-                alias -> "password".toCharArray()));
+                _ -> "password".toCharArray()));
 
     Path rejectedDirPath = securityDirPath.resolve("rejected");
     if (!rejectedDirPath.toFile().exists() && !rejectedDirPath.toFile().mkdirs()) {
@@ -119,127 +185,273 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     CertificateQuarantine certificateQuarantine =
         new FileBasedCertificateQuarantine(rejectedDirPath.toFile());
 
-    TrustListManager trustListManager = FileBasedTrustListManager.createAndInitialize(pkiDirPath);
+    trustListManager = FileBasedTrustListManager.createAndInitialize(pkiDirPath);
+    try {
+      userTrustListManager = FileBasedTrustListManager.createAndInitialize(userPkiDirPath);
+    } catch (Exception | Error e) {
+      closeAfterConstructionFailure(e, trustListManager);
+      throw e;
+    }
 
-    final CertificateValidator certificateValidator;
+    try {
+      final CertificateValidator certificateValidator;
 
-    if (config.getBoolean("trust-all-certificates")) {
-      certificateValidator =
-          (chain, uri, hostnames) -> {
+      if (config.getBoolean("trust-all-certificates")) {
+        certificateValidator =
+            (chain, _, _) -> {
 
-            // No validation, just accept all certificates.
-            LoggerFactory.getLogger(OpcUaDemoServer.class)
-                .info("Skipping validation for certificate chain:");
-
-            for (int i = 0; i < chain.size(); i++) {
-              X509Certificate certificate = chain.get(i);
-
-              trustListManager.addTrustedCertificate(certificate);
-
+              // Accept incoming certificates without granting trust to outgoing GDS connections.
               LoggerFactory.getLogger(OpcUaDemoServer.class)
-                  .info("  certificate[{}]: {}", i, certificate.getSubjectX500Principal());
-            }
-          };
-    } else {
-      certificateValidator =
-          new DefaultServerCertificateValidator(
-              trustListManager, ValidationCheck.ALL_OPTIONAL_CHECKS, certificateQuarantine);
+                  .info("Skipping validation for certificate chain:");
+
+              for (int i = 0; i < chain.size(); i++) {
+                X509Certificate certificate = chain.get(i);
+
+                LoggerFactory.getLogger(OpcUaDemoServer.class)
+                    .info("  certificate[{}]: {}", i, certificate.getSubjectX500Principal());
+              }
+            };
+      } else {
+        certificateValidator =
+            new DefaultServerCertificateValidator(
+                trustListManager, ValidationCheck.ALL_OPTIONAL_CHECKS, certificateQuarantine);
+      }
+
+      List<SecurityPolicy> configuredSecurityPolicies = getSecurityPolicies(config);
+      var supportedCertificateTypeIds = new LinkedHashSet<NodeId>();
+      supportedCertificateTypeIds.add(NodeIds.RsaSha256ApplicationCertificateType);
+
+      for (SecurityPolicy securityPolicy : configuredSecurityPolicies) {
+        SecurityPolicyProfile profile = securityPolicy.getProfile();
+
+        if (profile.publicKeyAlgorithm() == SecurityPolicyProfile.PublicKeyAlgorithm.ECC) {
+          NodeId certificateTypeId =
+              profile
+                  .preferredCertificateTypeId()
+                  .orElseThrow(
+                      () ->
+                          new IllegalStateException(
+                              "ECC security policy has no certificate type: " + securityPolicy));
+
+          supportedCertificateTypeIds.add(certificateTypeId);
+        }
+      }
+
+      var certificateFactory =
+          new DemoCertificateFactory(applicationUri, () -> getCertificateHostnames(config));
+
+      var defaultApplicationGroup =
+          new DefaultCertificateGroup(
+              trustListManager,
+              certificateStore,
+              certificateQuarantine,
+              certificateValidator,
+              List.copyOf(supportedCertificateTypeIds));
+
+      // Provisioning is the application's responsibility. A first start needs certificates for
+      // every supported type.
+      certificateFactory.createMissingCertificates(defaultApplicationGroup);
+
+      CertificateManager certificateManager =
+          new DefaultCertificateManager(defaultApplicationGroup);
+
+      Set<EndpointConfig> endpointConfigs = createEndpointConfigs(config);
+
+      if (!reverseConnectConfig.targets().isEmpty()) {
+        // Cross-validate each target's endpoint-url against the endpoints this server actually
+        // configures, mirroring the SDK-side validation that runs later at server startup.
+        reverseConnectConfig.validateEndpointUrls(
+            endpointConfigs.stream().map(EndpointConfig::getEndpointUrl).toList());
+      }
+
+      var serverConfigBuilder = OpcUaServerConfig.builder();
+      serverConfigBuilder
+          .setProductUri(PRODUCT_URI)
+          .setApplicationUri(applicationUri)
+          .setApplicationName(LocalizedText.english("Eclipse Milo OPC UA Demo Server"))
+          .setBuildInfo(createBuildInfo())
+          .setEndpoints(endpointConfigs)
+          .setCertificateManager(certificateManager)
+          .setIdentityValidator(
+              new CompositeValidator(
+                  AnonymousIdentityValidator.INSTANCE,
+                  createUsernameIdentityValidator(),
+                  createX509IdentityValidator(userTrustListManager)))
+          .setRoleMapper(new DemoRoleMapper())
+          .setLimits(new DemoConfigLimits());
+
+      if (!reverseConnectConfig.targets().isEmpty()) {
+        serverConfigBuilder.setReverseConnectTargets(reverseConnectConfig.toTargets());
+      }
+
+      server = new OpcUaServer(serverConfigBuilder.build(), transportFactory);
+      registrationService =
+          registrationConfig
+              .map(c -> new GdsRegistrationService(server, c, dataDirPath))
+              .orElse(null);
+
+      if (!reverseConnectConfig.targets().isEmpty()) {
+        // Initial targets do not emit onTargetAdded. Replay their snapshots before registering
+        // the listener so registration, scheduling, and attempt events are all logged.
+        var reverseConnectTargetLogger = new ReverseConnectTargetLogger();
+        server
+            .getReverseConnectTargetSnapshots()
+            .forEach(reverseConnectTargetLogger::onTargetAdded);
+        server.addReverseConnectTargetListener(reverseConnectTargetLogger);
+      }
+
+      server.getNamespaceTable().set(2, DemoNamespace.NAMESPACE_URI);
+
+      /*
+       * Address-space components are registered as SDK lifecycle participants. Registration runs
+       * separately after endpoint binding. The server starts participants in registration order once
+       * the standard address space and event facilities are ready but before any endpoint binds, so
+       * clients never observe a partially built address space, and it stops the ones that started, in
+       * reverse order, during startup rollback or shutdown.
+       */
+
+      if (config.getBoolean("address-space.data-type-test.enabled")) {
+        server.getNamespaceTable().set(3, DataTypeTestNamespace.NAMESPACE_URI);
+        server.addLifecycleParticipant(DataTypeTestNamespace.create(server));
+      }
+
+      var demoNamespace = new DemoNamespace(server, config);
+      server.addLifecycleParticipant(demoNamespace);
+
+      boolean gdsPushEnabled = config.getBoolean("gds-push-enabled");
+
+      if (gdsPushEnabled) {
+        ServerConfigurationTypeNode serverConfigurationNode =
+            server
+                .getAddressSpaceManager()
+                .getManagedNode(NodeIds.ServerConfiguration)
+                .map(ServerConfigurationTypeNode.class::cast)
+                .orElseThrow();
+
+        server.addLifecycleParticipant(
+            new ServerConfigurationObject(server, serverConfigurationNode, certificateFactory));
+      }
+
+      boolean aliasesEnabled = config.getBoolean("address-space.aliases.enabled");
+
+      if (aliasesEnabled) {
+        // Registered after the demo namespace because AliasManager rejects an alias whose target
+        // Node does not exist yet.
+        server.addLifecycleParticipant(
+            new AliasSupport(
+                server,
+                demoNamespace,
+                dataDirPath,
+                config.getBoolean("address-space.aliases.find-alias-verbose-enabled"),
+                config.getBoolean("address-space.dynamic.enabled")));
+      }
+
+      configureStandardServerNodes(gdsPushEnabled);
+
+      if (!aliasesEnabled) {
+        server.getAddressSpaceManager().getManagedNode(NodeIds.Aliases).ifPresent(UaNode::delete);
+      }
+      server.getAddressSpaceManager().getManagedNode(NodeIds.Locations).ifPresent(UaNode::delete);
+    } catch (Exception | Error e) {
+      closeAfterConstructionFailure(e, trustListManager, userTrustListManager);
+      throw e;
     }
+  }
 
-    DefaultApplicationGroup defaultApplicationGroup =
-        new DefaultApplicationGroup(
-            trustListManager,
-            certificateStore,
-            new RsaSha256CertificateFactoryImpl(
-                applicationUri, () -> getCertificateHostnames(config)),
-            certificateValidator);
-
-    defaultApplicationGroup.initialize();
-
-    CertificateManager certificateManager =
-        new DefaultCertificateManager(certificateQuarantine, defaultApplicationGroup);
-
-    Supplier<X509Certificate> certificateSupplier =
-        () -> {
-          X509Certificate[] certificateChain =
-              certificateManager
-                  .getDefaultApplicationGroup()
-                  .orElseThrow()
-                  .getCertificateChain(NodeIds.RsaSha256ApplicationCertificateType)
-                  .orElseThrow();
-
-          return certificateChain[0];
-        };
-
-    var serverConfigBuilder = OpcUaServerConfig.builder();
-    serverConfigBuilder
-        .setProductUri(PRODUCT_URI)
-        .setApplicationUri(applicationUri)
-        .setApplicationName(LocalizedText.english("Eclipse Milo OPC UA Demo Server"))
-        .setBuildInfo(createBuildInfo())
-        .setEndpoints(createEndpointConfigs(config, certificateSupplier))
-        .setCertificateManager(certificateManager)
-        .setIdentityValidator(
-            new CompositeValidator(
-                AnonymousIdentityValidator.INSTANCE,
-                createUsernameIdentityValidator(),
-                createX509IdentityValidator(userPkiDirPath)))
-        .setRoleMapper(new DemoRoleMapper())
-        .setLimits(new DemoConfigLimits())
-        .build();
-
-    OpcServerTransportFactory transportFactory =
-        transportProfile -> {
-          if (transportProfile == TransportProfile.TCP_UASC_UABINARY) {
-            OpcTcpServerTransportConfig transportConfig =
-                OpcTcpServerTransportConfig.newBuilder().build();
-
-            return new OpcTcpServerTransport(transportConfig);
-          }
-          return null;
-        };
-
-    server = new OpcUaServer(serverConfigBuilder.build(), transportFactory);
-
-    server.getNamespaceTable().set(2, DemoNamespace.NAMESPACE_URI);
-
-    boolean dataTypeTestEnabled = config.getBoolean("address-space.data-type-test.enabled");
-    if (dataTypeTestEnabled) {
-      server.getNamespaceTable().set(3, DataTypeTestNamespace.NAMESPACE_URI);
-      var dataTypeTestNamespace = DataTypeTestNamespace.create(server);
-      dataTypeTestNamespace.startup();
+  private static void closeAfterConstructionFailure(
+      Throwable failure, FileBasedTrustListManager... managers) {
+    for (FileBasedTrustListManager manager : managers) {
+      try {
+        manager.close();
+      } catch (IOException e) {
+        failure.addSuppressed(e);
+      }
     }
+  }
 
-    var demoNamespace = new DemoNamespace(server, config);
-    demoNamespace.startup();
+  private static OpcServerTransportFactory createDefaultTransportFactory() {
+    return transportProfile -> {
+      if (transportProfile == TransportProfile.TCP_UASC_UABINARY) {
+        OpcTcpServerTransportConfig transportConfig =
+            OpcTcpServerTransportConfig.newBuilder().build();
 
-    boolean gdsPushEnabled = config.getBoolean("gds-push-enabled");
-
-    if (gdsPushEnabled) {
-      ServerConfigurationTypeNode serverConfigurationNode =
-          server
-              .getAddressSpaceManager()
-              .getManagedNode(NodeIds.ServerConfiguration)
-              .map(ServerConfigurationTypeNode.class::cast)
-              .orElseThrow();
-
-      var serverConfigurationObject =
-          new ServerConfigurationObject(server, serverConfigurationNode);
-      serverConfigurationObject.startup();
-    }
-
-    server.getAddressSpaceManager().getManagedNode(NodeIds.Aliases).ifPresent(UaNode::delete);
-    server.getAddressSpaceManager().getManagedNode(NodeIds.Locations).ifPresent(UaNode::delete);
+        return new OpcTcpServerTransport(transportConfig);
+      }
+      return null;
+    };
   }
 
   @Override
   protected void onStartup() {
-    server.startup();
+    try {
+      startServer();
+    } catch (RuntimeException | Error e) {
+      // A failed startup leaves this lifecycle stopped, so onShutdown() never runs to close these.
+      closeTrustListManagers();
+      throw e;
+    }
+  }
+
+  private void startServer() {
+    // The SDK starts every registered participant and rolls the started ones back if any of them,
+    // or the rest of startup, fails. Joining is what makes such a failure, or a configuration that
+    // binds no endpoint at all, visible here instead of only in the log.
+    await(server.startup(), "startup");
+    try {
+      if (registrationService != null) {
+        registrationService.start();
+      }
+    } catch (RuntimeException | Error e) {
+      try {
+        registrationService.close();
+      } finally {
+        try {
+          await(server.shutdown(), "startup rollback");
+        } catch (RuntimeException cleanup) {
+          e.addSuppressed(cleanup);
+        }
+      }
+      throw e;
+    }
   }
 
   @Override
   protected void onShutdown() {
-    server.shutdown();
+    // OpcUaServer.shutdown() stops reverse-connect activity, unbinds transports, closes sessions,
+    // then stops the participants in reverse registration order while the standard address space
+    // is still in place.
+    try {
+      if (registrationService != null) {
+        registrationService.close();
+      }
+    } finally {
+      try {
+        await(server.shutdown(), "shutdown");
+      } finally {
+        closeTrustListManagers();
+      }
+    }
+  }
+
+  private void closeTrustListManagers() {
+    for (FileBasedTrustListManager manager : List.of(trustListManager, userTrustListManager)) {
+      try {
+        manager.close();
+      } catch (IOException e) {
+        LoggerFactory.getLogger(OpcUaDemoServer.class).warn("Failed to close trust list", e);
+      }
+    }
+  }
+
+  private static void await(CompletableFuture<OpcUaServer> future, String operation) {
+    try {
+      future.join();
+    } catch (CompletionException e) {
+      Throwable cause = e.getCause() != null ? e.getCause() : e;
+
+      throw new RuntimeException(
+          "OPC UA server %s failed: %s".formatted(operation, cause.getMessage()), cause);
+    }
   }
 
   /**
@@ -249,6 +461,45 @@ public class OpcUaDemoServer extends AbstractLifecycle {
    */
   public OpcUaServer getServer() {
     return server;
+  }
+
+  private void configureStandardServerNodes(boolean gdsPushEnabled) {
+    /*
+     * OPC 10000-5 §6.3.1 defines LocalTime as an optional TimeZoneDataType. OPC 10000-3 §8.28
+     * defines its UTC offset in minutes and whether daylight saving time is included in that
+     * offset. A read filter keeps both fields current when the JVM default time zone or DST state
+     * changes.
+     */
+    UaVariableNode localTimeNode =
+        server
+            .getAddressSpaceManager()
+            .getManagedNode(NodeIds.Server_LocalTime)
+            .map(UaVariableNode.class::cast)
+            .orElseThrow();
+
+    localTimeNode
+        .getFilterChain()
+        .addLast(
+            AttributeFilters.getValue(
+                _ -> new DataValue(new Variant(localTime(ZoneId.systemDefault(), Instant.now())))));
+
+    UNSUPPORTED_STANDARD_SERVER_NODES.forEach(
+        nodeId -> server.getAddressSpaceManager().getManagedNode(nodeId).ifPresent(UaNode::delete));
+
+    // OPC 10000-12 §7.10.4 ties this well-known instance to Push Management support.
+    if (!gdsPushEnabled) {
+      server
+          .getAddressSpaceManager()
+          .getManagedNode(NodeIds.ServerConfiguration)
+          .ifPresent(UaNode::delete);
+    }
+  }
+
+  static TimeZoneDataType localTime(ZoneId zoneId, Instant instant) {
+    ZoneRules rules = zoneId.getRules();
+    short offsetMinutes = (short) (rules.getOffset(instant).getTotalSeconds() / 60);
+
+    return new TimeZoneDataType(offsetMinutes, rules.isDaylightSavings(instant));
   }
 
   private UsernameIdentityValidator createUsernameIdentityValidator() {
@@ -267,15 +518,12 @@ public class OpcUaDemoServer extends AbstractLifecycle {
         });
   }
 
-  private X509IdentityValidator createX509IdentityValidator(Path userPkiDirPath)
-      throws IOException {
-
-    var userTrustListManager = FileBasedTrustListManager.createAndInitialize(userPkiDirPath);
-
+  private X509IdentityValidator createX509IdentityValidator(TrustListManager userTrustListManager) {
+    // Milo always enforces established revocation; this set controls only optional checks.
     var validator =
         new DefaultServerCertificateValidator(
             userTrustListManager,
-            Set.of(ValidationCheck.VALIDITY, ValidationCheck.REVOCATION),
+            Set.of(ValidationCheck.VALIDITY),
             new MemoryCertificateQuarantine());
 
     Predicate<X509Certificate> validate =
@@ -298,10 +546,11 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     var manufacturerName = "digitalpetri";
     var productName = "Eclipse Milo OPC UA Demo Server";
 
-    var softwareVersion = ManifestUtil.read(PROPERTY_SOFTWARE_VERSION).orElse("dev");
-    var buildNumber = ManifestUtil.read(PROPERTY_BUILD_NUMBER).orElse("dev");
-    var buildDate =
-        ManifestUtil.read(PROPERTY_BUILD_DATE)
+    String softwareVersion = readSoftwareVersion().orElse("dev");
+    String buildNumber =
+        readBuildProperty(BuildProperties.BUILD_NUMBER, PROPERTY_BUILD_NUMBER).orElse("dev");
+    DateTime buildDate =
+        readBuildProperty(BuildProperties.BUILD_DATE, PROPERTY_BUILD_DATE)
             .map(
                 date -> {
                   try {
@@ -316,39 +565,61 @@ public class OpcUaDemoServer extends AbstractLifecycle {
         PRODUCT_URI, manufacturerName, productName, softwareVersion, buildNumber, buildDate);
   }
 
-  private Set<EndpointConfig> createEndpointConfigs(
-      Config config, Supplier<X509Certificate> certificate) {
+  private static Optional<String> readSoftwareVersion() {
+    return readBuildProperty(BuildProperties.SOFTWARE_VERSION, PROPERTY_SOFTWARE_VERSION);
+  }
+
+  /**
+   * Reads build metadata, preferring the filtered {@code build-info.properties} resource and
+   * falling back to the shaded JAR's manifest.
+   *
+   * @param propertyKey the {@link BuildProperties} key.
+   * @param manifestAttribute the manifest attribute holding the same value.
+   * @return the value, or empty if neither source has it.
+   */
+  private static Optional<String> readBuildProperty(String propertyKey, String manifestAttribute) {
+    return BuildProperties.read(propertyKey).or(() -> ManifestUtil.read(manifestAttribute));
+  }
+
+  private Set<EndpointConfig> createEndpointConfigs(Config config) {
     var endpointConfigs = new LinkedHashSet<EndpointConfig>();
 
     List<String> bindAddresses = config.getStringList("bind-address-list");
     int bindPort = config.getInt("bind-port");
-    List<String> securityPolicies = config.getStringList("security-policy-list");
+    List<SecurityPolicy> securityPolicies = getSecurityPolicies(config);
     List<String> securityModes = config.getStringList("security-mode-list");
 
     for (String bindAddress : bindAddresses) {
       Set<String> hostnames = getEndpointHostnames(config);
 
       for (String hostname : hostnames) {
-        EndpointConfig.Builder builder = EndpointConfig.newBuilder();
-        builder
+        EndpointConfig.Builder baseBuilder = EndpointConfig.newBuilder();
+        baseBuilder
             .setTransportProfile(TransportProfile.TCP_UASC_UABINARY)
             .setBindAddress(bindAddress)
             .setBindPort(bindPort)
             .setHostname(hostname)
-            .setPath("/milo")
-            .setCertificate(certificate)
-            .addTokenPolicies(
-                USER_TOKEN_POLICY_ANONYMOUS, USER_TOKEN_POLICY_USERNAME, USER_TOKEN_POLICY_X509);
+            .setPath("/milo");
 
-        for (String securityPolicyString : securityPolicies) {
-          SecurityPolicy securityPolicy = SecurityPolicy.valueOf(securityPolicyString);
+        for (SecurityPolicy securityPolicy : securityPolicies) {
+          EndpointConfig.Builder policyBuilder = baseBuilder.copy();
+          policyBuilder.setSecurityPolicy(securityPolicy);
+          addTokenPolicies(policyBuilder, securityPolicy);
 
+          // No endpoint gets a fixed certificate. A managed identity is re-selected from the
+          // DefaultApplicationGroup whenever the endpoint cache is reset, so a certificate pushed
+          // by
+          // a GDS reaches every endpoint; a fixed certificate would stay stale until restart.
           if (securityPolicy == SecurityPolicy.None) {
-            // No need to iterate over security modes for the None policy.
-            builder.setSecurityPolicy(securityPolicy).setSecurityMode(MessageSecurityMode.None);
-
-            endpointConfigs.add(builder.build());
+            // Left implicit: the SDK selects the RSA certificate encrypted UserName tokens need
+            // and,
+            // if none is available, still advertises the endpoint without one.
+            endpointConfigs.add(policyBuilder.setSecurityMode(MessageSecurityMode.None).build());
           } else {
+            // Explicit: select the RSA or ECC type preferred by this endpoint's security policy.
+            policyBuilder.setEndpointCertificateConfig(
+                EndpointCertificateConfig.newBuilder().build());
+
             for (String securityModeString : securityModes) {
               MessageSecurityMode securityMode = MessageSecurityMode.valueOf(securityModeString);
 
@@ -357,9 +628,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
                 continue;
               }
 
-              builder.setSecurityPolicy(securityPolicy).setSecurityMode(securityMode);
-
-              endpointConfigs.add(builder.build());
+              endpointConfigs.add(policyBuilder.copy().setSecurityMode(securityMode).build());
             }
           }
         }
@@ -368,16 +637,44 @@ public class OpcUaDemoServer extends AbstractLifecycle {
         // Usage of the "/discovery" suffix is defined by OPC UA Part 6.
 
         EndpointConfig.Builder discoveryBuilder =
-            builder
+            baseBuilder
+                .copy()
                 .setPath("/milo/discovery")
                 .setSecurityPolicy(SecurityPolicy.None)
-                .setSecurityMode(MessageSecurityMode.None);
+                .setSecurityMode(MessageSecurityMode.None)
+                .addTokenPolicies(
+                    USER_TOKEN_POLICY_ANONYMOUS,
+                    USER_TOKEN_POLICY_USERNAME,
+                    USER_TOKEN_POLICY_X509);
 
         endpointConfigs.add(discoveryBuilder.build());
       }
     }
 
     return endpointConfigs;
+  }
+
+  private static List<SecurityPolicy> getSecurityPolicies(Config config) {
+    return config.getStringList("security-policy-list").stream()
+        .map(SecurityPolicy::valueOf)
+        .toList();
+  }
+
+  private static void addTokenPolicies(
+      EndpointConfig.Builder builder, SecurityPolicy securityPolicy) {
+
+    if (securityPolicy == SecurityPolicy.None) {
+      // Tokens still need RSA password encryption and certificate signatures on unsecured channels.
+      builder.addTokenPolicies(
+          USER_TOKEN_POLICY_ANONYMOUS, USER_TOKEN_POLICY_USERNAME, USER_TOKEN_POLICY_X509);
+    } else {
+      builder.addTokenPolicies(
+          USER_TOKEN_POLICY_ANONYMOUS,
+          new UserTokenPolicy(
+              "username", UserTokenType.UserName, null, null, securityPolicy.getUri()),
+          new UserTokenPolicy(
+              "certificate", UserTokenType.Certificate, null, null, securityPolicy.getUri()));
+    }
   }
 
   private Set<String> getEndpointHostnames(Config config) {
@@ -481,7 +778,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
   // region Bootstrap
 
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] ignoredArgs) throws Exception {
     // start running this static initializer ASAP, it measurably affects startup time.
     new Thread(
             () -> {
@@ -517,24 +814,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     // Load configuration
     Path configFilePath = dataDirPath.resolve("server.conf");
 
-    InputStream defaultConfigInputStream =
-        OpcUaDemoServer.class.getClassLoader().getResourceAsStream("default-server.conf");
-
-    assert defaultConfigInputStream != null;
-
-    // If the config file doesn't exist, copy the default from the classpath.
-    if (!configFilePath.toFile().exists()) {
-      Files.copy(defaultConfigInputStream, configFilePath);
-    }
-
-    Config defaultConfig =
-        ConfigFactory.parseReader(new InputStreamReader(defaultConfigInputStream));
-
-    Config userConfig = ConfigFactory.parseFile(configFilePath.toFile());
-
-    // Load the user config and merge it with the default config in case anything is missing.
-    // This also allows the user config to contain only override values.
-    Config config = userConfig.withFallback(defaultConfig);
+    Config config = loadConfiguration(configFilePath);
 
     var server = new OpcUaDemoServer(dataDirPath, config);
     server.startup();
@@ -542,8 +822,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     long startupDuration =
         TimeUnit.MILLISECONDS.convert(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
 
-    String version =
-        ManifestUtil.read(PROPERTY_SOFTWARE_VERSION).map("v%s"::formatted).orElse("(dev version)");
+    String version = readSoftwareVersion().map("v%s"::formatted).orElse("(dev version)");
 
     Logger logger = LoggerFactory.getLogger(OpcUaDemoServer.class);
     logger.info("Eclipse Milo OPC UA Demo Server {} started in {}ms", version, startupDuration);
@@ -553,6 +832,33 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     logger.info("security pki dir: {}", dataDirPath.resolve("security").resolve("pki"));
 
     waitForShutdownHook(server);
+  }
+
+  /**
+   * Loads user overrides with independent classpath defaults and resolves environment
+   * substitutions.
+   *
+   * @param configFilePath the configuration file to create on first use or read.
+   * @return the resolved configuration.
+   * @throws IOException if the default file cannot be copied.
+   */
+  public static Config loadConfiguration(Path configFilePath) throws IOException {
+    if (Files.notExists(configFilePath)) {
+      try (InputStream defaults =
+          OpcUaDemoServer.class.getClassLoader().getResourceAsStream("default-server.conf")) {
+        if (defaults == null) throw new IOException("Missing default-server.conf");
+        Files.copy(defaults, configFilePath);
+      }
+    }
+    try {
+      return ConfigFactory.parseFile(configFilePath.toFile())
+          .withFallback(ConfigFactory.parseResources("default-server.conf"))
+          .resolve();
+    } catch (ConfigException e) {
+      // HOCON diagnostics may render identity values. Do not attach the original exception.
+      throw new IllegalArgumentException(
+          "Unable to load server.conf; check syntax and required substitutions, including gds.registration.identity.password");
+    }
   }
 
   private static void waitForShutdownHook(OpcUaDemoServer server) throws InterruptedException {

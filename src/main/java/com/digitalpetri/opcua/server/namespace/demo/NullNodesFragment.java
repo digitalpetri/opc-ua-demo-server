@@ -2,19 +2,14 @@ package com.digitalpetri.opcua.server.namespace.demo;
 
 import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
 
-import java.util.List;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.items.DataItem;
-import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode.UaVariableNodeBuilder;
-import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -22,10 +17,9 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 
-public class NullNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+public class NullNodesFragment extends DemoAddressSpaceFragment {
 
   private final SimpleAddressSpaceFilter filter;
-  private final SubscriptionModel subscriptionModel;
 
   private final DemoNamespace namespace;
 
@@ -35,9 +29,6 @@ public class NullNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle 
     this.namespace = namespace;
 
     filter = SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);
-
-    subscriptionModel = new SubscriptionModel(server, this);
-    getLifecycleManager().addLifecycle(subscriptionModel);
 
     getLifecycleManager().addStartupTask(this::addNullNodes);
   }
@@ -90,25 +81,5 @@ public class NullNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle 
   @Override
   public AddressSpaceFilter getFilter() {
     return filter;
-  }
-
-  @Override
-  public void onDataItemsCreated(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsCreated(dataItems);
-  }
-
-  @Override
-  public void onDataItemsModified(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsModified(dataItems);
-  }
-
-  @Override
-  public void onDataItemsDeleted(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsDeleted(dataItems);
-  }
-
-  @Override
-  public void onMonitoringModeChanged(List<MonitoredItem> monitoredItems) {
-    subscriptionModel.onMonitoringModeChanged(monitoredItems);
   }
 }

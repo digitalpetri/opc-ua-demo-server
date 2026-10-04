@@ -1,5 +1,6 @@
 package com.digitalpetri.opcua.server.namespace.demo;
 
+import static com.digitalpetri.opcua.server.DemoConfigLimits.MIN_SUPPORTED_SAMPLE_RATE;
 import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
@@ -28,22 +29,17 @@ import com.digitalpetri.opcua.test.types.TestEnumType;
 import com.digitalpetri.opcua.test.types.UnionOfArray;
 import com.digitalpetri.opcua.test.types.UnionOfMatrix;
 import com.digitalpetri.opcua.test.types.UnionOfScalar;
-import java.util.List;
 import java.util.UUID;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.items.DataItem;
-import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode.UaVariableNodeBuilder;
-import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
@@ -69,13 +65,12 @@ import org.eclipse.milo.opcua.stack.core.types.structured.AccessLevelType;
 import org.eclipse.milo.opcua.stack.core.types.structured.AccessRestrictionType;
 import org.eclipse.milo.opcua.stack.core.types.structured.XVType;
 
-public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+public class DataTypeTestNodesFragment extends DemoAddressSpaceFragment {
 
   private final DemoNamespace namespace;
   private final UShort namespaceIndex;
 
   private final SimpleAddressSpaceFilter filter;
-  private final SubscriptionModel subscriptionModel;
 
   public DataTypeTestNodesFragment(OpcUaServer server, DemoNamespace namespace) {
     super(server, namespace);
@@ -85,35 +80,12 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
 
     filter = SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);
 
-    subscriptionModel = new SubscriptionModel(server, this);
-    getLifecycleManager().addLifecycle(subscriptionModel);
-
     getLifecycleManager().addStartupTask(this::addDataTypeTestNodes);
   }
 
   @Override
   public AddressSpaceFilter getFilter() {
     return filter;
-  }
-
-  @Override
-  public void onDataItemsCreated(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsCreated(dataItems);
-  }
-
-  @Override
-  public void onDataItemsModified(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsModified(dataItems);
-  }
-
-  @Override
-  public void onDataItemsDeleted(List<DataItem> dataItems) {
-    subscriptionModel.onDataItemsDeleted(dataItems);
-  }
-
-  @Override
-  public void onMonitoringModeChanged(List<MonitoredItem> monitoredItems) {
-    subscriptionModel.onMonitoringModeChanged(monitoredItems);
   }
 
   private void addDataTypeTestNodes() {
@@ -184,7 +156,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
         .setDataType(NodeIds.Structure)
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     ExtensionObject xo =
         ExtensionObject.encode(
@@ -217,7 +189,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
         .setArrayDimensions(new UInteger[] {uint(0)})
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     ExtensionObject[] array =
         new ExtensionObject[] {
@@ -255,7 +227,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
         .setArrayDimensions(new UInteger[] {uint(0), uint(0)})
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     Matrix matrix =
         Matrix.ofExtensionObject(
@@ -304,7 +276,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var value = TestEnumType.A;
     builder.setValue(new DataValue(Variant.ofEnum(value)));
@@ -335,7 +307,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
         .setArrayDimensions(new UInteger[] {uint(0)})
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var value = new TestEnumType[] {TestEnumType.A, TestEnumType.B};
     builder.setValue(new DataValue(Variant.of(value)));
@@ -366,7 +338,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
         .setArrayDimensions(new UInteger[] {uint(0), uint(0)})
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var value =
         Matrix.ofEnum(
@@ -400,7 +372,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct = UnionOfScalar.ofBoolean(true);
 
@@ -430,7 +402,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct = UnionOfArray.ofBoolean(new Boolean[] {true, false});
 
@@ -460,7 +432,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         UnionOfMatrix.ofBoolean(Matrix.ofBoolean(new Boolean[][] {{true, false}, {false, true}}));
@@ -491,7 +463,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct = new ConcreteTestType((short) 0, 0.0, "", false);
 
@@ -521,7 +493,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct = new ConcreteTestType((short) 0, 0.0, "", false);
 
@@ -553,7 +525,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
         .setArrayDimensions(new UInteger[] {uint(0)})
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     ExtensionObject[] array =
         new ExtensionObject[] {
@@ -593,7 +565,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
         .setArrayDimensions(new UInteger[] {uint(0), uint(0)})
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     Matrix matrix =
         Matrix.ofExtensionObject(
@@ -642,7 +614,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct = new ConcreteTestTypeEx((short) 0, 0.0, "", false, uint(0));
 
@@ -673,7 +645,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         new StructWithAbstractScalarFields(
@@ -708,7 +680,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         new StructWithAbstractArrayFields(
@@ -749,7 +721,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         new StructWithAbstractMatrixFields(
@@ -804,7 +776,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         new StructWithBuiltinScalarFields(
@@ -859,7 +831,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         new StructWithBuiltinArrayFields(
@@ -917,7 +889,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         new StructWithBuiltinMatrixFields(
@@ -1022,7 +994,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         new StructWithBuiltinScalarFieldsEx(
@@ -1091,7 +1063,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         new StructWithBuiltinArrayFieldsEx(
@@ -1166,7 +1138,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         new StructWithBuiltinMatrixFieldsEx(
@@ -1330,7 +1302,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         new StructWithOptionalScalarFields(
@@ -1370,7 +1342,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         new StructWithOptionalArrayFields(
@@ -1416,7 +1388,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     var struct =
         new StructWithOptionalMatrixFields(
@@ -1476,7 +1448,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     EncodingContext encodingContext = getNodeContext().getServer().getStaticEncodingContext();
 
@@ -1515,7 +1487,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     EncodingContext encodingContext = getNodeContext().getServer().getStaticEncodingContext();
 
@@ -1558,7 +1530,7 @@ public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLi
                 .orElseThrow())
         .setAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
         .setUserAccessLevel(AccessLevel.toValue(AccessLevel.READ_WRITE))
-        .setMinimumSamplingInterval(0.0);
+        .setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE);
 
     EncodingContext encodingContext = getNodeContext().getServer().getStaticEncodingContext();
 

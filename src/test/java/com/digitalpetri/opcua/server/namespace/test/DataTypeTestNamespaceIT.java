@@ -1,8 +1,8 @@
 package com.digitalpetri.opcua.server.namespace.test;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -18,12 +18,12 @@ import java.util.Map;
 import java.util.Objects;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
-import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseResultMask;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.IdType;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
@@ -67,37 +67,54 @@ class DataTypeTestNamespaceIT {
     }
   }
 
+  // Part 5 §§6.3.13–6.3.14: the generated metadata entry must remain exposed after the demo fills
+  // the three static-NodeId declarations that previously returned Bad_NoValue.
   @Test
-  void generatedNamespaceMetadataNodeIsNotExposed() throws Exception {
+  void generatedNamespaceMetadataIsCompleteAndReadable() throws Exception {
     UShort namespaceIndex =
         server.getServer().getNamespaceTable().getIndex(DataTypeTestNamespace.NAMESPACE_URI);
     assertNotNull(namespaceIndex, "DataTypeTest namespace should be registered");
 
     NodeId metadataNodeId = new NodeId(namespaceIndex, NAMESPACE_METADATA_NODE_ID);
     assertTrue(
-        server.getServer().getAddressSpaceManager().getManagedNode(metadataNodeId).isEmpty(),
-        "generated NamespaceMetadataType node should not be exposed");
-    assertFalse(
-        serverNamespacesContains(DataTypeTestNamespace.NAMESPACE_URI),
-        "Server.Namespaces should not reference the generated NamespaceMetadataType node");
+        server.getServer().getAddressSpaceManager().getManagedNode(metadataNodeId).isPresent(),
+        "generated NamespaceMetadataType node should be exposed");
+    assertTrue(
+        serverNamespacesContains(namespaceIndex, DataTypeTestNamespace.NAMESPACE_URI),
+        "Server.Namespaces should reference the generated NamespaceMetadataType node");
 
-    assertNodeIdUnknown(new NodeId(namespaceIndex, STATIC_NODE_ID_TYPES_NODE_ID));
-    assertNodeIdUnknown(new NodeId(namespaceIndex, STATIC_NUMERIC_NODE_ID_RANGE_NODE_ID));
-    assertNodeIdUnknown(new NodeId(namespaceIndex, STATIC_STRING_NODE_ID_PATTERN_NODE_ID));
+    assertArrayEquals(
+        new Integer[] {IdType.Numeric.getValue()},
+        (Integer[])
+            readGoodValue(namespaceIndex, STATIC_NODE_ID_TYPES_NODE_ID).getValue().getValue());
+    assertArrayEquals(
+        new String[] {"3003:6070"},
+        (String[])
+            readGoodValue(namespaceIndex, STATIC_NUMERIC_NODE_ID_RANGE_NODE_ID)
+                .getValue()
+                .getValue());
+    assertEquals(
+        "",
+        readGoodValue(namespaceIndex, STATIC_STRING_NODE_ID_PATTERN_NODE_ID).getValue().getValue());
   }
 
-  private void assertNodeIdUnknown(NodeId nodeId) throws Exception {
-    DataValue dataValue = client.readValue(0.0, TimestampsToReturn.Neither, nodeId);
+  private DataValue readGoodValue(UShort namespaceIndex, int identifier) throws Exception {
+    NodeId nodeId = new NodeId(namespaceIndex, identifier);
+    DataValue value = client.readValue(0.0, TimestampsToReturn.Neither, nodeId);
 
-    assertEquals(StatusCodes.Bad_NodeIdUnknown, dataValue.getStatusCode().getValue());
+    assertTrue(value.getStatusCode().isGood(), () -> nodeId + " should have a Good value");
+
+    return value;
   }
 
-  private boolean serverNamespacesContains(String browseName) throws Exception {
+  private boolean serverNamespacesContains(UShort namespaceIndex, String browseName)
+      throws Exception {
+
     BrowseDescription browseDescription =
         new BrowseDescription(
             NodeIds.Server_Namespaces,
             BrowseDirection.Forward,
-            null,
+            NodeIds.HasComponent,
             true,
             uint(NodeClass.Object.getValue()),
             uint(BrowseResultMask.All.getValue()));
@@ -107,6 +124,9 @@ class DataTypeTestNamespaceIT {
 
     return references != null
         && Arrays.stream(references)
-            .anyMatch(ref -> Objects.equals(ref.getBrowseName().getName(), browseName));
+            .anyMatch(
+                ref ->
+                    Objects.equals(ref.getBrowseName().getNamespaceIndex(), namespaceIndex)
+                        && Objects.equals(ref.getBrowseName().getName(), browseName));
   }
 }

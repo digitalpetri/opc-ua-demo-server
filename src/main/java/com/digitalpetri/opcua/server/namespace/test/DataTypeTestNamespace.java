@@ -1,13 +1,17 @@
 package com.digitalpetri.opcua.server.namespace.test;
 
+import static com.digitalpetri.opcua.server.DemoConfigLimits.MIN_SUPPORTED_SAMPLE_RATE;
+
 import com.digitalpetri.opcua.test.DataTypeInitializer;
 import com.digitalpetri.opcua.uanodeset.namespace.NodeSetNamespace;
 import java.io.InputStream;
 import java.util.List;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
-import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
+import org.eclipse.milo.opcua.sdk.server.model.objects.NamespaceMetadataTypeNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.IdType;
 
 public class DataTypeTestNamespace extends NodeSetNamespace {
 
@@ -17,9 +21,8 @@ public class DataTypeTestNamespace extends NodeSetNamespace {
   public DataTypeTestNamespace(OpcUaServer server) {
     super(server, NAMESPACE_URI);
 
-    // OPC UA Part 5 permits omitting namespace metadata entries when mandatory
-    // NamespaceMetadataType properties cannot be populated from the namespace.
-    getLifecycleManager().addStartupTask(this::deleteNamespaceMetadataNode);
+    getLifecycleManager().addStartupTask(this::configureNamespaceMetadataNode);
+    getLifecycleManager().addStartupTask(this::configureMinimumSamplingIntervals);
   }
 
   @Override
@@ -45,9 +48,29 @@ public class DataTypeTestNamespace extends NodeSetNamespace {
     return namespace;
   }
 
-  private void deleteNamespaceMetadataNode() {
+  private void configureNamespaceMetadataNode() {
     NodeId nodeId = new NodeId(getNamespaceIndex(), NAMESPACE_METADATA_NODE_ID);
 
-    getNodeManager().getNode(nodeId).ifPresent(UaNode::delete);
+    NamespaceMetadataTypeNode metadataNode =
+        getNodeManager()
+            .getNode(nodeId)
+            .map(NamespaceMetadataTypeNode.class::cast)
+            .orElseThrow(() -> new IllegalStateException("missing namespace metadata: " + nodeId));
+
+    // Part 5 §6.3.13: this generated NodeSet contains only static numeric NodeIds. The declared
+    // range covers every numeric NodeId in DataTypeTest.NodeSet.xml; the String pattern is ignored
+    // but remains a readable mandatory Property.
+    metadataNode.setStaticNodeIdTypes(new IdType[] {IdType.Numeric});
+    metadataNode.setStaticNumericNodeIdRange(new String[] {"3003:6070"});
+    metadataNode.setStaticStringNodeIdPattern("");
+  }
+
+  private void configureMinimumSamplingIntervals() {
+    // The NodeSet declares no MinimumSamplingInterval, so every Variable would report the schema
+    // default of 0, an interval the server never samples at.
+    getNodeManager().getNodes().stream()
+        .filter(node -> node instanceof UaVariableNode)
+        .map(UaVariableNode.class::cast)
+        .forEach(node -> node.setMinimumSamplingInterval(MIN_SUPPORTED_SAMPLE_RATE));
   }
 }

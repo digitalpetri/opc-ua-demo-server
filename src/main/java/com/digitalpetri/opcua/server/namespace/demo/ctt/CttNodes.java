@@ -1,26 +1,26 @@
 package com.digitalpetri.opcua.server.namespace.demo.ctt;
 
+import com.digitalpetri.opcua.server.namespace.demo.DemoAddressSpaceFragment;
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
-import java.util.List;
+import com.digitalpetri.opcua.server.namespace.demo.ctt.AlarmsAndConditionsFragment.OptionalStateConfig;
+import com.typesafe.config.Config;
+import java.time.Duration;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.Lifecycle;
 import org.eclipse.milo.opcua.sdk.server.LifecycleManager;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.items.DataItem;
-import org.eclipse.milo.opcua.sdk.server.items.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
-import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.ReferenceTypes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
+import org.jspecify.annotations.Nullable;
 
 public class CttNodes extends AddressSpaceComposite implements Lifecycle {
 
@@ -62,6 +62,42 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
     var securityAccessFragment =
         new SecurityAccessFragment(server, this, rootFragment.getCttFolderNodeId(), namespaceIndex);
     lifecycleManager.addLifecycle(securityAccessFragment);
+
+    Config config = namespace.getConfig();
+
+    boolean alarmsAndConditionsEnabled =
+        config.getBoolean("address-space.ctt.alarms-and-conditions.enabled");
+    if (alarmsAndConditionsEnabled) {
+      Duration dwellTime = config.getDuration("address-space.ctt.alarms-and-conditions.dwell-time");
+      var alarmsAndConditionsFragment =
+          new AlarmsAndConditionsFragment(
+              server,
+              this,
+              rootFragment.getCttFolderNodeId(),
+              namespaceIndex,
+              dwellTime,
+              optionalStateConfig(config));
+      lifecycleManager.addLifecycle(alarmsAndConditionsFragment);
+    }
+  }
+
+  /**
+   * Read the optional-state (Confirm, Shelving) fixture configuration, or {@code null} when those
+   * fixtures are disabled.
+   */
+  private static @Nullable OptionalStateConfig optionalStateConfig(Config config) {
+    String prefix = "address-space.ctt.alarms-and-conditions.optional-state-fixtures.";
+
+    if (!config.getBoolean(prefix + "enabled")) {
+      return null;
+    }
+
+    return new OptionalStateConfig(
+        config.getDuration(prefix + "confirm-dwell-time"),
+        config.getDuration(prefix + "shelving-dwell-time"),
+        config.getDuration(prefix + "shelving-heartbeat-interval"),
+        config.getDuration(prefix + "shelving-cycling-max-time-shelved"),
+        config.getDuration(prefix + "shelving-steady-max-time-shelved"));
   }
 
   public NodeId getCttFolderNodeId() {
@@ -82,7 +118,7 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
     lifecycleManager.shutdown();
   }
 
-  private static class RootFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+  private static class RootFragment extends DemoAddressSpaceFragment {
 
     private final AddressSpaceFilter filter =
         SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);
@@ -90,15 +126,10 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
     private final UaFolderNode cttFolder;
     private final UaFolderNode staticFolder;
 
-    private final SubscriptionModel subscriptionModel;
-
     public RootFragment(
         OpcUaServer server, AddressSpaceComposite composite, UShort namespaceIndex) {
 
       super(server, composite);
-
-      subscriptionModel = new SubscriptionModel(server, composite);
-      getLifecycleManager().addLifecycle(subscriptionModel);
 
       cttFolder =
           new UaFolderNode(
@@ -148,26 +179,6 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
     @Override
     public AddressSpaceFilter getFilter() {
       return filter;
-    }
-
-    @Override
-    public void onDataItemsCreated(List<DataItem> dataItems) {
-      subscriptionModel.onDataItemsCreated(dataItems);
-    }
-
-    @Override
-    public void onDataItemsModified(List<DataItem> dataItems) {
-      subscriptionModel.onDataItemsModified(dataItems);
-    }
-
-    @Override
-    public void onDataItemsDeleted(List<DataItem> dataItems) {
-      subscriptionModel.onDataItemsDeleted(dataItems);
-    }
-
-    @Override
-    public void onMonitoringModeChanged(List<MonitoredItem> monitoredItems) {
-      subscriptionModel.onMonitoringModeChanged(monitoredItems);
     }
   }
 }

@@ -2,7 +2,7 @@ package com.digitalpetri.opcua.server;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import java.net.InetAddress;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.file.Files;
@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import org.eclipse.milo.opcua.stack.transport.server.OpcServerTransportFactory;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -99,37 +100,49 @@ public class OpcUaTestServerBuilder {
    * @throws Exception if server creation fails.
    */
   public OpcUaDemoServer build() throws Exception {
-    // Create a data directory if not provided
+    return new OpcUaDemoServer(resolveDataDir(), buildTestConfig());
+  }
+
+  /**
+   * Build the OPC UA Demo Server with a test-supplied transport factory.
+   *
+   * @param transportFactory the transport factory used by the SDK server.
+   * @return configured server instance.
+   * @throws Exception if server creation fails.
+   */
+  public OpcUaDemoServer build(OpcServerTransportFactory transportFactory) throws Exception {
+    return new OpcUaDemoServer(resolveDataDir(), buildTestConfig(), transportFactory);
+  }
+
+  private Path resolveDataDir() throws IOException {
     Path effectiveDataDir = dataDir;
     if (effectiveDataDir == null) {
       effectiveDataDir = Files.createTempDirectory("opcua-test-");
     }
 
-    // Ensure data directory exists
     if (!Files.exists(effectiveDataDir)) {
       Files.createDirectories(effectiveDataDir);
     }
 
-    // Build test configuration
-    Config config = buildTestConfig();
-
-    return new OpcUaDemoServer(effectiveDataDir, config);
+    return effectiveDataDir;
   }
 
   /**
-   * Find an available port by trying to bind to a random port in the range 10000-65535. If binding
+   * Find an available port by trying to bind to a random port in the range 10000-32767. If binding
    * fails, recursively tries again with a new random port.
+   *
+   * <p>The port is released before the server binds it. Staying below the ephemeral port ranges
+   * (32768-60999 on Linux, 49152-65535 on Windows and macOS) keeps outgoing connections, such as
+   * those from test clients, from taking it in between. The check binds the wildcard address, as
+   * the server does, so a socket bound to any local address makes the port unavailable.
    *
    * @return an available port number.
    */
   private static int findAvailablePort() {
-    var port = new Random().nextInt(65535 - 10000) + 10000;
+    var port = new Random().nextInt(32768 - 10000) + 10000;
 
-    try {
-      var ss = new ServerSocket();
-      var isa = new InetSocketAddress(InetAddress.getLocalHost(), port);
-      ss.bind(isa);
-      ss.close();
+    try (var ss = new ServerSocket()) {
+      ss.bind(new InetSocketAddress(port));
       return port;
     } catch (Throwable t) {
       // Port not available, try again
@@ -158,7 +171,20 @@ public class OpcUaTestServerBuilder {
 
     // Address space configuration - disable all optional features for faster startup
     var addressSpace = new HashMap<String, Object>();
+    addressSpace.put("aliases.enabled", true);
+    addressSpace.put("aliases.find-alias-verbose-enabled", true);
+    addressSpace.put("alarms.enabled", false);
+    addressSpace.put("alarms.tick-interval", "1 second");
     addressSpace.put("ctt.enabled", false);
+    addressSpace.put("ctt.alarms-and-conditions.enabled", false);
+    addressSpace.put("ctt.alarms-and-conditions.dwell-time", "6 seconds");
+    String optionalStateFixtures = "ctt.alarms-and-conditions.optional-state-fixtures.";
+    addressSpace.put(optionalStateFixtures + "enabled", false);
+    addressSpace.put(optionalStateFixtures + "confirm-dwell-time", "20 seconds");
+    addressSpace.put(optionalStateFixtures + "shelving-dwell-time", "20 seconds");
+    addressSpace.put(optionalStateFixtures + "shelving-heartbeat-interval", "10 seconds");
+    addressSpace.put(optionalStateFixtures + "shelving-cycling-max-time-shelved", "90 seconds");
+    addressSpace.put(optionalStateFixtures + "shelving-steady-max-time-shelved", "30 seconds");
     addressSpace.put("data-type-test.enabled", false);
     addressSpace.put("dynamic.enabled", false);
     addressSpace.put("mass.enabled", false);
