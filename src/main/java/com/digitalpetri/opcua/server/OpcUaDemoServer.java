@@ -136,6 +136,13 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
   private final @Nullable GdsRegistrationService registrationService;
 
+  /*
+   * Each of these watches its directories, holding an inotify instance and a thread, until it is
+   * closed. Nothing in the SDK closes them, so this lifecycle does.
+   */
+  private final FileBasedTrustListManager trustListManager;
+  private final FileBasedTrustListManager userTrustListManager;
+
   public OpcUaDemoServer(Path dataDirPath, Config config) throws Exception {
     this(dataDirPath, config, createDefaultTransportFactory());
   }
@@ -178,7 +185,8 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     CertificateQuarantine certificateQuarantine =
         new FileBasedCertificateQuarantine(rejectedDirPath.toFile());
 
-    TrustListManager trustListManager = FileBasedTrustListManager.createAndInitialize(pkiDirPath);
+    trustListManager = FileBasedTrustListManager.createAndInitialize(pkiDirPath);
+    userTrustListManager = FileBasedTrustListManager.createAndInitialize(userPkiDirPath);
 
     final CertificateValidator certificateValidator;
 
@@ -261,7 +269,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
             new CompositeValidator(
                 AnonymousIdentityValidator.INSTANCE,
                 createUsernameIdentityValidator(),
-                createX509IdentityValidator(userPkiDirPath)))
+                createX509IdentityValidator(userTrustListManager)))
         .setRoleMapper(new DemoRoleMapper())
         .setLimits(new DemoConfigLimits());
 
@@ -353,6 +361,16 @@ public class OpcUaDemoServer extends AbstractLifecycle {
 
   @Override
   protected void onStartup() {
+    try {
+      startServer();
+    } catch (RuntimeException | Error e) {
+      // A failed startup leaves this lifecycle stopped, so onShutdown() never runs to close these.
+      closeTrustListManagers();
+      throw e;
+    }
+  }
+
+  private void startServer() {
     // The SDK starts every registered participant and rolls the started ones back if any of them,
     // or the rest of startup, fails. Joining is what makes such a failure, or a configuration that
     // binds no endpoint at all, visible here instead of only in the log.
@@ -385,7 +403,21 @@ public class OpcUaDemoServer extends AbstractLifecycle {
         registrationService.close();
       }
     } finally {
-      await(server.shutdown(), "shutdown");
+      try {
+        await(server.shutdown(), "shutdown");
+      } finally {
+        closeTrustListManagers();
+      }
+    }
+  }
+
+  private void closeTrustListManagers() {
+    for (FileBasedTrustListManager manager : List.of(trustListManager, userTrustListManager)) {
+      try {
+        manager.close();
+      } catch (IOException e) {
+        LoggerFactory.getLogger(OpcUaDemoServer.class).warn("Failed to close trust list", e);
+      }
     }
   }
 
@@ -464,11 +496,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
         });
   }
 
-  private X509IdentityValidator createX509IdentityValidator(Path userPkiDirPath)
-      throws IOException {
-
-    var userTrustListManager = FileBasedTrustListManager.createAndInitialize(userPkiDirPath);
-
+  private X509IdentityValidator createX509IdentityValidator(TrustListManager userTrustListManager) {
     var validator =
         new DefaultServerCertificateValidator(
             userTrustListManager,
