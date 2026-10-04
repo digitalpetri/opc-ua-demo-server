@@ -357,22 +357,23 @@ public class TrustListObject extends FileObject {
         InvocationContext context, ByteString certificate, Boolean isTrustedCertificate)
         throws UaException {
 
-      requireNoActiveTransaction();
+      transactions.applyImmediately(
+          () -> {
+            try {
+              X509Certificate x509Certificate =
+                  CertificateUtil.decodeCertificate(certificate.bytesOrEmpty());
 
-      try {
-        X509Certificate x509Certificate =
-            CertificateUtil.decodeCertificate(certificate.bytesOrEmpty());
+              if (isTrustedCertificate) {
+                trustListManager.addTrustedCertificate(x509Certificate);
+              } else {
+                trustListManager.addIssuerCertificate(x509Certificate);
+              }
 
-        if (isTrustedCertificate) {
-          trustListManager.addTrustedCertificate(x509Certificate);
-        } else {
-          trustListManager.addIssuerCertificate(x509Certificate);
-        }
-
-        certificateQuarantine.removeRejectedCertificate(x509Certificate);
-      } catch (Exception e) {
-        throw new UaException(StatusCodes.Bad_InvalidArgument, e);
-      }
+              certificateQuarantine.removeRejectedCertificate(x509Certificate);
+            } catch (Exception e) {
+              throw new UaException(StatusCodes.Bad_InvalidArgument, e);
+            }
+          });
     }
   }
 
@@ -395,27 +396,20 @@ public class TrustListObject extends FileObject {
         InvocationContext context, String thumbprint, Boolean isTrustedCertificate)
         throws UaException {
 
-      requireNoActiveTransaction();
+      transactions.applyImmediately(
+          () -> {
+            ByteString thumbprintBytes = ByteString.of(Hex.decode(thumbprint));
 
-      ByteString thumbprintBytes = ByteString.of(Hex.decode(thumbprint));
-
-      if (isTrustedCertificate) {
-        if (!trustListManager.removeTrustedCertificate(thumbprintBytes)) {
-          throw new UaException(StatusCodes.Bad_InvalidArgument);
-        }
-      } else {
-        if (!trustListManager.removeIssuerCertificate(thumbprintBytes)) {
-          throw new UaException(StatusCodes.Bad_InvalidArgument);
-        }
-      }
-    }
-  }
-
-  private void requireNoActiveTransaction() throws UaException {
-    if (transactions.isActive()) {
-      throw new UaException(
-          StatusCodes.Bad_TransactionPending,
-          "transaction has started; call ApplyChanges or CancelChanges first");
+            if (isTrustedCertificate) {
+              if (!trustListManager.removeTrustedCertificate(thumbprintBytes)) {
+                throw new UaException(StatusCodes.Bad_InvalidArgument);
+              }
+            } else {
+              if (!trustListManager.removeIssuerCertificate(thumbprintBytes)) {
+                throw new UaException(StatusCodes.Bad_InvalidArgument);
+              }
+            }
+          });
     }
   }
 

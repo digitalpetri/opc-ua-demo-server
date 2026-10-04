@@ -106,6 +106,34 @@ public final class PushTransactionManager {
   }
 
   /**
+   * Apply a direct TrustList mutation only when no transaction is active.
+   *
+   * <p>The check and mutation share the transaction lock so a new transaction cannot start and
+   * apply staged contents while an earlier direct mutation is still writing its target.
+   *
+   * @param change the direct mutation to complete before allowing a new transaction.
+   * @throws UaException if a transaction is active or the mutation fails.
+   */
+  void applyImmediately(ImmediateChange change) throws UaException {
+    synchronized (lock) {
+      expireIfOwnerGone();
+
+      if (active != null) {
+        throw new UaException(
+            StatusCodes.Bad_TransactionPending,
+            "transaction has started; call ApplyChanges or CancelChanges first");
+      }
+
+      change.apply();
+    }
+  }
+
+  @FunctionalInterface
+  interface ImmediateChange {
+    void apply() throws UaException;
+  }
+
+  /**
    * Get the active transaction, which must be owned by {@code sessionId}.
    *
    * @param sessionId the id of the Session that must own the transaction.

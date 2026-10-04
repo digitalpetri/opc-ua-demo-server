@@ -18,12 +18,14 @@ import com.digitalpetri.opcua.server.OpcUaTestServerBuilder;
 import com.digitalpetri.opcua.server.TestCertificateAuthority;
 import com.typesafe.config.ConfigFactory;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,6 +42,7 @@ import org.eclipse.milo.opcua.sdk.server.SessionListener;
 import org.eclipse.milo.opcua.sdk.server.methods.MethodInvocationHandler;
 import org.eclipse.milo.opcua.sdk.server.model.objects.ServerConfigurationTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.objects.TransactionDiagnosticsTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.objects.TrustListTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
@@ -195,6 +198,135 @@ class ServerConfigurationObjectIT {
     assertTrue(
         server.getAddressSpaceManager().getManagedNode(nodeId).isPresent(),
         () -> nodeId + " should be present");
+  }
+
+  @Nested
+  class ImmediateTrustListMutations {
+
+    // Direct additions must finish before a new transaction can start, or ApplyChanges could
+    // overwrite an addition that passed its no-active-transaction check earlier.
+    @Test
+    void certificateAdditionFinishesBeforeAnotherTransactionStarts() throws Exception {
+      assertImmediateMutationExcludesTransaction(false);
+    }
+
+    // Direct removals need the same exclusion as additions; otherwise they can race with a
+    // staged replacement of the issuer list and unexpectedly restore a removed certificate.
+    @Test
+    void certificateRemovalFinishesBeforeAnotherTransactionStarts() throws Exception {
+      assertImmediateMutationExcludesTransaction(true);
+    }
+
+    private void assertImmediateMutationExcludesTransaction(boolean remove) throws Exception {
+      var transactions = new PushTransactionManager();
+      var contents = new MemoryTrustListManager();
+      X509Certificate certificate = certificateAuthority.getCertificate();
+      if (remove) contents.addIssuerCertificate(certificate);
+      String mutationMethod = remove ? "removeIssuerCertificate" : "addIssuerCertificate";
+      var entered = new CompletableFuture<Void>();
+      var release = new CompletableFuture<Void>();
+      TrustListManager blockingStore =
+          (TrustListManager)
+              Proxy.newProxyInstance(
+                  TrustListManager.class.getClassLoader(),
+                  new Class<?>[] {TrustListManager.class},
+                  (_, method, arguments) -> {
+                    if (method.getName().equals(mutationMethod)) {
+                      entered.complete(null);
+                      release.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                    }
+                    try {
+                      return method.invoke(contents, arguments);
+                    } catch (InvocationTargetException e) {
+                      throw e.getCause();
+                    }
+                  });
+      var node =
+          (TrustListTypeNode)
+              server.getAddressSpaceManager().getManagedNode(TRUST_LIST).orElseThrow();
+      var object =
+          new TrustListObject(new MemoryCertificateQuarantine(), blockingStore, node, transactions);
+      var mutationDone = new CompletableFuture<Void>();
+      Thread mutation =
+          Thread.ofPlatform()
+              .start(
+                  () -> {
+                    try {
+                      if (remove) {
+                        assertGood(
+                            object
+                                .new RemoveCertificateMethodImpl(
+                                    node.getRemoveCertificateMethodNode())
+                                .invoke(
+                                    Optional::empty,
+                                    new CallMethodRequest(
+                                        TRUST_LIST,
+                                        node.getRemoveCertificateMethodNode().getNodeId(),
+                                        new Variant[] {
+                                          new Variant(
+                                              HexFormat.of()
+                                                  .formatHex(
+                                                      CertificateUtil.thumbprint(certificate)
+                                                          .bytesOrEmpty())),
+                                          new Variant(false)
+                                        })));
+                      } else {
+                        assertGood(
+                            object.new AddCertificateMethodImpl(node.getAddCertificateMethodNode())
+                                .invoke(
+                                    Optional::empty,
+                                    new CallMethodRequest(
+                                        TRUST_LIST,
+                                        node.getAddCertificateMethodNode().getNodeId(),
+                                        new Variant[] {
+                                          new Variant(ByteString.of(certificate.getEncoded())),
+                                          new Variant(false)
+                                        })));
+                      }
+                      mutationDone.complete(null);
+                    } catch (Throwable e) {
+                      mutationDone.completeExceptionally(e);
+                    }
+                  });
+      var started = new CompletableFuture<PushTransaction>();
+      Thread contender = null;
+      try {
+        entered.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        contender =
+            Thread.ofPlatform()
+                .start(
+                    () -> {
+                      try {
+                        started.complete(
+                            transactions.beginOrContinue(new NodeId(0, "contending-session")));
+                      } catch (Throwable e) {
+                        started.completeExceptionally(e);
+                      }
+                    });
+        // Observe lock contention or completion, rather than relying on a delay to prove that
+        // the second thread had an opportunity to start its transaction.
+        long deadline = System.nanoTime() + TIMEOUT.toNanos();
+        while (!started.isDone()
+            && contender.getState() != Thread.State.BLOCKED
+            && System.nanoTime() < deadline) {
+          Thread.onSpinWait();
+        }
+        assertFalse(
+            started.isDone(),
+            "transaction initiation must wait for the direct trust-list mutation");
+        assertEquals(Thread.State.BLOCKED, contender.getState());
+      } finally {
+        release.complete(null);
+        mutation.join(TIMEOUT);
+        if (contender != null) contender.join(TIMEOUT);
+      }
+      mutationDone.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+      PushTransaction transaction = started.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+      assertTrue(transactions.isActive());
+      assertEquals(!remove, contents.getIssuerCertificates().contains(certificate));
+      transactions.record(
+          transactions.seal(transaction.getSessionId()), StatusCode.GOOD, List.of());
+    }
   }
 
   @Nested

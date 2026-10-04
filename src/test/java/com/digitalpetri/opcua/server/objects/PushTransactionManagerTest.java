@@ -11,6 +11,7 @@ import com.digitalpetri.opcua.server.objects.PushTransaction.TrustListUpdate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -25,6 +26,27 @@ class PushTransactionManagerTest {
   private static final NodeId TRUST_LIST = new NodeId(0, "trust-list");
 
   private final PushTransactionManager manager = new PushTransactionManager();
+
+  // Direct changes must reject both staged and applying transactions without touching their
+  // target. They become available again once ApplyChanges records the transaction outcome.
+  @Test
+  void immediateChangesAreRejectedUntilTheTransactionEnds() throws UaException {
+    var mutations = new AtomicInteger();
+    PushTransaction transaction = manager.beginOrContinue(SESSION_A);
+
+    assertStatus(
+        StatusCodes.Bad_TransactionPending,
+        () -> manager.applyImmediately(mutations::incrementAndGet));
+    manager.seal(SESSION_A);
+    assertStatus(
+        StatusCodes.Bad_TransactionPending,
+        () -> manager.applyImmediately(mutations::incrementAndGet));
+    assertEquals(0, mutations.get(), "rejected calls must not mutate the trust list");
+
+    manager.record(transaction, StatusCode.GOOD, List.of());
+    manager.applyImmediately(mutations::incrementAndGet);
+    assertEquals(1, mutations.get());
+  }
 
   // Part 12 §7.10.2: once a transaction has started in one Session, every other Session is refused
   // with Bad_TransactionPending until it completes, while the owner keeps continuing it.
