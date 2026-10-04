@@ -613,46 +613,48 @@ public class ServerConfigurationObject extends AbstractLifecycle {
 
         boolean certificatesChanged = false;
 
-        for (StagedChange change : changes) {
-          try {
-            change.apply();
+        try {
+          for (StagedChange change : changes) {
+            try {
+              change.apply();
 
-            if (change instanceof CertificateUpdate update) {
-              certificatesChanged = true;
-              regeneratedPrivateKeys.remove(
-                  new CertificateSlot(update.certificateGroupId(), update.certificateTypeId()),
-                  update.keyPair().getPrivate());
+              if (change instanceof CertificateUpdate update) {
+                certificatesChanged = true;
+                regeneratedPrivateKeys.remove(
+                    new CertificateSlot(update.certificateGroupId(), update.certificateTypeId()),
+                    update.keyPair().getPrivate());
+              }
+            } catch (Exception e) {
+              logger.error("Failed to apply staged change to {}", change.targetId(), e);
+
+              long statusCode =
+                  e instanceof UaException ue
+                      ? ue.getStatusCode().getValue()
+                      : StatusCodes.Bad_UnexpectedError;
+
+              errors.add(
+                  new TransactionErrorType(
+                      change.targetId(),
+                      new StatusCode(statusCode),
+                      LocalizedText.english(String.valueOf(e.getMessage()))));
             }
-          } catch (Exception e) {
-            logger.error("Failed to apply staged change to {}", change.targetId(), e);
-
-            long statusCode =
-                e instanceof UaException ue
-                    ? ue.getStatusCode().getValue()
-                    : StatusCodes.Bad_UnexpectedError;
-
-            errors.add(
-                new TransactionErrorType(
-                    change.targetId(),
-                    new StatusCode(statusCode),
-                    LocalizedText.english(String.valueOf(e.getMessage()))));
           }
+
+        } catch (Error e) {
+          if (certificatesChanged) {
+            try {
+              refreshEndpointsAndCloseSessions(replacedThumbprints);
+            } catch (Exception | Error cleanupFailure) {
+              if (cleanupFailure != e) {
+                e.addSuppressed(cleanupFailure);
+              }
+            }
+          }
+          throw e;
         }
 
         if (certificatesChanged) {
-          // Endpoint resolution, including the certificate each endpoint advertises, is memoized by
-          // the SDK. New SecureChannels look their certificate up by the thumbprint the client took
-          // from GetEndpoints, so the advertised set has to change for the new certificates to be
-          // reachable at all.
-          server.resetEndpointDescriptionCache();
-
-          // A certificate that is still installed, because its update failed or re-installed the
-          // same certificate, still resolves by thumbprint; Sessions bound to it keep working.
-          CertificateManager certificateManager = server.getConfig().getCertificateManager();
-          replacedThumbprints.removeIf(
-              thumbprint -> certificateManager.getCertificate(thumbprint).isPresent());
-
-          closeSessionsBoundTo(replacedThumbprints);
+          refreshEndpointsAndCloseSessions(replacedThumbprints);
         }
 
         StatusCode result =
@@ -679,6 +681,23 @@ public class ServerConfigurationObject extends AbstractLifecycle {
           transactions.record(transaction, new StatusCode(StatusCodes.Bad_UnexpectedError), errors);
         }
       }
+    }
+
+    /** Refresh installed certificate identities and retire Sessions using replaced certificates. */
+    private void refreshEndpointsAndCloseSessions(Set<ByteString> replacedThumbprints) {
+      // Endpoint resolution, including the certificate each endpoint advertises, is memoized by
+      // the SDK. New SecureChannels look their certificate up by the thumbprint the client took
+      // from GetEndpoints, so the advertised set has to change for the new certificates to be
+      // reachable at all.
+      server.resetEndpointDescriptionCache();
+
+      // A certificate that is still installed, because its update failed or re-installed the
+      // same certificate, still resolves by thumbprint; Sessions bound to it keep working.
+      CertificateManager certificateManager = server.getConfig().getCertificateManager();
+      replacedThumbprints.removeIf(
+          thumbprint -> certificateManager.getCertificate(thumbprint).isPresent());
+
+      closeSessionsBoundTo(replacedThumbprints);
     }
 
     /** Thumbprints of the certificates currently installed in the slots the changes replace. */

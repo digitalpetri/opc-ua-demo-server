@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -36,6 +37,7 @@ import org.eclipse.milo.opcua.sdk.client.identity.UsernameProvider;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.Session;
 import org.eclipse.milo.opcua.sdk.server.SessionListener;
+import org.eclipse.milo.opcua.sdk.server.methods.MethodInvocationHandler;
 import org.eclipse.milo.opcua.sdk.server.model.objects.ServerConfigurationTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.objects.TransactionDiagnosticsTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
@@ -561,24 +563,8 @@ class ServerConfigurationObjectIT {
               .findFirst()
               .orElseThrow();
       var handler = serverConfiguration.getApplyChangesMethodNode().getInvocationHandler();
-      // Inject a store failure into the real handler's transaction without changing production
-      // APIs.
-      Field ownerField = handler.getClass().getDeclaredField("this$0");
-      ownerField.setAccessible(true);
-      Object owner = ownerField.get(handler);
-      Field transactionsField = ServerConfigurationObject.class.getDeclaredField("transactions");
-      transactionsField.setAccessible(true);
-      PushTransactionManager transactions = (PushTransactionManager) transactionsField.get(owner);
-      CertificateGroup failingGroup =
-          (CertificateGroup)
-              Proxy.newProxyInstance(
-                  CertificateGroup.class.getClassLoader(),
-                  new Class<?>[] {CertificateGroup.class},
-                  (_, method, _) -> {
-                    if (method.getName().equals(failedMethod)) throw failure;
-                    if (method.getName().equals("getCertificateChain")) return Optional.empty();
-                    throw new AssertionError("Unexpected group call: " + method.getName());
-                  });
+      PushTransactionManager transactions = transactionsFor(handler);
+      CertificateGroup failingGroup = failingCertificateGroup(failedMethod, failure);
       transactions
           .beginOrContinue(session.getSessionId())
           .stage(
@@ -609,6 +595,78 @@ class ServerConfigurationObjectIT {
               installedCertificate(NodeIds.RsaSha256ApplicationCertificateType)));
       assertGood(
           call(nextAdmin, NodeIds.ServerConfiguration, NodeIds.ServerConfiguration_CancelChanges));
+    }
+
+    // A later fatal store failure must not leave endpoints advertising a certificate that an
+    // earlier successful change has already replaced, or leave the old channel's Session alive.
+    @Test
+    void applicationErrorAfterCertificateUpdateRefreshesEndpointsAndClosesOldSession()
+        throws Exception {
+      OpcUaClient admin = connectSecurityAdmin(SecurityPolicy.Basic256Sha256);
+      NodeId sessionId = admin.getSession().getSessionId();
+      Session session =
+          server.getSessionManager().getAllSessions().stream()
+              .filter(s -> s.getSessionId().equals(sessionId))
+              .findFirst()
+              .orElseThrow();
+      CompletableFuture<Void> closed = sessionClosed(sessionId);
+      X509Certificate issued = issueCertificate(admin, NodeIds.RsaSha256ApplicationCertificateType);
+      assertTrue(updateCertificate(admin, NodeIds.RsaSha256ApplicationCertificateType, issued));
+      var handler = serverConfiguration.getApplyChangesMethodNode().getInvocationHandler();
+      PushTransactionManager transactions = transactionsFor(handler);
+      var failure = new LinkageError("later certificate store failure");
+      transactions
+          .beginOrContinue(sessionId)
+          .stage(
+              new PushTransaction.CertificateUpdate(
+                  DEFAULT_APPLICATION_GROUP,
+                  failingCertificateGroup("updateCertificate", failure),
+                  NodeIds.EccNistP256ApplicationCertificateType,
+                  serverCertificateGroup()
+                      .getKeyPair(NodeIds.EccNistP256ApplicationCertificateType)
+                      .orElseThrow(),
+                  new X509Certificate[] {
+                    installedCertificate(NodeIds.EccNistP256ApplicationCertificateType)
+                  }));
+      var request =
+          new CallMethodRequest(
+              NodeIds.ServerConfiguration,
+              NodeIds.ServerConfiguration_ApplyChanges,
+              new Variant[0]);
+      assertSame(
+          failure,
+          assertThrows(
+              LinkageError.class, () -> handler.invoke(() -> Optional.of(session), request)));
+      assertFalse(transactions.isActive());
+      assertEquals(
+          StatusCodes.Bad_UnexpectedError, transactions.getDiagnostics().result().getValue());
+      assertEquals(issued, installedCertificate(NodeIds.RsaSha256ApplicationCertificateType));
+      assertEquals(issued, advertisedCertificate(SecurityPolicy.Basic256Sha256));
+      assertNewChannelUsesCertificate(SecurityPolicy.Basic256Sha256, issued);
+      closed.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    private PushTransactionManager transactionsFor(MethodInvocationHandler handler)
+        throws Exception {
+      // Inject faults into the real transaction without adding production APIs for tests.
+      Field ownerField = handler.getClass().getDeclaredField("this$0");
+      ownerField.setAccessible(true);
+      Object owner = ownerField.get(handler);
+      Field transactionsField = ServerConfigurationObject.class.getDeclaredField("transactions");
+      transactionsField.setAccessible(true);
+      return (PushTransactionManager) transactionsField.get(owner);
+    }
+
+    private CertificateGroup failingCertificateGroup(String failedMethod, Throwable failure) {
+      return (CertificateGroup)
+          Proxy.newProxyInstance(
+              CertificateGroup.class.getClassLoader(),
+              new Class<?>[] {CertificateGroup.class},
+              (_, method, _) -> {
+                if (method.getName().equals(failedMethod)) throw failure;
+                if (method.getName().equals("getCertificateChain")) return Optional.empty();
+                throw new AssertionError("Unexpected group call: " + method.getName());
+              });
     }
 
     // Part 12 §7.7.2 lets ApplyChanges close Endpoints and force reconnects, but only a replaced
