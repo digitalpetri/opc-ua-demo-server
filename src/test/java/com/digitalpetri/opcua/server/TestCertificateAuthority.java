@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -13,6 +14,7 @@ import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
@@ -20,6 +22,8 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v2CRLBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CRLConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
@@ -143,6 +147,33 @@ public final class TestCertificateAuthority {
     }
 
     return sign(builder, keyPair);
+  }
+
+  /**
+   * Create a current CRL for this authority, optionally revoking issued certificates.
+   *
+   * @param revoked certificates to revoke.
+   * @return the signed CRL.
+   * @throws Exception if CRL generation fails.
+   */
+  public X509CRL createCrl(X509Certificate... revoked) throws Exception {
+    Instant now = Instant.now();
+    var builder = new X509v2CRLBuilder(subject, Date.from(now.minus(1, ChronoUnit.MINUTES)));
+    builder.setNextUpdate(Date.from(now.plus(1, ChronoUnit.DAYS)));
+    builder.addExtension(
+        Extension.authorityKeyIdentifier,
+        false,
+        new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(certificate));
+    for (X509Certificate leaf : revoked) {
+      builder.addCRLEntry(
+          leaf.getSerialNumber(),
+          Date.from(now.minus(1, ChronoUnit.MINUTES)),
+          CRLReason.keyCompromise);
+    }
+    return new JcaX509CRLConverter()
+        .getCRL(
+            builder.build(
+                new JcaContentSignerBuilder("SHA256withRSA").build(keyPair.getPrivate())));
   }
 
   private static KeyUsage keyUsageFor(PublicKey publicKey) {
