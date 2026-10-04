@@ -3,7 +3,6 @@ package com.digitalpetri.opcua.server;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.file.Files;
@@ -129,19 +128,21 @@ public class OpcUaTestServerBuilder {
   }
 
   /**
-   * Find an available port by trying to bind to a random port in the range 10000-65535. If binding
+   * Find an available port by trying to bind to a random port in the range 10000-32767. If binding
    * fails, recursively tries again with a new random port.
+   *
+   * <p>The port is released before the server binds it. Staying below the ephemeral port ranges
+   * (32768-60999 on Linux, 49152-65535 on Windows and macOS) keeps outgoing connections, such as
+   * those from test clients, from taking it in between. The check binds the wildcard address, as
+   * the server does, so a socket bound to any local address makes the port unavailable.
    *
    * @return an available port number.
    */
   private static int findAvailablePort() {
-    var port = new Random().nextInt(65535 - 10000) + 10000;
+    var port = new Random().nextInt(32768 - 10000) + 10000;
 
-    try {
-      var ss = new ServerSocket();
-      var isa = new InetSocketAddress(InetAddress.getLocalHost(), port);
-      ss.bind(isa);
-      ss.close();
+    try (var ss = new ServerSocket()) {
+      ss.bind(new InetSocketAddress(port));
       return port;
     } catch (Throwable t) {
       // Port not available, try again
