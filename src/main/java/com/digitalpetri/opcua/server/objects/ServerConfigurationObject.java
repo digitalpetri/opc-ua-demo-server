@@ -393,11 +393,21 @@ public class ServerConfigurationObject extends AbstractLifecycle {
 
       KeyPair newKeyPair;
       if (privateKey == null || privateKey.isNullOrEmpty()) {
-        PrivateKey key;
-        if ((key = regeneratedPrivateKeys.get(certificateSlot)) != null) {
-          // Use previously generated PrivateKey + new certificate PublicKey. The key stays
-          // available until the staged update is applied, so a cancelled or abandoned transaction
-          // does not strand the certificate that was issued for it.
+        PrivateKey key = regeneratedPrivateKeys.get(certificateSlot);
+        if (key != null) {
+          try {
+            verifyPrivateKeyMatchesCertificate(
+                new KeyPair(certificateChain.getFirst().getPublicKey(), key));
+          } catch (UaException e) {
+            if (e.getStatusCode().getValue() != StatusCodes.Bad_SecurityChecksFailed) {
+              throw e;
+            }
+            // An abandoned regenerated key must not prevent renewal of the installed key.
+            // Keep it in the map so the certificate issued for it can still be pushed later.
+            key = null;
+          }
+        }
+        if (key != null) {
           newKeyPair = new KeyPair(certificateChain.getFirst().getPublicKey(), key);
         } else {
           // Use current PrivateKey + new certificate PublicKey
@@ -594,70 +604,80 @@ public class ServerConfigurationObject extends AbstractLifecycle {
       // The transaction stays active, but sealed, until its outcome is recorded below, so no other
       // Session can modify the TrustLists or CertificateGroups while they are being applied.
       PushTransaction transaction = transactions.seal(sessionId);
-      List<StagedChange> changes = transaction.getChanges();
-
-      Set<ByteString> replacedThumbprints = thumbprintsReplacedBy(changes);
-
+      boolean recorded = false;
       var errors = new ArrayList<TransactionErrorType>();
-      boolean certificatesChanged = false;
+      try {
+        List<StagedChange> changes = transaction.getChanges();
 
-      for (StagedChange change : changes) {
-        try {
-          change.apply();
+        Set<ByteString> replacedThumbprints = thumbprintsReplacedBy(changes);
 
-          if (change instanceof CertificateUpdate update) {
-            certificatesChanged = true;
-            regeneratedPrivateKeys.remove(
-                new CertificateSlot(update.certificateGroupId(), update.certificateTypeId()),
-                update.keyPair().getPrivate());
+        boolean certificatesChanged = false;
+
+        for (StagedChange change : changes) {
+          try {
+            change.apply();
+
+            if (change instanceof CertificateUpdate update) {
+              certificatesChanged = true;
+              regeneratedPrivateKeys.remove(
+                  new CertificateSlot(update.certificateGroupId(), update.certificateTypeId()),
+                  update.keyPair().getPrivate());
+            }
+          } catch (Exception e) {
+            logger.error("Failed to apply staged change to {}", change.targetId(), e);
+
+            long statusCode =
+                e instanceof UaException ue
+                    ? ue.getStatusCode().getValue()
+                    : StatusCodes.Bad_UnexpectedError;
+
+            errors.add(
+                new TransactionErrorType(
+                    change.targetId(),
+                    new StatusCode(statusCode),
+                    LocalizedText.english(String.valueOf(e.getMessage()))));
           }
-        } catch (Exception e) {
-          logger.error("Failed to apply staged change to {}", change.targetId(), e);
-
-          long statusCode =
-              e instanceof UaException ue
-                  ? ue.getStatusCode().getValue()
-                  : StatusCodes.Bad_UnexpectedError;
-
-          errors.add(
-              new TransactionErrorType(
-                  change.targetId(),
-                  new StatusCode(statusCode),
-                  LocalizedText.english(String.valueOf(e.getMessage()))));
         }
-      }
 
-      if (certificatesChanged) {
-        // Endpoint resolution, including the certificate each endpoint advertises, is memoized by
-        // the SDK. New SecureChannels look their certificate up by the thumbprint the client took
-        // from GetEndpoints, so the advertised set has to change for the new certificates to be
-        // reachable at all.
-        server.resetEndpointDescriptionCache();
+        if (certificatesChanged) {
+          // Endpoint resolution, including the certificate each endpoint advertises, is memoized by
+          // the SDK. New SecureChannels look their certificate up by the thumbprint the client took
+          // from GetEndpoints, so the advertised set has to change for the new certificates to be
+          // reachable at all.
+          server.resetEndpointDescriptionCache();
 
-        // A certificate that is still installed, because its update failed or re-installed the
-        // same certificate, still resolves by thumbprint; Sessions bound to it keep working.
-        CertificateManager certificateManager = server.getConfig().getCertificateManager();
-        replacedThumbprints.removeIf(
-            thumbprint -> certificateManager.getCertificate(thumbprint).isPresent());
+          // A certificate that is still installed, because its update failed or re-installed the
+          // same certificate, still resolves by thumbprint; Sessions bound to it keep working.
+          CertificateManager certificateManager = server.getConfig().getCertificateManager();
+          replacedThumbprints.removeIf(
+              thumbprint -> certificateManager.getCertificate(thumbprint).isPresent());
 
-        closeSessionsBoundTo(replacedThumbprints);
-      }
+          closeSessionsBoundTo(replacedThumbprints);
+        }
 
-      StatusCode result =
-          errors.isEmpty() ? StatusCode.GOOD : new StatusCode(StatusCodes.Bad_UnexpectedError);
+        StatusCode result =
+            errors.isEmpty() ? StatusCode.GOOD : new StatusCode(StatusCodes.Bad_UnexpectedError);
 
-      transactions.record(transaction, result, errors);
+        transactions.record(transaction, result, errors);
+        recorded = true;
 
-      logger.info(
-          "Applied {} staged change(s) from Session {}; {} error(s)",
-          changes.size(),
-          sessionId,
-          errors.size());
+        logger.info(
+            "Applied {} staged change(s) from Session {}; {} error(s)",
+            changes.size(),
+            sessionId,
+            errors.size());
 
-      if (!errors.isEmpty()) {
-        throw new UaException(
-            StatusCodes.Bad_UnexpectedError,
-            errors.size() + " change(s) failed; see TransactionDiagnostics");
+        if (!errors.isEmpty()) {
+          throw new UaException(
+              StatusCodes.Bad_UnexpectedError,
+              errors.size() + " change(s) failed; see TransactionDiagnostics");
+        }
+      } finally {
+        if (!recorded) {
+          // Preparation, application Errors, and endpoint/session cleanup can all fail. None may
+          // leave the sealed transaction blocking every later push-management operation.
+          transactions.record(transaction, new StatusCode(StatusCodes.Bad_UnexpectedError), errors);
+        }
       }
     }
 

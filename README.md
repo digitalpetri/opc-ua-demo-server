@@ -208,3 +208,8 @@ replaced. Those clients must call `GetEndpoints` again and reconnect. `CancelCha
 session, discards staged changes. The `TransactionDiagnostics` Object reports the outcome of the
 current or most recent transaction. No restart is needed after provisioning.
 
+If an unexpected storage or endpoint-refresh failure occurs during `ApplyChanges`, successful
+changes remain installed. The transaction ends and `TransactionDiagnostics` reports the failure;
+`CancelChanges` cannot undo changes already applied. Read the installed certificates and trust
+lists, then stage a new transaction to complete the update or restore the previous contents.
+

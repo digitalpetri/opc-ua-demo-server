@@ -16,6 +16,8 @@ import com.digitalpetri.opcua.server.OpcUaTestClient;
 import com.digitalpetri.opcua.server.OpcUaTestServerBuilder;
 import com.digitalpetri.opcua.server.TestCertificateAuthority;
 import com.typesafe.config.ConfigFactory;
+import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -23,6 +25,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -503,6 +506,109 @@ class ServerConfigurationObjectIT {
 
       assertEquals(issued, installedCertificate(NodeIds.RsaSha256ApplicationCertificateType));
       assertNewChannelUsesCertificate(SecurityPolicy.Basic256Sha256, issued);
+    }
+
+    // An abandoned regenerated key must not block renewing the certificate for the installed key.
+    // Keep that regenerated key available as well, so a later issued certificate still works.
+    @Test
+    void abandonedRegeneratedKeyDoesNotBlockCurrentKeyRenewal() throws Exception {
+      OpcUaClient admin = connectSecurityAdmin(SecurityPolicy.Basic256Sha256);
+      X509Certificate regenerated =
+          issueCertificate(admin, NodeIds.RsaSha256ApplicationCertificateType);
+      CallMethodResult csrResult =
+          call(
+              admin,
+              NodeIds.ServerConfiguration,
+              NodeIds.ServerConfiguration_CreateSigningRequest,
+              new Variant(DEFAULT_APPLICATION_GROUP),
+              new Variant(NodeIds.RsaSha256ApplicationCertificateType),
+              new Variant(null),
+              new Variant(false),
+              new Variant(null));
+      assertGood(csrResult);
+      ByteString csr = (ByteString) csrResult.getOutputArguments()[0].getValue();
+      X509Certificate renewed = certificateAuthority.issue(csr.bytesOrEmpty());
+      assertTrue(updateCertificate(admin, NodeIds.RsaSha256ApplicationCertificateType, renewed));
+      assertGood(
+          call(admin, NodeIds.ServerConfiguration, NodeIds.ServerConfiguration_CancelChanges));
+      assertTrue(
+          updateCertificate(admin, NodeIds.RsaSha256ApplicationCertificateType, regenerated));
+      assertGood(
+          call(admin, NodeIds.ServerConfiguration, NodeIds.ServerConfiguration_CancelChanges));
+    }
+
+    // Unexpected failure before applying a change must still release the sealed transaction.
+    @Test
+    void preparationFailureEndsTransaction() throws Exception {
+      assertFailedApplyReleasesTransaction(
+          "getCertificateChain", new IllegalStateException("lookup failed"));
+    }
+
+    // Errors escape the per-change Exception handler, but must not leave push management locked.
+    @Test
+    void applicationErrorEndsTransaction() throws Exception {
+      assertFailedApplyReleasesTransaction(
+          "updateCertificate", new LinkageError("store unavailable"));
+    }
+
+    private void assertFailedApplyReleasesTransaction(String failedMethod, Throwable failure)
+        throws Exception {
+      OpcUaClient admin = connectSecurityAdmin(SecurityPolicy.Basic256Sha256);
+      NodeId adminSessionId = admin.getSession().getSessionId();
+      Session session =
+          server.getSessionManager().getAllSessions().stream()
+              .filter(s -> s.getSessionId().equals(adminSessionId))
+              .findFirst()
+              .orElseThrow();
+      var handler = serverConfiguration.getApplyChangesMethodNode().getInvocationHandler();
+      // Inject a store failure into the real handler's transaction without changing production
+      // APIs.
+      Field ownerField = handler.getClass().getDeclaredField("this$0");
+      ownerField.setAccessible(true);
+      Object owner = ownerField.get(handler);
+      Field transactionsField = ServerConfigurationObject.class.getDeclaredField("transactions");
+      transactionsField.setAccessible(true);
+      PushTransactionManager transactions = (PushTransactionManager) transactionsField.get(owner);
+      CertificateGroup failingGroup =
+          (CertificateGroup)
+              Proxy.newProxyInstance(
+                  CertificateGroup.class.getClassLoader(),
+                  new Class<?>[] {CertificateGroup.class},
+                  (_, method, _) -> {
+                    if (method.getName().equals(failedMethod)) throw failure;
+                    if (method.getName().equals("getCertificateChain")) return Optional.empty();
+                    throw new AssertionError("Unexpected group call: " + method.getName());
+                  });
+      transactions
+          .beginOrContinue(session.getSessionId())
+          .stage(
+              new PushTransaction.CertificateUpdate(
+                  DEFAULT_APPLICATION_GROUP,
+                  failingGroup,
+                  NodeIds.RsaSha256ApplicationCertificateType,
+                  serverCertificateGroup()
+                      .getKeyPair(NodeIds.RsaSha256ApplicationCertificateType)
+                      .orElseThrow(),
+                  new X509Certificate[] {
+                    installedCertificate(NodeIds.RsaSha256ApplicationCertificateType)
+                  }));
+      var request =
+          new CallMethodRequest(
+              NodeIds.ServerConfiguration,
+              NodeIds.ServerConfiguration_ApplyChanges,
+              new Variant[0]);
+      assertThrows(failure.getClass(), () -> handler.invoke(() -> Optional.of(session), request));
+      assertFalse(transactions.isActive(), "failed ApplyChanges must release ownership");
+      assertEquals(
+          StatusCodes.Bad_UnexpectedError, transactions.getDiagnostics().result().getValue());
+      OpcUaClient nextAdmin = connectSecurityAdmin(SecurityPolicy.Basic256Sha256);
+      assertTrue(
+          updateCertificate(
+              nextAdmin,
+              NodeIds.RsaSha256ApplicationCertificateType,
+              installedCertificate(NodeIds.RsaSha256ApplicationCertificateType)));
+      assertGood(
+          call(nextAdmin, NodeIds.ServerConfiguration, NodeIds.ServerConfiguration_CancelChanges));
     }
 
     // Part 12 §7.7.2 lets ApplyChanges close Endpoints and force reconnects, but only a replaced
