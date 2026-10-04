@@ -5,7 +5,6 @@ import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeI
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
@@ -22,7 +21,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 
-public class MassNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+public class MassNodesFragment extends DemoAddressSpaceFragment {
 
   private final SimpleAddressSpaceFilter filter;
 

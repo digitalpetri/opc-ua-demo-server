@@ -3,6 +3,7 @@ package com.digitalpetri.opcua.server.namespace.demo.ctt;
 import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
+import com.digitalpetri.opcua.server.namespace.demo.DemoAddressSpaceFragment;
 import com.digitalpetri.opcua.server.namespace.demo.EuRangeCheckFilter;
 import com.digitalpetri.opcua.server.namespace.demo.Util;
 import java.util.List;
@@ -13,7 +14,6 @@ import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.model.variables.AnalogItemTypeNode;
@@ -47,7 +47,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.EUInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.EnumValueType;
 import org.eclipse.milo.opcua.stack.core.types.structured.Range;
 
-public class DataAccessProfileFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+public class DataAccessProfileFragment extends DemoAddressSpaceFragment {
 
   private static final EUInformation DIMENSIONLESS_UNITS = CefactEngineeringUnits.CODE_C62;
   private static final EUInformation MILLIMETRE_UNITS = CefactEngineeringUnits.CODE_MMT;

@@ -4,6 +4,7 @@ import static com.digitalpetri.opcua.server.DemoConfigLimits.MIN_SUPPORTED_SAMPL
 import static java.util.Objects.requireNonNull;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ushort;
 
+import com.digitalpetri.opcua.server.namespace.demo.DemoAddressSpaceFragment;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +17,6 @@ import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.conditions.AlarmCondition;
@@ -50,7 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** CTT-only Alarms and Conditions fixtures with deterministic, continuously repeating inputs. */
-public final class AlarmsAndConditionsFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+public final class AlarmsAndConditionsFragment extends DemoAddressSpaceFragment {
 
   static final String ROOT_ID = "CTT.AlarmsAndConditions";
   static final String DISCRETE_INPUT_ID = ROOT_ID + ".Discrete.Input";

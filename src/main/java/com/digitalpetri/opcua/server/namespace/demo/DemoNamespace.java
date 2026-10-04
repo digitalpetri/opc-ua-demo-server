@@ -11,7 +11,6 @@ import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.Lifecycle;
 import org.eclipse.milo.opcua.sdk.server.LifecycleManager;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.Namespace;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
@@ -155,7 +154,7 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
     return demoFragment.getNodeManager();
   }
 
-  private static class DemoFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+  private static class DemoFragment extends DemoAddressSpaceFragment {
 
     private final AddressSpaceFilter filter =
         SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);

@@ -35,7 +35,6 @@ import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
@@ -66,7 +65,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.AccessLevelType;
 import org.eclipse.milo.opcua.stack.core.types.structured.AccessRestrictionType;
 import org.eclipse.milo.opcua.stack.core.types.structured.XVType;
 
-public class DataTypeTestNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+public class DataTypeTestNodesFragment extends DemoAddressSpaceFragment {
 
   private final DemoNamespace namespace;
   private final UShort namespaceIndex;

@@ -1,5 +1,6 @@
 package com.digitalpetri.opcua.server.namespace.demo.ctt;
 
+import com.digitalpetri.opcua.server.namespace.demo.DemoAddressSpaceFragment;
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
 import com.digitalpetri.opcua.server.namespace.demo.ctt.AlarmsAndConditionsFragment.OptionalStateConfig;
 import com.typesafe.config.Config;
@@ -10,7 +11,6 @@ import org.eclipse.milo.opcua.sdk.server.AddressSpaceComposite;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.Lifecycle;
 import org.eclipse.milo.opcua.sdk.server.LifecycleManager;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
@@ -118,7 +118,7 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
     lifecycleManager.shutdown();
   }
 
-  private static class RootFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+  private static class RootFragment extends DemoAddressSpaceFragment {
 
     private final AddressSpaceFilter filter =
         SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);

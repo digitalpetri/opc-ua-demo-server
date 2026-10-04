@@ -3,6 +3,7 @@ package com.digitalpetri.opcua.server.namespace.demo.alarms;
 import static com.digitalpetri.opcua.server.namespace.demo.Util.deriveChildNodeId;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
 
+import com.digitalpetri.opcua.server.namespace.demo.DemoAddressSpaceFragment;
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -13,7 +14,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.NodeManager;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * com.digitalpetri.opcua.server.namespace.demo.ctt.AlarmsAndConditionsFragment}, which stays flat
  * and boring for CTT conformance runs.
  */
-public final class AlarmNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+public final class AlarmNodesFragment extends DemoAddressSpaceFragment {
 
   public static final String ROOT_ID = "Demo.Alarms";
   public static final String PLANT_ID = ROOT_ID + ".Plant";

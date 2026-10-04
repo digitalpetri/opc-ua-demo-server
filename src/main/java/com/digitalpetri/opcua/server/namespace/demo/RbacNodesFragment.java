@@ -8,7 +8,6 @@ import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
-import org.eclipse.milo.opcua.sdk.server.ManagedAddressSpaceFragmentWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
@@ -25,7 +24,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.PermissionType;
 import org.eclipse.milo.opcua.stack.core.types.structured.PermissionType.Field;
 import org.eclipse.milo.opcua.stack.core.types.structured.RolePermissionType;
 
-public class RbacNodesFragment extends ManagedAddressSpaceFragmentWithLifecycle {
+public class RbacNodesFragment extends DemoAddressSpaceFragment {
 
   private final AddressSpaceFilter filter =
       SimpleAddressSpaceFilter.create(getNodeManager()::containsNode);
