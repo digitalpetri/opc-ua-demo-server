@@ -19,7 +19,7 @@ ENV JAVA_TOOL_OPTIONS=$ENV_JTO
 RUN mvn clean package
 
 # Stage 2: Run the application using a minimal Java runtime image
-FROM bellsoft/liberica-openjdk-alpine:25 AS runtime
+FROM bellsoft/liberica-openjdk-alpine:25.0.5.1-5 AS runtime
 
 # Set working directory inside the container
 WORKDIR /app
