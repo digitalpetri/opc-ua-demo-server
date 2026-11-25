@@ -114,17 +114,16 @@ public class RbacNodesFragment extends DemoAddressSpaceFragment {
   private static AccessControlFilter createAccessControlFilter(Config config, String key) {
     RolePermissionType[] rolePermissions =
         config.getConfigList(key).stream()
-            .map(
-                roleConfig -> {
-                  String roleIdString = roleConfig.getString("role-id");
-                  List<String> permissionsString = roleConfig.getStringList("permissions");
+            .map(roleConfig -> {
+              String roleIdString = roleConfig.getString("role-id");
+              List<String> permissionsString = roleConfig.getStringList("permissions");
 
-                  NodeId roleId = NodeId.parse(roleIdString);
-                  Field[] permissions =
-                      permissionsString.stream().map(Field::valueOf).toArray(Field[]::new);
+              NodeId roleId = NodeId.parse(roleIdString);
+              Field[] permissions =
+                  permissionsString.stream().map(Field::valueOf).toArray(Field[]::new);
 
-                  return new RolePermissionType(roleId, PermissionType.of(permissions));
-                })
+              return new RolePermissionType(roleId, PermissionType.of(permissions));
+            })
             .toArray(RolePermissionType[]::new);
 
     return new AccessControlFilter(rolePermissions);

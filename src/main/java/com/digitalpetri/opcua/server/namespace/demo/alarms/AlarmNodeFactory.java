@@ -253,12 +253,11 @@ final class AlarmNodeFactory {
     if (writable) {
       // Node-local behavior belongs in a hook, which runs against the staged graph before anything
       // is published; structure and Property values do not (they would escape the batch).
-      request.onNode(
-          (declaration, node, parent, graph) -> {
-            if (declaration == null) {
-              node.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
-            }
-          });
+      request.onNode((declaration, node, parent, graph) -> {
+        if (declaration == null) {
+          node.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
+        }
+      });
     }
 
     AnalogItemTypeNode analogNode =

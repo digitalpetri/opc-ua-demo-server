@@ -341,12 +341,11 @@ class AlarmNodesIT {
           assertTrue(conditions.getStatusCode().isGood());
           assertTrue(
               references(conditions).stream()
-                  .anyMatch(
-                      r ->
-                          r.getNodeId()
-                              .toNodeId(server.getNamespaceTable())
-                              .filter(nodeId(BOILER + ".DrumLevelAlarm")::equals)
-                              .isPresent()),
+                  .anyMatch(r ->
+                      r.getNodeId()
+                          .toNodeId(server.getNamespaceTable())
+                          .filter(nodeId(BOILER + ".DrumLevelAlarm")::equals)
+                          .isPresent()),
               "the boiler exposes no HasCondition reference to its drum level alarm");
         });
   }
@@ -665,12 +664,11 @@ class AlarmNodesIT {
     OpcUaMonitoredItem item =
         OpcUaMonitoredItem.newEventItem(notifierId, eventTypeAndSourceFilter());
     item.setQueueSize(uint(1000));
-    item.setEventValueListener(
-        (_, fields) -> {
-          if (fields.length > 1 && fields[1].value() instanceof NodeId sourceNode) {
-            onSourceNode.accept(sourceNode);
-          }
-        });
+    item.setEventValueListener((_, fields) -> {
+      if (fields.length > 1 && fields[1].value() instanceof NodeId sourceNode) {
+        onSourceNode.accept(sourceNode);
+      }
+    });
 
     return item;
   }
@@ -693,12 +691,11 @@ class AlarmNodesIT {
       OpcUaMonitoredItem item =
           OpcUaMonitoredItem.newEventItem(notifierId, eventTypeAndSourceFilter());
       item.setQueueSize(uint(1000));
-      item.setEventValueListener(
-          (_, fields) ->
-              events.add(
-                  new RefreshEvent(
-                      fields[0].value() instanceof NodeId eventType ? eventType : null,
-                      fields[1].value() instanceof NodeId sourceNode ? sourceNode : null)));
+      item.setEventValueListener((_, fields) ->
+          events.add(
+              new RefreshEvent(
+                  fields[0].value() instanceof NodeId eventType ? eventType : null,
+                  fields[1].value() instanceof NodeId sourceNode ? sourceNode : null)));
 
       subscription.addMonitoredItems(List.of(item));
       subscription.synchronizeMonitoredItems();

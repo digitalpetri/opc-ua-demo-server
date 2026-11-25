@@ -118,12 +118,11 @@ public class TrustListObject extends FileObject {
         .getLastUpdateTimeNode()
         .getFilterChain()
         .addLast(
-            AttributeFilters.getValue(
-                ctx -> {
-                  DateTime lastUpdateTime = trustListManager.getLastUpdateTime();
+            AttributeFilters.getValue(ctx -> {
+              DateTime lastUpdateTime = trustListManager.getLastUpdateTime();
 
-                  return new DataValue(new Variant(lastUpdateTime));
-                }));
+              return new DataValue(new Variant(lastUpdateTime));
+            }));
 
     logger.debug("TrustListObject started: {}", trustListTypeNode.getNodeId());
   }
@@ -357,23 +356,22 @@ public class TrustListObject extends FileObject {
         InvocationContext context, ByteString certificate, Boolean isTrustedCertificate)
         throws UaException {
 
-      transactions.applyImmediately(
-          () -> {
-            try {
-              X509Certificate x509Certificate =
-                  CertificateUtil.decodeCertificate(certificate.bytesOrEmpty());
+      transactions.applyImmediately(() -> {
+        try {
+          X509Certificate x509Certificate =
+              CertificateUtil.decodeCertificate(certificate.bytesOrEmpty());
 
-              if (isTrustedCertificate) {
-                trustListManager.addTrustedCertificate(x509Certificate);
-              } else {
-                trustListManager.addIssuerCertificate(x509Certificate);
-              }
+          if (isTrustedCertificate) {
+            trustListManager.addTrustedCertificate(x509Certificate);
+          } else {
+            trustListManager.addIssuerCertificate(x509Certificate);
+          }
 
-              certificateQuarantine.removeRejectedCertificate(x509Certificate);
-            } catch (Exception e) {
-              throw new UaException(StatusCodes.Bad_InvalidArgument, e);
-            }
-          });
+          certificateQuarantine.removeRejectedCertificate(x509Certificate);
+        } catch (Exception e) {
+          throw new UaException(StatusCodes.Bad_InvalidArgument, e);
+        }
+      });
     }
   }
 
@@ -396,20 +394,19 @@ public class TrustListObject extends FileObject {
         InvocationContext context, String thumbprint, Boolean isTrustedCertificate)
         throws UaException {
 
-      transactions.applyImmediately(
-          () -> {
-            ByteString thumbprintBytes = ByteString.of(Hex.decode(thumbprint));
+      transactions.applyImmediately(() -> {
+        ByteString thumbprintBytes = ByteString.of(Hex.decode(thumbprint));
 
-            if (isTrustedCertificate) {
-              if (!trustListManager.removeTrustedCertificate(thumbprintBytes)) {
-                throw new UaException(StatusCodes.Bad_InvalidArgument);
-              }
-            } else {
-              if (!trustListManager.removeIssuerCertificate(thumbprintBytes)) {
-                throw new UaException(StatusCodes.Bad_InvalidArgument);
-              }
-            }
-          });
+        if (isTrustedCertificate) {
+          if (!trustListManager.removeTrustedCertificate(thumbprintBytes)) {
+            throw new UaException(StatusCodes.Bad_InvalidArgument);
+          }
+        } else {
+          if (!trustListManager.removeIssuerCertificate(thumbprintBytes)) {
+            throw new UaException(StatusCodes.Bad_InvalidArgument);
+          }
+        }
+      });
     }
   }
 

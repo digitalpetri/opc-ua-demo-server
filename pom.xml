@@ -59,7 +59,7 @@
     <maven-failsafe-plugin.version>3.6.1</maven-failsafe-plugin.version>
     <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
     <maven-surefire-plugin.version>3.6.1</maven-surefire-plugin.version>
-    <spotless-maven-plugin.version>3.8.0</spotless-maven-plugin.version>
+    <spotless-maven-plugin.version>3.11.0</spotless-maven-plugin.version>
     <native-maven-plugin.version>1.1.18</native-maven-plugin.version>
   </properties>
 

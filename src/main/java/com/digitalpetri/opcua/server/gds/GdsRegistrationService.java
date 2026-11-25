@@ -377,21 +377,19 @@ public final class GdsRegistrationService implements AutoCloseable {
       List<EndpointDescription> endpoints, SecurityPolicy policy, UserTokenType tokenType)
       throws RegistrationException {
     return endpoints.stream()
-        .filter(
-            e ->
-                policy.getUri().equals(e.getSecurityPolicyUri())
-                    && e.getSecurityMode() == MessageSecurityMode.SignAndEncrypt
-                    && Stack.TCP_UASC_UABINARY_TRANSPORT_URI.equals(e.getTransportProfileUri())
-                    && e.getUserIdentityTokens() != null
-                    && Arrays.stream(e.getUserIdentityTokens())
-                        .anyMatch(t -> compatibleToken(t, e, tokenType)))
+        .filter(e ->
+            policy.getUri().equals(e.getSecurityPolicyUri())
+                && e.getSecurityMode() == MessageSecurityMode.SignAndEncrypt
+                && Stack.TCP_UASC_UABINARY_TRANSPORT_URI.equals(e.getTransportProfileUri())
+                && e.getUserIdentityTokens() != null
+                && Arrays.stream(e.getUserIdentityTokens())
+                    .anyMatch(t -> compatibleToken(t, e, tokenType)))
         .findFirst()
-        .orElseThrow(
-            () ->
-                new RegistrationException(
-                    "No endpoint supports configured policy, SignAndEncrypt, UA TCP binary, and "
-                        + (tokenType == UserTokenType.Anonymous ? "anonymous" : "username")
-                        + " authentication"));
+        .orElseThrow(() ->
+            new RegistrationException(
+                "No endpoint supports configured policy, SignAndEncrypt, UA TCP binary, and "
+                    + (tokenType == UserTokenType.Anonymous ? "anonymous" : "username")
+                    + " authentication"));
   }
 
   static boolean retryable(Throwable failure) {

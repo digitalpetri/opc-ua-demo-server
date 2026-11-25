@@ -113,10 +113,9 @@ public record ReverseConnectConfig(List<ReverseConnectTargetConfig> targets) {
 
       boolean match =
           serverEndpointUrls.stream()
-              .anyMatch(
-                  serverUrl ->
-                      endpointUrl.equals(serverUrl)
-                          || endpointPath.equals(EndpointUtil.getPath(serverUrl)));
+              .anyMatch(serverUrl ->
+                  endpointUrl.equals(serverUrl)
+                      || endpointPath.equals(EndpointUtil.getPath(serverUrl)));
 
       if (!match) {
         String configuredUrls =

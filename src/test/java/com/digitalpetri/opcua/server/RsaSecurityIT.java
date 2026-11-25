@@ -60,20 +60,18 @@ class RsaSecurityIT {
             SecurityPolicy.Aes256_Sha256_RsaPss,
             SecurityPolicy.RSA_DH_AesGcm,
             SecurityPolicy.RSA_DH_ChaChaPoly)
-        .flatMap(
-            policy -> {
-              Stream<MessageSecurityMode> modes =
-                  policy == SecurityPolicy.None
-                      ? Stream.of(MessageSecurityMode.None)
-                      : Stream.of(MessageSecurityMode.Sign, MessageSecurityMode.SignAndEncrypt);
-              return modes.map(
-                  mode ->
-                      DynamicTest.dynamicTest(
-                          policy + "/" + mode,
-                          () ->
-                              assertTokenConnection(
-                                  policy, mode, tokenType, tempDir.resolve(policy + "-" + mode))));
-            });
+        .flatMap(policy -> {
+          Stream<MessageSecurityMode> modes =
+              policy == SecurityPolicy.None
+                  ? Stream.of(MessageSecurityMode.None)
+                  : Stream.of(MessageSecurityMode.Sign, MessageSecurityMode.SignAndEncrypt);
+          return modes.map(mode ->
+              DynamicTest.dynamicTest(
+                  policy + "/" + mode,
+                  () ->
+                      assertTokenConnection(
+                          policy, mode, tokenType, tempDir.resolve(policy + "-" + mode))));
+        });
   }
 
   private static void assertTokenConnection(

@@ -80,30 +80,29 @@ class AliasSupportIT {
         OpcUaTestServerBuilder.builder()
             .withDataDir(tempDir)
             .withConfig(ConfigFactory.parseMap(Map.of("address-space.dynamic.enabled", true)))
-            .build(
-                transportProfile -> {
-                  if (transportProfile != TransportProfile.TCP_UASC_UABINARY) {
-                    return null;
-                  }
+            .build(transportProfile -> {
+              if (transportProfile != TransportProfile.TCP_UASC_UABINARY) {
+                return null;
+              }
 
-                  OpcTcpServerTransportConfig transportConfig =
-                      OpcTcpServerTransportConfig.newBuilder().build();
+              OpcTcpServerTransportConfig transportConfig =
+                  OpcTcpServerTransportConfig.newBuilder().build();
 
-                  return new OpcTcpServerTransport(transportConfig) {
-                    @Override
-                    public synchronized void bind(
-                        ServerApplicationContext applicationContext, InetSocketAddress bindAddress)
-                        throws Exception {
+              return new OpcTcpServerTransport(transportConfig) {
+                @Override
+                public synchronized void bind(
+                    ServerApplicationContext applicationContext, InetSocketAddress bindAddress)
+                    throws Exception {
 
-                      bindObserved.set(true);
-                      OpcUaDemoServer startingServer = serverReference.get();
-                      aliasesCompleteAtBind.set(
-                          startingServer != null && aliasAddressSpaceIsComplete(startingServer));
+                  bindObserved.set(true);
+                  OpcUaDemoServer startingServer = serverReference.get();
+                  aliasesCompleteAtBind.set(
+                      startingServer != null && aliasAddressSpaceIsComplete(startingServer));
 
-                      super.bind(applicationContext, bindAddress);
-                    }
-                  };
-                });
+                  super.bind(applicationContext, bindAddress);
+                }
+              };
+            });
     serverReference.set(server);
 
     server.startup();

@@ -107,12 +107,11 @@ public class ServerConfigurationObject extends AbstractLifecycle {
           // closes. Staged changes are discarded; nothing was applied.
           transactions
               .cancelIfOwned(session.getSessionId())
-              .ifPresent(
-                  transaction ->
-                      logger.info(
-                          "Discarded {} staged change(s); owning Session {} closed",
-                          transaction.size(),
-                          session.getSessionId()));
+              .ifPresent(transaction ->
+                  logger.info(
+                      "Discarded {} staged change(s); owning Session {} closed",
+                      transaction.size(),
+                      session.getSessionId()));
         }
       };
 
@@ -253,12 +252,11 @@ public class ServerConfigurationObject extends AbstractLifecycle {
             .getCertificateTypesNode()
             .getFilterChain()
             .addLast(
-                AttributeFilters.getValue(
-                    _ -> {
-                      NodeId[] certificateTypeIds =
-                          group.getSupportedCertificateTypeIds().toArray(NodeId[]::new);
-                      return new DataValue(new Variant(certificateTypeIds));
-                    }));
+                AttributeFilters.getValue(_ -> {
+                  NodeId[] certificateTypeIds =
+                      group.getSupportedCertificateTypeIds().toArray(NodeId[]::new);
+                  return new DataValue(new Variant(certificateTypeIds));
+                }));
       }
     }
 
@@ -710,14 +708,13 @@ public class ServerConfigurationObject extends AbstractLifecycle {
               .certificateGroup()
               .getCertificateChain(update.certificateTypeId())
               .map(chain -> chain[0])
-              .ifPresent(
-                  current -> {
-                    try {
-                      thumbprints.add(CertificateUtil.thumbprint(current));
-                    } catch (UaException e) {
-                      logger.warn("Unable to compute thumbprint of replaced certificate", e);
-                    }
-                  });
+              .ifPresent(current -> {
+                try {
+                  thumbprints.add(CertificateUtil.thumbprint(current));
+                } catch (UaException e) {
+                  logger.warn("Unable to compute thumbprint of replaced certificate", e);
+                }
+              });
         }
       }
 

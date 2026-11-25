@@ -272,11 +272,10 @@ public final class AlarmNodesFragment extends DemoAddressSpaceFragment {
     getServer()
         .getAddressSpaceManager()
         .getManagedNode(NodeIds.Server)
-        .ifPresent(
-            serverNode ->
-                serverNode
-                    .getNodeManager()
-                    .removeReferences(reference, getServer().getNamespaceTable()));
+        .ifPresent(serverNode ->
+            serverNode
+                .getNodeManager()
+                .removeReferences(reference, getServer().getNamespaceTable()));
   }
 
   private void advanceSafely() {

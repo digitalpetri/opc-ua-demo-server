@@ -124,9 +124,8 @@ class DataTypeTestNamespaceIT {
 
     return references != null
         && Arrays.stream(references)
-            .anyMatch(
-                ref ->
-                    Objects.equals(ref.getBrowseName().getNamespaceIndex(), namespaceIndex)
-                        && Objects.equals(ref.getBrowseName().getName(), browseName));
+            .anyMatch(ref ->
+                Objects.equals(ref.getBrowseName().getNamespaceIndex(), namespaceIndex)
+                    && Objects.equals(ref.getBrowseName().getName(), browseName));
   }
 }

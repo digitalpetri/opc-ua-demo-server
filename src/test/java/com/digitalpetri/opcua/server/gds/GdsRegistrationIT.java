@@ -332,16 +332,15 @@ class GdsRegistrationIT {
                 gdsServer.getServer().getNamespaceTable()));
     MethodInvocationHandler original = method.getInvocationHandler();
     var release = new CountDownLatch(1);
-    method.setInvocationHandler(
-        (context, request) -> {
-          CallMethodResult result = original.invoke(context, request);
-          try {
-            release.await(10, TimeUnit.SECONDS);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          }
-          return result;
-        });
+    method.setInvocationHandler((context, request) -> {
+      CallMethodResult result = original.invoke(context, request);
+      try {
+        release.await(10, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+      return result;
+    });
     try {
       register(ConfigFactory.empty());
       assertEquals(
@@ -358,11 +357,10 @@ class GdsRegistrationIT {
             GdsNodeIds.Directory_RegisterApplication.toNodeIdOrThrow(
                 gdsServer.getServer().getNamespaceTable()));
     MethodInvocationHandler original = method.getInvocationHandler();
-    method.setInvocationHandler(
-        (context, request) -> {
-          original.invoke(context, request);
-          return bad(StatusCodes.Bad_EntryExists);
-        });
+    method.setInvocationHandler((context, request) -> {
+      original.invoke(context, request);
+      return bad(StatusCodes.Bad_EntryExists);
+    });
     register(ConfigFactory.empty());
     assertEquals(1, namespace.getRegisterApplicationCallCount());
   }
@@ -478,14 +476,13 @@ class GdsRegistrationIT {
   void shutdownDuringDiscoveryClosesSocketAndPreventsRetry() throws Exception {
     try (var blackhole = new ServerSocket(0)) {
       var accepted =
-          CompletableFuture.supplyAsync(
-              () -> {
-                try {
-                  return blackhole.accept();
-                } catch (Exception e) {
-                  throw new RuntimeException(e);
-                }
-              });
+          CompletableFuture.supplyAsync(() -> {
+            try {
+              return blackhole.accept();
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
+          });
       GdsRegistrationService service =
           service(
               ConfigFactory.parseMap(
@@ -516,35 +513,33 @@ class GdsRegistrationIT {
             GdsNodeIds.Directory_FindApplications.toNodeIdOrThrow(
                 gdsServer.getServer().getNamespaceTable()));
     MethodInvocationHandler original = method.getInvocationHandler();
-    method.setInvocationHandler(
-        (context, request) -> {
-          calls.incrementAndGet();
-          try {
-            new CountDownLatch(1).await(800, TimeUnit.MILLISECONDS);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          }
-          return original.invoke(context, request);
-        });
+    method.setInvocationHandler((context, request) -> {
+      calls.incrementAndGet();
+      try {
+        new CountDownLatch(1).await(800, TimeUnit.MILLISECONDS);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+      return original.invoke(context, request);
+    });
     UaMethodNode register =
         method(
             GdsNodeIds.Directory_RegisterApplication.toNodeIdOrThrow(
                 gdsServer.getServer().getNamespaceTable()));
-    register.setInvocationHandler(
-        (_, _) -> {
-          try {
-            new CountDownLatch(1).await(800, TimeUnit.MILLISECONDS);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-          }
-          return bad(StatusCodes.Bad_Timeout);
-        });
+    register.setInvocationHandler((_, _) -> {
+      try {
+        new CountDownLatch(1).await(800, TimeUnit.MILLISECONDS);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+      return bad(StatusCodes.Bad_Timeout);
+    });
     GdsRegistrationService service =
         service(
             ConfigFactory.parseString(
                 """
-        gds.registration { request-timeout=1s, attempt-timeout=1s, retry-interval=100ms }
-        """));
+                gds.registration { request-timeout=1s, attempt-timeout=1s, retry-interval=100ms }
+                """));
     service.start();
     await(() -> calls.get() >= 2);
     assertFalse(service.completion().isDone());
@@ -725,10 +720,9 @@ class GdsRegistrationIT {
         method(
             GdsNodeIds.Directory_RegisterApplication.toNodeIdOrThrow(
                 gdsServer.getServer().getNamespaceTable()));
-    register.setInvocationHandler(
-        (_, _) ->
-            new CallMethodResult(
-                StatusCode.GOOD, null, null, new Variant[] {new Variant(NodeId.NULL_VALUE)}));
+    register.setInvocationHandler((_, _) ->
+        new CallMethodResult(
+            StatusCode.GOOD, null, null, new Variant[] {new Variant(NodeId.NULL_VALUE)}));
     GdsRegistrationService invalid = service(ConfigFactory.empty());
     invalid.start();
     ExecutionException error =
