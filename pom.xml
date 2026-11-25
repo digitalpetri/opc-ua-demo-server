@@ -45,22 +45,22 @@
     <data-type-test.version>0.3</data-type-test.version>
     <jakarta.xml.bind-api.version>4.0.2</jakarta.xml.bind-api.version>
     <jetbrains-annotations.version>24.1.0</jetbrains-annotations.version>
-    <junit.version>6.1.2</junit.version>
-    <logback.version>1.5.38</logback.version>
-    <milo.version>1.2.0-SNAPSHOT</milo.version>
-    <netty.version>4.2.16.Final</netty.version>
-    <typesafe-config.version>1.4.9</typesafe-config.version>
-    <uanodeset.version>0.4.1</uanodeset.version>
+    <junit.version>6.1.3</junit.version>
+    <logback.version>1.6.6</logback.version>
+    <milo.version>1.2.0-RC3</milo.version>
+    <netty.version>4.2.20.Final</netty.version>
+    <typesafe-config.version>1.4.10</typesafe-config.version>
+    <uanodeset.version>0.5.2</uanodeset.version>
 
     <!-- Plugin Dependencies -->
-    <buildnumber-maven-plugin.version>3.3.0</buildnumber-maven-plugin.version>
+    <buildnumber-maven-plugin.version>3.3.1</buildnumber-maven-plugin.version>
     <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
-    <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
-    <maven-failsafe-plugin.version>3.5.5</maven-failsafe-plugin.version>
+    <maven-enforcer-plugin.version>3.7.0</maven-enforcer-plugin.version>
+    <maven-failsafe-plugin.version>3.6.1</maven-failsafe-plugin.version>
     <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
-    <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
-    <spotless-maven-plugin.version>3.8.0</spotless-maven-plugin.version>
-    <native-maven-plugin.version>1.1.5</native-maven-plugin.version>
+    <maven-surefire-plugin.version>3.6.1</maven-surefire-plugin.version>
+    <spotless-maven-plugin.version>3.11.0</spotless-maven-plugin.version>
+    <native-maven-plugin.version>1.1.18</native-maven-plugin.version>
   </properties>
 
   <build>
@@ -378,24 +378,5 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
-  <repositories>
-    <!--
-      Milo is currently tracked at a snapshot version, which Central proper does not serve. Without
-      this a clean checkout resolves it only from whatever happens to be in the local repository, so
-      CI and the native image's builder container cannot build the project at all.
-    -->
-    <repository>
-      <id>central-portal-snapshots</id>
-      <name>Central Portal Snapshots</name>
-      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 
 </project>

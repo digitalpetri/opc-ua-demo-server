@@ -249,60 +249,57 @@ class ServerConfigurationObjectIT {
       var mutationDone = new CompletableFuture<Void>();
       Thread mutation =
           Thread.ofPlatform()
-              .start(
-                  () -> {
-                    try {
-                      if (remove) {
-                        assertGood(
-                            object
-                                .new RemoveCertificateMethodImpl(
-                                    node.getRemoveCertificateMethodNode())
-                                .invoke(
-                                    Optional::empty,
-                                    new CallMethodRequest(
-                                        TRUST_LIST,
-                                        node.getRemoveCertificateMethodNode().getNodeId(),
-                                        new Variant[] {
-                                          new Variant(
-                                              HexFormat.of()
-                                                  .formatHex(
-                                                      CertificateUtil.thumbprint(certificate)
-                                                          .bytesOrEmpty())),
-                                          new Variant(false)
-                                        })));
-                      } else {
-                        assertGood(
-                            object.new AddCertificateMethodImpl(node.getAddCertificateMethodNode())
-                                .invoke(
-                                    Optional::empty,
-                                    new CallMethodRequest(
-                                        TRUST_LIST,
-                                        node.getAddCertificateMethodNode().getNodeId(),
-                                        new Variant[] {
-                                          new Variant(ByteString.of(certificate.getEncoded())),
-                                          new Variant(false)
-                                        })));
-                      }
-                      mutationDone.complete(null);
-                    } catch (Throwable e) {
-                      mutationDone.completeExceptionally(e);
-                    }
-                  });
+              .start(() -> {
+                try {
+                  if (remove) {
+                    assertGood(
+                        object
+                            .new RemoveCertificateMethodImpl(node.getRemoveCertificateMethodNode())
+                            .invoke(
+                                Optional::empty,
+                                new CallMethodRequest(
+                                    TRUST_LIST,
+                                    node.getRemoveCertificateMethodNode().getNodeId(),
+                                    new Variant[] {
+                                      new Variant(
+                                          HexFormat.of()
+                                              .formatHex(
+                                                  CertificateUtil.thumbprint(certificate)
+                                                      .bytesOrEmpty())),
+                                      new Variant(false)
+                                    })));
+                  } else {
+                    assertGood(
+                        object.new AddCertificateMethodImpl(node.getAddCertificateMethodNode())
+                            .invoke(
+                                Optional::empty,
+                                new CallMethodRequest(
+                                    TRUST_LIST,
+                                    node.getAddCertificateMethodNode().getNodeId(),
+                                    new Variant[] {
+                                      new Variant(ByteString.of(certificate.getEncoded())),
+                                      new Variant(false)
+                                    })));
+                  }
+                  mutationDone.complete(null);
+                } catch (Throwable e) {
+                  mutationDone.completeExceptionally(e);
+                }
+              });
       var started = new CompletableFuture<PushTransaction>();
       Thread contender = null;
       try {
         entered.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         contender =
             Thread.ofPlatform()
-                .start(
-                    () -> {
-                      try {
-                        started.complete(
-                            transactions.beginOrContinue(new NodeId(0, "contending-session")));
-                      } catch (Throwable e) {
-                        started.completeExceptionally(e);
-                      }
-                    });
+                .start(() -> {
+                  try {
+                    started.complete(
+                        transactions.beginOrContinue(new NodeId(0, "contending-session")));
+                  } catch (Throwable e) {
+                    started.completeExceptionally(e);
+                  }
+                });
         // Observe lock contention or completion, rather than relying on a delay to prove that
         // the second thread had an opportunity to start its transaction.
         long deadline = System.nanoTime() + TIMEOUT.toNanos();

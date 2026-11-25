@@ -77,19 +77,16 @@ public final class OpcUaTestClient {
             .filter(e -> e.getSecurityMode() == securityMode)
             .filter(e -> !e.getPath().endsWith("/discovery"))
             .findFirst()
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "no endpoint configured for " + securityPolicy + "/" + securityMode));
+            .orElseThrow(() ->
+                new IllegalArgumentException(
+                    "no endpoint configured for " + securityPolicy + "/" + securityMode));
 
     return OpcUaClient.create(
         endpoint.getEndpointUrl(),
         endpoints ->
             endpoints.stream()
-                .filter(
-                    e ->
-                        Objects.equals(
-                            e.getSecurityPolicyUri(), endpoint.getSecurityPolicy().getUri()))
+                .filter(e ->
+                    Objects.equals(e.getSecurityPolicyUri(), endpoint.getSecurityPolicy().getUri()))
                 .filter(e -> e.getSecurityMode() == endpoint.getSecurityMode())
                 .filter(
                     e -> e.getEndpointUrl() == null || !e.getEndpointUrl().endsWith("/discovery"))

@@ -74,10 +74,9 @@ final class FileAliasVersionStore implements AliasVersionStore {
           categoryId =
               categoryId
                   .absolute(namespaceTable)
-                  .orElseThrow(
-                      () ->
-                          new IllegalArgumentException(
-                              "unregistered namespace index in legacy alias version key: " + key));
+                  .orElseThrow(() ->
+                      new IllegalArgumentException(
+                          "unregistered namespace index in legacy alias version key: " + key));
         }
         loaded.put(categoryId, UInteger.valueOf(value));
       } catch (RuntimeException e) {
@@ -115,9 +114,8 @@ final class FileAliasVersionStore implements AliasVersionStore {
       temporaryPath = Files.createTempFile(parentPath, filePath.getFileName().toString(), ".tmp");
 
       var properties = new Properties();
-      candidateVersions.forEach(
-          (nodeId, version) ->
-              properties.setProperty(nodeId.toParseableString(), version.toString()));
+      candidateVersions.forEach((nodeId, version) ->
+          properties.setProperty(nodeId.toParseableString(), version.toString()));
 
       try (FileChannel fileChannel =
               FileChannel.open(

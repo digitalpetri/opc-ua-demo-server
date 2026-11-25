@@ -32,8 +32,8 @@ class GdsRegistrationConfigTest {
         GdsRegistrationConfig.fromConfig(
                 ConfigFactory.parseString(
                     """
-        gds.registration { enabled = false, identity = "placeholder", request-timeout = -1 }
-        """))
+                    gds.registration { enabled = false, identity = "placeholder", request-timeout = -1 }
+                    """))
             .isEmpty());
   }
 
@@ -81,22 +81,20 @@ class GdsRegistrationConfigTest {
             "retry-interval", List.of("0ms", "0.5ms", "1000000000000000000000s"),
             "discovery-url-list", List.of(List.of("opc.tcp://host/path?secret-value")),
             "update-existing", List.of(Map.of("secret-value", "x")));
-    invalid.forEach(
-        (key, values) ->
-            values.forEach(
-                value -> {
-                  Config config =
-                      ConfigFactory.parseMap(Map.of("gds.registration." + key, value))
-                          .withFallback(enabled());
-                  IllegalArgumentException error =
-                      assertThrows(
-                          IllegalArgumentException.class,
-                          () -> GdsRegistrationConfig.fromConfig(config),
-                          key + "=" + value);
-                  assertTrue(error.getMessage().contains("gds.registration." + key));
-                  assertFalse(error.toString().contains("secret-value"));
-                  assertNull(error.getCause());
-                }));
+    invalid.forEach((key, values) ->
+        values.forEach(value -> {
+          Config config =
+              ConfigFactory.parseMap(Map.of("gds.registration." + key, value))
+                  .withFallback(enabled());
+          IllegalArgumentException error =
+              assertThrows(
+                  IllegalArgumentException.class,
+                  () -> GdsRegistrationConfig.fromConfig(config),
+                  key + "=" + value);
+          assertTrue(error.getMessage().contains("gds.registration." + key));
+          assertFalse(error.toString().contains("secret-value"));
+          assertNull(error.getCause());
+        }));
   }
 
   @Test

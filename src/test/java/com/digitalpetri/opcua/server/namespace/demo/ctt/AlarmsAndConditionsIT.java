@@ -285,9 +285,8 @@ class AlarmsAndConditionsIT {
         }
 
         Map<NodeId, Object> heldValues = new ConcurrentHashMap<>();
-        inputs.forEach(
-            (conditionId, input) ->
-                heldValues.put(conditionId, input.getValue().getValue().getValue()));
+        inputs.forEach((conditionId, input) ->
+            heldValues.put(conditionId, input.getValue().getValue().getValue()));
 
         Thread.sleep(ENABLE_HOLD_DWELL_TIME.multipliedBy(3).toMillis());
 
@@ -393,11 +392,10 @@ class AlarmsAndConditionsIT {
                   nodeId(AlarmsAndConditionsFragment.EXCLUSIVE_LIMIT_INPUT_ID));
           inputItem.setSamplingInterval(SLOW_SAMPLING_INTERVAL);
           inputItem.setQueueSize(uint(1000));
-          inputItem.setDataValueListener(
-              (_, _) -> {
-                valueNotifications.incrementAndGet();
-                initialValueReceived.countDown();
-              });
+          inputItem.setDataValueListener((_, _) -> {
+            valueNotifications.incrementAndGet();
+            initialValueReceived.countDown();
+          });
 
           OpcUaMonitoredItem eventItem =
               OpcUaMonitoredItem.newEventItem(NodeIds.Server, exclusiveLimitEventFilter());
@@ -483,11 +481,10 @@ class AlarmsAndConditionsIT {
                   AlarmsAndConditionsFragment.CONFIRM_CONDITION_ID,
                   AlarmsAndConditionsFragment.SHELVING_CYCLING_CONDITION_ID,
                   AlarmsAndConditionsFragment.SHELVING_STEADY_CONDITION_ID))
-          .forEach(
-              identifier ->
-                  assertTrue(
-                      server.getConditionManager().findCondition(nodeId(identifier)).isEmpty(),
-                      () -> "condition unexpectedly registered: " + identifier));
+          .forEach(identifier ->
+              assertTrue(
+                  server.getConditionManager().findCondition(nodeId(identifier)).isEmpty(),
+                  () -> "condition unexpectedly registered: " + identifier));
     } finally {
       demoServer.shutdown();
     }

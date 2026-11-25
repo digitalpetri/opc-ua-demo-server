@@ -178,36 +178,35 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
               new LocalizedText("Demo"));
 
       getLifecycleManager()
-          .addStartupTask(
-              () -> {
-                getNodeManager().addNode(demoFolder);
+          .addStartupTask(() -> {
+            getNodeManager().addNode(demoFolder);
 
-                demoFolder.addReference(
-                    new Reference(
-                        demoFolder.getNodeId(),
-                        NodeIds.Organizes,
-                        NodeIds.ObjectsFolder.expanded(),
-                        Direction.INVERSE));
+            demoFolder.addReference(
+                new Reference(
+                    demoFolder.getNodeId(),
+                    NodeIds.Organizes,
+                    NodeIds.ObjectsFolder.expanded(),
+                    Direction.INVERSE));
 
-                demoFolder.addReference(
-                    new Reference(
-                        demoFolder.getNodeId(),
-                        NodeIds.HasComponent,
-                        ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Scalar"),
-                        Direction.FORWARD));
-                demoFolder.addReference(
-                    new Reference(
-                        demoFolder.getNodeId(),
-                        NodeIds.HasComponent,
-                        ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Array"),
-                        Direction.FORWARD));
-                demoFolder.addReference(
-                    new Reference(
-                        demoFolder.getNodeId(),
-                        NodeIds.HasComponent,
-                        ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Matrix"),
-                        Direction.FORWARD));
-              });
+            demoFolder.addReference(
+                new Reference(
+                    demoFolder.getNodeId(),
+                    NodeIds.HasComponent,
+                    ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Scalar"),
+                    Direction.FORWARD));
+            demoFolder.addReference(
+                new Reference(
+                    demoFolder.getNodeId(),
+                    NodeIds.HasComponent,
+                    ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Array"),
+                    Direction.FORWARD));
+            demoFolder.addReference(
+                new Reference(
+                    demoFolder.getNodeId(),
+                    NodeIds.HasComponent,
+                    ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Matrix"),
+                    Direction.FORWARD));
+          });
     }
 
     private void addNamespaceMetadataNodes() {

@@ -23,10 +23,9 @@ class ServerConfigurationObjectTest {
                     true, ByteString.of(new byte[31])));
 
     assertEquals(StatusCodes.Bad_InvalidArgument, exception.getStatusCode().getValue());
-    assertDoesNotThrow(
-        () ->
-            ServerConfigurationObject.validateRegeneratePrivateKeyNonce(
-                true, ByteString.of(new byte[32])));
+    assertDoesNotThrow(() ->
+        ServerConfigurationObject.validateRegeneratePrivateKeyNonce(
+            true, ByteString.of(new byte[32])));
     assertDoesNotThrow(
         () -> ServerConfigurationObject.validateRegeneratePrivateKeyNonce(false, null));
   }

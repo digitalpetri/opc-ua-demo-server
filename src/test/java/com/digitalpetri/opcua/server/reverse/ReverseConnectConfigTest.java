@@ -396,11 +396,9 @@ class ReverseConnectConfigTest {
     // targetWith("") configures endpoint-url = opc.tcp://localhost:4840/milo
     ReverseConnectConfig reverseConnectConfig = ReverseConnectConfig.fromConfig(targetWith(""));
 
-    assertDoesNotThrow(
-        () ->
-            reverseConnectConfig.validateEndpointUrls(
-                List.of(
-                    "opc.tcp://localhost:4840/milo", "opc.tcp://localhost:4840/milo/discovery")));
+    assertDoesNotThrow(() ->
+        reverseConnectConfig.validateEndpointUrls(
+            List.of("opc.tcp://localhost:4840/milo", "opc.tcp://localhost:4840/milo/discovery")));
   }
 
   @Test

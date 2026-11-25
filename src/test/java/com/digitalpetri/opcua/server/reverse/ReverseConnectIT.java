@@ -154,10 +154,9 @@ class ReverseConnectIT {
       assertTrue(
           appender.list.stream()
               .map(ILoggingEvent::getFormattedMessage)
-              .anyMatch(
-                  message ->
-                      message.contains("Reverse Connect target registered")
-                          && message.contains("disabled")),
+              .anyMatch(message ->
+                  message.contains("Reverse Connect target registered")
+                      && message.contains("disabled")),
           "registration of the disabled target should be logged");
 
       clientListener.setSoTimeout(NO_CONNECT_TIMEOUT_MILLIS);

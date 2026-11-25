@@ -228,10 +228,9 @@ public class OpcUaDemoServer extends AbstractLifecycle {
           NodeId certificateTypeId =
               profile
                   .preferredCertificateTypeId()
-                  .orElseThrow(
-                      () ->
-                          new IllegalStateException(
-                              "ECC security policy has no certificate type: " + securityPolicy));
+                  .orElseThrow(() ->
+                      new IllegalStateException(
+                          "ECC security policy has no certificate type: " + securityPolicy));
 
           supportedCertificateTypeIds.add(certificateTypeId);
         }
@@ -503,19 +502,18 @@ public class OpcUaDemoServer extends AbstractLifecycle {
   }
 
   private UsernameIdentityValidator createUsernameIdentityValidator() {
-    return new UsernameIdentityValidator(
-        authenticationChallenge -> {
-          String username = authenticationChallenge.getUsername();
-          String password = authenticationChallenge.getPassword();
+    return new UsernameIdentityValidator(authenticationChallenge -> {
+      String username = authenticationChallenge.getUsername();
+      String password = authenticationChallenge.getPassword();
 
-          var validUser = "User".equals(username) && "password".equals(password);
-          var validUserA = "UserA".equals(username) && "password".equals(password);
-          var validUserB = "UserB".equals(username) && "password".equals(password);
-          var validSiteAdmin = "SiteAdmin".equals(username) && "password".equals(password);
-          var validSecurityAdmin = "SecurityAdmin".equals(username) && "password".equals(password);
+      var validUser = "User".equals(username) && "password".equals(password);
+      var validUserA = "UserA".equals(username) && "password".equals(password);
+      var validUserB = "UserB".equals(username) && "password".equals(password);
+      var validSiteAdmin = "SiteAdmin".equals(username) && "password".equals(password);
+      var validSecurityAdmin = "SecurityAdmin".equals(username) && "password".equals(password);
 
-          return validUser || validUserA || validUserB || validSiteAdmin || validSecurityAdmin;
-        });
+      return validUser || validUserA || validUserB || validSiteAdmin || validSecurityAdmin;
+    });
   }
 
   private X509IdentityValidator createX509IdentityValidator(TrustListManager userTrustListManager) {
@@ -551,14 +549,13 @@ public class OpcUaDemoServer extends AbstractLifecycle {
         readBuildProperty(BuildProperties.BUILD_NUMBER, PROPERTY_BUILD_NUMBER).orElse("dev");
     DateTime buildDate =
         readBuildProperty(BuildProperties.BUILD_DATE, PROPERTY_BUILD_DATE)
-            .map(
-                date -> {
-                  try {
-                    return new DateTime(dateFormat.parse(date));
-                  } catch (Throwable t) {
-                    return DateTime.NULL_VALUE;
-                  }
-                })
+            .map(date -> {
+              try {
+                return new DateTime(dateFormat.parse(date));
+              } catch (Throwable t) {
+                return DateTime.NULL_VALUE;
+              }
+            })
             .orElse(DateTime.NULL_VALUE);
 
     return new BuildInfo(
@@ -865,15 +862,14 @@ public class OpcUaDemoServer extends AbstractLifecycle {
     var shutdownLatch = new CountDownLatch(1);
     Runtime.getRuntime()
         .addShutdownHook(
-            new Thread(
-                () -> {
-                  System.out.println("Shutting down server...");
-                  try {
-                    server.shutdown();
-                  } finally {
-                    shutdownLatch.countDown();
-                  }
-                }));
+            new Thread(() -> {
+              System.out.println("Shutting down server...");
+              try {
+                server.shutdown();
+              } finally {
+                shutdownLatch.countDown();
+              }
+            }));
     shutdownLatch.await();
   }
 

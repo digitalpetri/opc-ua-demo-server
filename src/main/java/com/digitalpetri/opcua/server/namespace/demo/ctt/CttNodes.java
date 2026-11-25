@@ -146,26 +146,25 @@ public class CttNodes extends AddressSpaceComposite implements Lifecycle {
               new LocalizedText("Static"));
 
       getLifecycleManager()
-          .addStartupTask(
-              () -> {
-                getNodeManager().addNode(cttFolder);
+          .addStartupTask(() -> {
+            getNodeManager().addNode(cttFolder);
 
-                cttFolder.addReference(
-                    new Reference(
-                        cttFolder.getNodeId(),
-                        ReferenceTypes.HasComponent,
-                        NodeIds.ObjectsFolder.expanded(),
-                        Direction.INVERSE));
+            cttFolder.addReference(
+                new Reference(
+                    cttFolder.getNodeId(),
+                    ReferenceTypes.HasComponent,
+                    NodeIds.ObjectsFolder.expanded(),
+                    Direction.INVERSE));
 
-                getNodeManager().addNode(staticFolder);
+            getNodeManager().addNode(staticFolder);
 
-                staticFolder.addReference(
-                    new Reference(
-                        staticFolder.getNodeId(),
-                        ReferenceTypes.HasComponent,
-                        cttFolder.getNodeId().expanded(),
-                        Direction.INVERSE));
-              });
+            staticFolder.addReference(
+                new Reference(
+                    staticFolder.getNodeId(),
+                    ReferenceTypes.HasComponent,
+                    cttFolder.getNodeId().expanded(),
+                    Direction.INVERSE));
+          });
     }
 
     public NodeId getCttFolderNodeId() {

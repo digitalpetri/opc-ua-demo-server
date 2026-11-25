@@ -162,18 +162,17 @@ public class FileObject extends AbstractLifecycle {
   protected void closeHandles(NodeId sessionId, boolean writeOnly) {
     var row = new HashMap<>(handles.row(sessionId));
 
-    row.forEach(
-        (handleId, handle) -> {
-          if (writeOnly && (handle.mode.intValue() & MASK_WRITE) != MASK_WRITE) {
-            return;
-          }
-          handles.remove(sessionId, handleId);
-          try {
-            handle.file.close();
-          } catch (IOException e) {
-            logger.debug("Error closing file handle {} for Session {}", handleId, sessionId, e);
-          }
-        });
+    row.forEach((handleId, handle) -> {
+      if (writeOnly && (handle.mode.intValue() & MASK_WRITE) != MASK_WRITE) {
+        return;
+      }
+      handles.remove(sessionId, handleId);
+      try {
+        handle.file.close();
+      } catch (IOException e) {
+        logger.debug("Error closing file handle {} for Session {}", handleId, sessionId, e);
+      }
+    });
   }
 
   protected FileType.OpenMethod newOpenMethod(UaMethodNode methodNode) {
@@ -201,27 +200,25 @@ public class FileObject extends AbstractLifecycle {
   }
 
   protected AttributeFilter newOpenCountAttributeFilter() {
-    return AttributeFilters.getValue(
-        ctx -> {
-          var openCount = ushort(handles.size());
+    return AttributeFilters.getValue(ctx -> {
+      var openCount = ushort(handles.size());
 
-          return new DataValue(new Variant(openCount));
-        });
+      return new DataValue(new Variant(openCount));
+    });
   }
 
   protected AttributeFilter newSizeAttributeFilter() {
-    return AttributeFilters.getValue(
-        ctx -> {
-          var length = 0L;
-          try {
-            length = fileSupplier.get().length();
-          } catch (IOException ignored) {
-          }
+    return AttributeFilters.getValue(ctx -> {
+      var length = 0L;
+      try {
+        length = fileSupplier.get().length();
+      } catch (IOException ignored) {
+      }
 
-          var size = ulong(length);
+      var size = ulong(length);
 
-          return new DataValue(new Variant(size));
-        });
+      return new DataValue(new Variant(size));
+    });
   }
 
   @FunctionalInterface

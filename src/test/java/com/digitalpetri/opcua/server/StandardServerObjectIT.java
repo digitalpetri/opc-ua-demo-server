@@ -63,16 +63,15 @@ class StandardServerObjectIT {
     assertAll(
         "unsupported Server Object nodes",
         unsupportedNodeIds.stream()
-            .<Executable>map(
-                nodeId ->
-                    () ->
-                        assertTrue(
-                            server
-                                .getServer()
-                                .getAddressSpaceManager()
-                                .getManagedNode(nodeId)
-                                .isEmpty(),
-                            () -> nodeId + " should not be exposed")));
+            .<Executable>map(nodeId ->
+                () ->
+                    assertTrue(
+                        server
+                            .getServer()
+                            .getAddressSpaceManager()
+                            .getManagedNode(nodeId)
+                            .isEmpty(),
+                        () -> nodeId + " should not be exposed")));
 
     assertTrue(
         server
@@ -94,16 +93,15 @@ class StandardServerObjectIT {
     assertAll(
         "supported Server Object nodes",
         retainedNodeIds.stream()
-            .<Executable>map(
-                nodeId ->
-                    () ->
-                        assertTrue(
-                            server
-                                .getServer()
-                                .getAddressSpaceManager()
-                                .getManagedNode(nodeId)
-                                .isPresent(),
-                            () -> nodeId + " should remain exposed")));
+            .<Executable>map(nodeId ->
+                () ->
+                    assertTrue(
+                        server
+                            .getServer()
+                            .getAddressSpaceManager()
+                            .getManagedNode(nodeId)
+                            .isPresent(),
+                        () -> nodeId + " should remain exposed")));
 
     assertTrue(
         server
