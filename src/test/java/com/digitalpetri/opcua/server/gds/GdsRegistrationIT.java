@@ -761,7 +761,11 @@ class GdsRegistrationIT {
   void nativeBinaryRegistersSecurely() throws Exception {
     String binary = System.getProperty("gds.native.binary");
     assumeTrue(binary != null, "native smoke test runs after native packaging");
+
+    // Connect while the demo's trust list is still open.
+    GdsClient gds = inspector();
     demo.shutdown();
+
     Config nativeConfig =
         secure()
             .withFallback(settings())
@@ -796,7 +800,7 @@ class GdsRegistrationIT {
       await(() -> Files.isRegularFile(stateFile()) || !process.isAlive());
       assertTrue(Files.isRegularFile(stateFile()), () -> readLog(directory.resolve("native.log")));
       ApplicationRecordDataType record =
-          inspector().findApplications(demo.getServer().getConfig().getApplicationUri())[0];
+          gds.findApplications(demo.getServer().getConfig().getApplicationUri())[0];
       String[] discoveryUrls = record.getDiscoveryUrls();
       assertNotNull(discoveryUrls);
       assertFalse(
