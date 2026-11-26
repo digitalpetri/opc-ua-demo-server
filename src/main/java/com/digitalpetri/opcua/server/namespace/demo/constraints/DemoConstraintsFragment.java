@@ -508,6 +508,8 @@ public final class DemoConstraintsFragment extends DemoAddressSpaceFragment {
         DataTypeTestNodeIds.ConcreteTestType.toNodeId(nsTable).orElseThrow();
     NodeId concreteTestTypeEncodingId =
         ConcreteTestType.BINARY_ENCODING_ID.toNodeId(nsTable).orElseThrow();
+    NodeId concreteTestTypeExEncodingId =
+        ConcreteTestTypeEx.BINARY_ENCODING_ID.toNodeId(nsTable).orElseThrow();
 
     // WriteFullArrayOnly (AccessLevelEx bit 10)
     UaVariableNode writeFullArrayOnly =
@@ -564,6 +566,11 @@ public final class DemoConstraintsFragment extends DemoAddressSpaceFragment {
     subtypable.setAccessLevelEx(
         AccessLevelExType.of(
             AccessLevelExType.Field.CurrentRead, AccessLevelExType.Field.CurrentWrite));
+    subtypable
+        .getFilterChain()
+        .addLast(
+            DemoValueFilters.allowedBinaryEncodings(
+                Set.of(concreteTestTypeEncodingId, concreteTestTypeExEncodingId)));
 
     // WriteOnly (AccessLevel = CurrentWrite -> Bad_NotReadable)
     UaVariableNode writeOnly =

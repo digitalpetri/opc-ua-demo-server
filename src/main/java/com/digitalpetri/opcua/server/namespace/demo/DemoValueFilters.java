@@ -14,6 +14,7 @@ import java.util.UUID;
 import org.eclipse.milo.opcua.sdk.core.QualifiedProperty;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.sdk.server.model.variables.MultiStateValueDiscreteTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.variables.XYArrayItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilter;
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilterContext;
@@ -37,6 +38,8 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.structured.Range;
+import org.eclipse.milo.opcua.stack.core.types.structured.XVType;
 import org.eclipse.milo.opcua.stack.core.util.ArrayUtil;
 import org.eclipse.milo.opcua.stack.core.util.Namespaces;
 import org.jspecify.annotations.Nullable;
@@ -169,20 +172,22 @@ public final class DemoValueFilters {
                   DemoOptionSet.class,
                   dataValue.value().value());
 
-          DemoOptionSet current =
-              decodeCurrentOptionSet(encodingContext, variableNode.getValue().value().value());
+          synchronized (variableNode) {
+            DemoOptionSet current =
+                decodeCurrentOptionSet(encodingContext, variableNode.getValue().value().value());
 
-          DemoOptionSet merged = DemoOptionSet.mergeWrite(current, written);
-          ExtensionObject encoded = ExtensionObject.encode(encodingContext, merged);
+            DemoOptionSet merged = DemoOptionSet.mergeWrite(current, written);
+            ExtensionObject encoded = ExtensionObject.encode(encodingContext, merged);
 
-          DataValue updated =
-              new DataValue(
-                  Variant.ofExtensionObject(encoded),
-                  dataValue.statusCode(),
-                  dataValue.sourceTime(),
-                  dataValue.serverTime());
+            DataValue updated =
+                new DataValue(
+                    Variant.ofExtensionObject(encoded),
+                    dataValue.statusCode(),
+                    dataValue.sourceTime(),
+                    dataValue.serverTime());
 
-          ctx.writeAttribute(attributeId, updated);
+            ctx.writeAttribute(attributeId, updated);
+          }
           return;
         }
         ctx.writeAttribute(attributeId, value);
@@ -217,22 +222,24 @@ public final class DemoValueFilters {
             throw new UaException(StatusCodes.Bad_TypeMismatch, "Expected OptionSet array");
           }
 
-          DemoOptionSet[] currentArray =
-              decodeCurrentOptionSetElements(
-                  encodingContext, variableNode.getValue().value().value());
+          synchronized (variableNode) {
+            DemoOptionSet[] currentArray =
+                decodeCurrentOptionSetElements(
+                    encodingContext, variableNode.getValue().value().value());
 
-          ExtensionObject[] encoded =
-              mergeOptionSetElements(
-                  encodingContext, expectedBinaryEncodingId, currentArray, elements);
+            ExtensionObject[] encoded =
+                mergeOptionSetElements(
+                    encodingContext, expectedBinaryEncodingId, currentArray, elements);
 
-          DataValue updated =
-              new DataValue(
-                  Variant.ofExtensionObjectArray(encoded),
-                  dataValue.statusCode(),
-                  dataValue.sourceTime(),
-                  dataValue.serverTime());
+            DataValue updated =
+                new DataValue(
+                    Variant.ofExtensionObjectArray(encoded),
+                    dataValue.statusCode(),
+                    dataValue.sourceTime(),
+                    dataValue.serverTime());
 
-          ctx.writeAttribute(attributeId, updated);
+            ctx.writeAttribute(attributeId, updated);
+          }
           return;
         }
         ctx.writeAttribute(attributeId, value);
@@ -268,24 +275,26 @@ public final class DemoValueFilters {
             throw new UaException(StatusCodes.Bad_TypeMismatch, "Expected OptionSet matrix");
           }
 
-          DemoOptionSet[] currentFlat =
-              decodeCurrentOptionSetElements(
-                  encodingContext, variableNode.getValue().value().value());
+          synchronized (variableNode) {
+            DemoOptionSet[] currentFlat =
+                decodeCurrentOptionSetElements(
+                    encodingContext, variableNode.getValue().value().value());
 
-          ExtensionObject[] encodedFlat =
-              mergeOptionSetElements(
-                  encodingContext, expectedBinaryEncodingId, currentFlat, elements);
+            ExtensionObject[] encodedFlat =
+                mergeOptionSetElements(
+                    encodingContext, expectedBinaryEncodingId, currentFlat, elements);
 
-          Matrix updatedMatrix =
-              new Matrix(encodedFlat, matrix.getDimensions(), OpcUaDataType.ExtensionObject);
-          DataValue updated =
-              new DataValue(
-                  Variant.ofMatrix(updatedMatrix),
-                  dataValue.statusCode(),
-                  dataValue.sourceTime(),
-                  dataValue.serverTime());
+            Matrix updatedMatrix =
+                new Matrix(encodedFlat, matrix.getDimensions(), OpcUaDataType.ExtensionObject);
+            DataValue updated =
+                new DataValue(
+                    Variant.ofMatrix(updatedMatrix),
+                    dataValue.statusCode(),
+                    dataValue.sourceTime(),
+                    dataValue.serverTime());
 
-          ctx.writeAttribute(attributeId, updated);
+            ctx.writeAttribute(attributeId, updated);
+          }
           return;
         }
         ctx.writeAttribute(attributeId, value);
@@ -322,23 +331,26 @@ public final class DemoValueFilters {
                   StructWithOptionSet.class,
                   dataValue.value().value());
 
-          DemoOptionSet currentOptions =
-              decodeCurrentStructOptions(encodingContext, variableNode.getValue().value().value());
+          synchronized (variableNode) {
+            DemoOptionSet currentOptions =
+                decodeCurrentStructOptions(
+                    encodingContext, variableNode.getValue().value().value());
 
-          StructWithOptionSet mergedStruct =
-              new StructWithOptionSet(
-                  written.getName(),
-                  DemoOptionSet.mergeWrite(currentOptions, written.getOptions()));
+            StructWithOptionSet mergedStruct =
+                new StructWithOptionSet(
+                    written.getName(),
+                    DemoOptionSet.mergeWrite(currentOptions, written.getOptions()));
 
-          ExtensionObject encoded = ExtensionObject.encode(encodingContext, mergedStruct);
-          DataValue updated =
-              new DataValue(
-                  Variant.ofExtensionObject(encoded),
-                  dataValue.statusCode(),
-                  dataValue.sourceTime(),
-                  dataValue.serverTime());
+            ExtensionObject encoded = ExtensionObject.encode(encodingContext, mergedStruct);
+            DataValue updated =
+                new DataValue(
+                    Variant.ofExtensionObject(encoded),
+                    dataValue.statusCode(),
+                    dataValue.sourceTime(),
+                    dataValue.serverTime());
 
-          ctx.writeAttribute(attributeId, updated);
+            ctx.writeAttribute(attributeId, updated);
+          }
           return;
         }
         ctx.writeAttribute(attributeId, value);
@@ -374,22 +386,24 @@ public final class DemoValueFilters {
                 StatusCodes.Bad_TypeMismatch, "Expected StructWithOptionSet array");
           }
 
-          DemoOptionSet[] currentOptions =
-              decodeCurrentStructOptionsElements(
-                  encodingContext, variableNode.getValue().value().value());
+          synchronized (variableNode) {
+            DemoOptionSet[] currentOptions =
+                decodeCurrentStructOptionsElements(
+                    encodingContext, variableNode.getValue().value().value());
 
-          ExtensionObject[] encoded =
-              mergeStructWithOptionSetElements(
-                  encodingContext, expectedBinaryEncodingId, currentOptions, elements);
+            ExtensionObject[] encoded =
+                mergeStructWithOptionSetElements(
+                    encodingContext, expectedBinaryEncodingId, currentOptions, elements);
 
-          DataValue updated =
-              new DataValue(
-                  Variant.ofExtensionObjectArray(encoded),
-                  dataValue.statusCode(),
-                  dataValue.sourceTime(),
-                  dataValue.serverTime());
+            DataValue updated =
+                new DataValue(
+                    Variant.ofExtensionObjectArray(encoded),
+                    dataValue.statusCode(),
+                    dataValue.sourceTime(),
+                    dataValue.serverTime());
 
-          ctx.writeAttribute(attributeId, updated);
+            ctx.writeAttribute(attributeId, updated);
+          }
           return;
         }
         ctx.writeAttribute(attributeId, value);
@@ -426,24 +440,26 @@ public final class DemoValueFilters {
                 StatusCodes.Bad_TypeMismatch, "Expected StructWithOptionSet matrix");
           }
 
-          DemoOptionSet[] currentOptions =
-              decodeCurrentStructOptionsElements(
-                  encodingContext, variableNode.getValue().value().value());
+          synchronized (variableNode) {
+            DemoOptionSet[] currentOptions =
+                decodeCurrentStructOptionsElements(
+                    encodingContext, variableNode.getValue().value().value());
 
-          ExtensionObject[] encodedFlat =
-              mergeStructWithOptionSetElements(
-                  encodingContext, expectedBinaryEncodingId, currentOptions, elements);
+            ExtensionObject[] encodedFlat =
+                mergeStructWithOptionSetElements(
+                    encodingContext, expectedBinaryEncodingId, currentOptions, elements);
 
-          Matrix updatedMatrix =
-              new Matrix(encodedFlat, matrix.getDimensions(), OpcUaDataType.ExtensionObject);
-          DataValue updated =
-              new DataValue(
-                  Variant.ofMatrix(updatedMatrix),
-                  dataValue.statusCode(),
-                  dataValue.sourceTime(),
-                  dataValue.serverTime());
+            Matrix updatedMatrix =
+                new Matrix(encodedFlat, matrix.getDimensions(), OpcUaDataType.ExtensionObject);
+            DataValue updated =
+                new DataValue(
+                    Variant.ofMatrix(updatedMatrix),
+                    dataValue.statusCode(),
+                    dataValue.sourceTime(),
+                    dataValue.serverTime());
 
-          ctx.writeAttribute(attributeId, updated);
+            ctx.writeAttribute(attributeId, updated);
+          }
           return;
         }
         ctx.writeAttribute(attributeId, value);
@@ -515,6 +531,20 @@ public final class DemoValueFilters {
    * @return a new {@link AttributeFilter}.
    */
   public static AttributeFilter noSubDataTypes(NodeId expectedBinaryEncodingId) {
+    return allowedBinaryEncodings(Set.of(expectedBinaryEncodingId));
+  }
+
+  /**
+   * Creates a filter accepting only scalar binary {@link ExtensionObject} values whose encoding
+   * NodeId belongs to {@code allowedBinaryEncodingIds}, rejecting all other values with {@code
+   * Bad_TypeMismatch}.
+   *
+   * @param allowedBinaryEncodingIds the permitted {@code Default Binary} encoding NodeIds.
+   * @return a new {@link AttributeFilter}.
+   */
+  public static AttributeFilter allowedBinaryEncodings(Set<NodeId> allowedBinaryEncodingIds) {
+    Set<NodeId> allowed = Set.copyOf(allowedBinaryEncodingIds);
+
     return new AttributeFilter() {
       @Override
       public void writeAttribute(
@@ -525,15 +555,47 @@ public final class DemoValueFilters {
           Object raw = dataValue.value().value();
           if (raw instanceof ExtensionObject xo) {
             if (!(xo instanceof ExtensionObject.Binary)
-                || !expectedBinaryEncodingId.equals(xo.getEncodingOrTypeId())) {
+                || !allowed.contains(xo.getEncodingOrTypeId())) {
               throw new UaException(
                   StatusCodes.Bad_TypeMismatch,
-                  "NoSubDataTypes forbids subtype encoding " + xo.getEncodingOrTypeId());
+                  "Structure encoding is not permitted: " + xo.getEncodingOrTypeId());
             }
           } else {
             throw new UaException(
-                StatusCodes.Bad_TypeMismatch, "NoSubDataTypes requires exact structure type");
+                StatusCodes.Bad_TypeMismatch, "Expected an allowed structured binary value");
           }
+        }
+        ctx.writeAttribute(attributeId, value);
+      }
+    };
+  }
+
+  /**
+   * Creates a filter validating Part 8 {@code XYArrayItemType} writes as 1-D {@link XVType} arrays
+   * whose {@code value} (Y coordinate) components fall within the node's {@code EURange}.
+   *
+   * @param encodingContext the server's static {@link EncodingContext}.
+   * @return a new {@link AttributeFilter}.
+   */
+  public static AttributeFilter xyArrayEuRangeCheck(EncodingContext encodingContext) {
+    NodeId xvBinaryEncodingId =
+        XVType.BINARY_ENCODING_ID.toNodeId(encodingContext.getNamespaceTable()).orElseThrow();
+
+    return new AttributeFilter() {
+      @Override
+      public void writeAttribute(
+          AttributeFilterContext ctx, AttributeId attributeId, @Nullable Object value)
+          throws UaException {
+
+        if (attributeId == AttributeId.Value
+            && value instanceof DataValue dataValue
+            && ctx.getNode() instanceof XYArrayItemTypeNode xyArrayItem) {
+
+          validateXyArrayEuRange(
+              dataValue.value().value(),
+              xyArrayItem.getEuRange(),
+              encodingContext,
+              xvBinaryEncodingId);
         }
         ctx.writeAttribute(attributeId, value);
       }
@@ -773,6 +835,34 @@ public final class DemoValueFilters {
     if (reading == null || !(reading.value() instanceof Double)) {
       throw new UaException(
           StatusCodes.Bad_TypeMismatch, "Reading must be a scalar Double under DataTypeRefinement");
+    }
+  }
+
+  static void validateXyArrayEuRange(
+      @Nullable Object value,
+      @Nullable Range euRange,
+      EncodingContext encodingContext,
+      NodeId xvBinaryEncodingId)
+      throws UaException {
+
+    if (!(value instanceof Object[] elements)) {
+      throw new UaException(StatusCodes.Bad_TypeMismatch, "Expected 1-D XVType array");
+    }
+
+    for (int i = 0; i < elements.length; i++) {
+      XVType xv =
+          decodeExpectedStruct(encodingContext, xvBinaryEncodingId, XVType.class, elements[i]);
+
+      if (euRange != null) {
+        Float y = xv.getValue();
+        double low = euRange.getLow();
+        double high = euRange.getHigh();
+        if (y == null || y.isNaN() || y < low || y > high) {
+          throw new UaException(
+              StatusCodes.Bad_OutOfRange,
+              "XVType element [%d] value %s is out of range [%s, %s]".formatted(i, y, low, high));
+        }
+      }
     }
   }
 

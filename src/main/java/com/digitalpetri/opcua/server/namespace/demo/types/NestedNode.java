@@ -8,6 +8,8 @@ import java.util.StringJoiner;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.UaSerializationException;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.encoding.GenericDataTypeCodec;
 import org.eclipse.milo.opcua.stack.core.encoding.UaDecoder;
@@ -165,6 +167,12 @@ public final class NestedNode extends Structure implements UaStructuredType {
     @Override
     public NestedNode decodeType(EncodingContext context, UaDecoder decoder) {
       long encodingMask = decoder.decodeUInt32("EncodingMask").longValue();
+      if ((encodingMask & ~1L) != 0L) {
+        throw new UaSerializationException(
+            StatusCodes.Bad_DecodingError,
+            "Unexpected EncodingMask bits in NestedNode: 0x%x".formatted(encodingMask));
+      }
+
       Integer depth = decoder.decodeInt32("Depth");
       String label = decoder.decodeString("Label");
       NestedNode child =

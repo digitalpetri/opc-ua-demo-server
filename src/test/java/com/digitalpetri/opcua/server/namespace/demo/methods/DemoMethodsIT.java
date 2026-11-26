@@ -11,9 +11,11 @@ import com.digitalpetri.opcua.server.OpcUaDemoServer;
 import com.digitalpetri.opcua.server.OpcUaTestClient;
 import com.digitalpetri.opcua.server.OpcUaTestServerBuilder;
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
+import com.digitalpetri.opcua.server.namespace.demo.types.DecimalEncoding;
 import com.digitalpetri.opcua.server.namespace.demo.types.DemoRecord;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,7 @@ import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.UaStructuredType;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
@@ -76,11 +79,33 @@ class DemoMethodsIT {
 
   @AfterAll
   void tearDown() throws Exception {
-    if (client != null) {
-      client.disconnect();
+    Throwable disconnectFailure = null;
+    try {
+      if (client != null) {
+        client.disconnect();
+      }
+    } catch (Throwable t) {
+      disconnectFailure = t;
+    } finally {
+      if (server != null) {
+        try {
+          server.shutdown();
+        } catch (Throwable t) {
+          if (disconnectFailure != null) {
+            disconnectFailure.addSuppressed(t);
+          } else {
+            throw t;
+          }
+        }
+      }
     }
-    if (server != null) {
-      server.shutdown();
+
+    if (disconnectFailure instanceof Exception e) {
+      throw e;
+    } else if (disconnectFailure instanceof Error e) {
+      throw e;
+    } else if (disconnectFailure != null) {
+      throw new RuntimeException(disconnectFailure);
     }
   }
 
@@ -166,6 +191,16 @@ class DemoMethodsIT {
             Variant.ofBoolean(true));
     assertTrue(threeArgs.getStatusCode().isGood());
     assertEquals("OK OK", threeArgs.getOutputArguments()[0].value());
+
+    // Expanded result exceeding server max message size is rejected with Bad_OutOfRange before
+    // building/returning an unencodable response.
+    int maxMessageSize =
+        server.getServer().getStaticEncodingContext().getEncodingLimits().getMaxMessageSize();
+    String largeChunk = "a".repeat((maxMessageSize / 10) + 1024);
+    CallMethodResult oversized =
+        callMethod(methodsFolder, formatMethod, Variant.ofString(largeChunk), Variant.ofInt32(10));
+    assertEquals(StatusCodes.Bad_InvalidArgument, oversized.getStatusCode().getValue());
+    assertEquals(StatusCodes.Bad_OutOfRange, oversized.getInputArgumentResults()[0].getValue());
   }
 
   @Test
@@ -182,6 +217,35 @@ class DemoMethodsIT {
     assertEquals("Double", abstractResult.getOutputArguments()[0].value());
     assertTrue(((String) abstractResult.getOutputArguments()[1].value()).contains("DemoRecord"));
     assertEquals(2.5, abstractResult.getOutputArguments()[2].value());
+
+    // OPC UA Decimal (i=50) encoded as a binary ExtensionObject is also accepted as a Number.
+    BigDecimal decimalValue = new BigDecimal("123.45");
+    CallMethodResult decimalResult =
+        callMethod(
+            methodsFolder,
+            demoNode("Demo.Methods.InspectAbstract"),
+            Variant.ofExtensionObject(DecimalEncoding.encode(decimalValue)),
+            Variant.ofExtensionObject(encode(new DemoRecord(2, "Dec", 4.0, true))));
+    assertTrue(decimalResult.getStatusCode().isGood());
+    assertEquals("Decimal", decimalResult.getOutputArguments()[0].value());
+    assertTrue(((String) decimalResult.getOutputArguments()[1].value()).contains("DemoRecord"));
+    assertEquals(
+        decimalValue,
+        DecimalEncoding.decode(
+            assertInstanceOf(
+                ExtensionObject.class, decimalResult.getOutputArguments()[2].value())));
+
+    ExtensionObject invalidDecimal =
+        ExtensionObject.of(ByteString.of(new byte[] {0x02, 0x00}), NodeIds.Decimal);
+    CallMethodResult invalidDecimalResult =
+        callMethod(
+            methodsFolder,
+            demoNode("Demo.Methods.InspectAbstract"),
+            Variant.ofExtensionObject(invalidDecimal),
+            Variant.ofExtensionObject(encode(new DemoRecord(3, "BadDec", 5.0, false))));
+    assertEquals(StatusCodes.Bad_InvalidArgument, invalidDecimalResult.getStatusCode().getValue());
+    assertEquals(
+        StatusCodes.Bad_OutOfRange, invalidDecimalResult.getInputArgumentResults()[0].getValue());
 
     NodeId describeRank = demoNode("Demo.Methods.DescribeRank");
 
@@ -257,6 +321,28 @@ class DemoMethodsIT {
     assertTrue(valid.getStatusCode().isGood());
     assertEquals("valid-label: 5 (75.0%)", valid.getOutputArguments()[0].value());
     assertFalse(valid.getOutputArguments()[0].isNull());
+
+    // Label length counts Unicode code points: 17 supplementary emoji (34 UTF-16 units) pass,
+    // while 33 ASCII characters are rejected.
+    String seventeenEmoji = "\uD83D\uDE42".repeat(17);
+    CallMethodResult emojiValid =
+        callMethod(
+            methodsFolder,
+            validateMethod,
+            Variant.ofInt32(1),
+            Variant.ofString(seventeenEmoji),
+            Variant.ofDouble(50.0));
+    assertTrue(emojiValid.getStatusCode().isGood());
+
+    CallMethodResult tooLongAscii =
+        callMethod(
+            methodsFolder,
+            validateMethod,
+            Variant.ofInt32(1),
+            Variant.ofString("a".repeat(33)),
+            Variant.ofDouble(50.0));
+    assertEquals(StatusCodes.Bad_InvalidArgument, tooLongAscii.getStatusCode().getValue());
+    assertEquals(StatusCodes.Bad_OutOfRange, tooLongAscii.getInputArgumentResults()[1].getValue());
   }
 
   // region Helpers

@@ -6,8 +6,10 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 
 import com.digitalpetri.opcua.server.namespace.demo.DemoAddressSpaceFragment;
 import com.digitalpetri.opcua.server.namespace.demo.DemoNamespace;
+import com.digitalpetri.opcua.server.namespace.demo.types.DecimalEncoding;
 import com.digitalpetri.opcua.server.namespace.demo.types.DemoRecord;
 import java.lang.reflect.Array;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.StringJoiner;
@@ -16,11 +18,13 @@ import org.eclipse.milo.opcua.sdk.core.CefactEngineeringUnits;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.core.Reference.Direction;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
+import org.eclipse.milo.opcua.sdk.server.AccessContext;
 import org.eclipse.milo.opcua.sdk.server.AddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.SimpleAddressSpaceFilter;
 import org.eclipse.milo.opcua.sdk.server.methods.AbstractMethodInvocationHandler;
 import org.eclipse.milo.opcua.sdk.server.methods.InvalidArgumentException;
+import org.eclipse.milo.opcua.sdk.server.methods.MethodInvocationHandler;
 import org.eclipse.milo.opcua.sdk.server.model.variables.AnalogItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.MultiStateDiscreteTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.TwoStateDiscreteTypeNode;
@@ -40,15 +44,19 @@ import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
 import org.eclipse.milo.opcua.stack.core.types.UaStructuredType;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DiagnosticInfo;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Matrix;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.structured.Argument;
+import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodRequest;
+import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.Range;
 import org.jspecify.annotations.Nullable;
 
@@ -451,16 +459,36 @@ public final class DemoMethodsFragment extends DemoAddressSpaceFragment {
               throw errors.build();
             }
 
-            StringJoiner joiner = new StringJoiner(" ");
-            for (int i = 0; i < repeatCount; i++) {
-              joiner.add(message);
+            String unit = uppercase ? message.toUpperCase(Locale.ROOT) : message;
+            long unitBytes = unit.getBytes(StandardCharsets.UTF_8).length;
+            long expandedBytes = unitBytes * repeatCount + (repeatCount - 1L);
+            long maxOutputBytes =
+                context
+                    .getServer()
+                    .getStaticEncodingContext()
+                    .getEncodingLimits()
+                    .getMaxMessageSize();
+            UInteger maxStringLength =
+                context.getServer().getConfig().getLimits().getMaxStringLength();
+            if (maxStringLength != null && maxStringLength.longValue() > 0) {
+              maxOutputBytes = Math.min(maxOutputBytes, maxStringLength.longValue());
             }
-            String result = joiner.toString();
-            if (uppercase) {
-              result = result.toUpperCase(Locale.ROOT);
+            if (expandedBytes > maxOutputBytes) {
+              errors.reject(
+                  0,
+                  StatusCodes.Bad_OutOfRange,
+                  Diagnostic.text(
+                      "formatted message UTF-8 length (%d bytes) exceeds maximum size (%d bytes)"
+                          .formatted(expandedBytes, maxOutputBytes)));
+              throw errors.build();
             }
 
-            return new Variant[] {Variant.ofString(result)};
+            StringJoiner joiner = new StringJoiner(" ");
+            for (int i = 0; i < repeatCount; i++) {
+              joiner.add(unit);
+            }
+
+            return new Variant[] {Variant.ofString(joiner.toString())};
           }
         });
   }
@@ -509,7 +537,7 @@ public final class DemoMethodsFragment extends DemoAddressSpaceFragment {
             inputs,
             outputs);
 
-    methodNode.setInvocationHandler(
+    MethodInvocationHandler delegate =
         new AbstractMethodInvocationHandler(methodNode) {
           @Override
           public Argument[] getInputArguments() {
@@ -542,7 +570,56 @@ public final class DemoMethodsFragment extends DemoAddressSpaceFragment {
               Variant.ofString(numberType), Variant.ofString(payloadType), echoedNumber
             };
           }
-        });
+        };
+
+    // Milo's DataTypeTree maps Decimal (i=50) to Number.class rather than ExtensionObject.class, so
+    // intercept binary Decimal ExtensionObjects in input argument 0 while delegating argument 1
+    // validation and all other numeric subtypes to AbstractMethodInvocationHandler.
+    methodNode.setInvocationHandler((AccessContext accessContext, CallMethodRequest request) -> {
+      Variant[] args = request.getInputArguments();
+      if (args != null
+          && args.length == 2
+          && args[0].value() instanceof ExtensionObject decimalXo
+          && NodeIds.Decimal.equals(decimalXo.getEncodingOrTypeId())) {
+
+        StatusCode decimalStatus = StatusCode.GOOD;
+        try {
+          DecimalEncoding.decode(decimalXo);
+        } catch (UaException e) {
+          decimalStatus = e.getStatusCode();
+        }
+
+        CallMethodRequest delegatedRequest =
+            new CallMethodRequest(
+                request.getObjectId(),
+                request.getMethodId(),
+                new Variant[] {Variant.ofDouble(0.0), args[1]});
+        CallMethodResult delegated = delegate.invoke(accessContext, delegatedRequest);
+
+        if (decimalStatus.isBad()) {
+          StatusCode[] argResults = delegated.getInputArgumentResults();
+          StatusCode payloadStatus =
+              (argResults != null && argResults.length >= 2) ? argResults[1] : StatusCode.GOOD;
+          return new CallMethodResult(
+              new StatusCode(StatusCodes.Bad_InvalidArgument),
+              new StatusCode[] {decimalStatus, payloadStatus},
+              new DiagnosticInfo[0],
+              new Variant[0]);
+        }
+        if (!delegated.getStatusCode().isGood()) {
+          return delegated;
+        }
+
+        Variant[] outputsResult = delegated.getOutputArguments();
+        return new CallMethodResult(
+            StatusCode.GOOD,
+            delegated.getInputArgumentResults(),
+            delegated.getInputArgumentDiagnosticInfos(),
+            new Variant[] {Variant.ofString("Decimal"), outputsResult[1], args[0]});
+      }
+
+      return delegate.invoke(accessContext, request);
+    });
   }
 
   private void addDescribeRank(NodeId folderId) {
@@ -864,7 +941,7 @@ public final class DemoMethodsFragment extends DemoAddressSpaceFragment {
               hasErrors = true;
             }
 
-            if (label == null || label.isBlank() || label.length() > 32) {
+            if (label == null || label.isBlank() || label.codePointCount(0, label.length()) > 32) {
               errors.reject(
                   1,
                   StatusCodes.Bad_OutOfRange,

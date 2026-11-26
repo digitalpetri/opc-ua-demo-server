@@ -28,6 +28,11 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
@@ -51,6 +56,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseResultMask;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
+import org.eclipse.milo.opcua.stack.core.types.structured.AxisInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.EnumDefinition;
@@ -58,6 +64,8 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.WriteResponse;
 import org.eclipse.milo.opcua.stack.core.types.structured.WriteValue;
+import org.eclipse.milo.opcua.stack.core.types.structured.XVType;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
@@ -97,11 +105,33 @@ class DemoValuesIT {
 
   @AfterAll
   void tearDown() throws Exception {
-    if (client != null) {
-      client.disconnect();
+    Throwable disconnectFailure = null;
+    try {
+      if (client != null) {
+        client.disconnect();
+      }
+    } catch (Throwable t) {
+      disconnectFailure = t;
+    } finally {
+      if (server != null) {
+        try {
+          server.shutdown();
+        } catch (Throwable t) {
+          if (disconnectFailure != null) {
+            disconnectFailure.addSuppressed(t);
+          } else {
+            throw t;
+          }
+        }
+      }
     }
-    if (server != null) {
-      server.shutdown();
+
+    if (disconnectFailure instanceof Exception e) {
+      throw e;
+    } else if (disconnectFailure instanceof Error e) {
+      throw e;
+    } else if (disconnectFailure != null) {
+      throw new RuntimeException(disconnectFailure);
     }
   }
 
@@ -184,8 +214,16 @@ class DemoValuesIT {
           StatusCodes.Bad_OutOfRange,
           writeValue(arrayId, Variant.ofExtensionObjectArray(new ExtensionObject[] {tooShort}))
               .getValue());
+      assertEquals(
+          StatusCodes.Bad_WriteNotSupported,
+          writeValueWithIndexRange(
+                  arrayId,
+                  "0",
+                  Variant.ofExtensionObjectArray(
+                      new ExtensionObject[] {DecimalEncoding.encode(BigDecimal.ONE)}))
+              .getValue());
 
-      // 2-D matrix write and validation
+      // 2-D matrix write, empty wire representation, and validation
       NodeId matrixId = demoNode("Demo.Values.Builtin.Matrix.Decimal");
       Matrix nextMatrix =
           Matrix.ofExtensionObject(
@@ -206,6 +244,21 @@ class DemoValuesIT {
               client.readValue(0.0, TimestampsToReturn.Neither, matrixId).value().value());
       ExtensionObject[] flat = (ExtensionObject[]) readMatrix.getElements();
       assertEquals(new BigDecimal("40.5"), DecimalEncoding.decode(flat[3]));
+
+      // Empty 2-D arrays arrive as ExtensionObject[0] on the wire; nonempty 1-D arrays and null
+      // remain rejected.
+      assertTrue(
+          writeValue(matrixId, Variant.ofExtensionObjectArray(new ExtensionObject[0])).isGood());
+      assertEquals(
+          StatusCodes.Bad_TypeMismatch,
+          writeValue(
+                  matrixId,
+                  Variant.ofExtensionObjectArray(
+                      new ExtensionObject[] {DecimalEncoding.encode(BigDecimal.ONE)}))
+              .getValue());
+      assertEquals(
+          StatusCodes.Bad_TypeMismatch, writeValue(matrixId, Variant.NULL_VALUE).getValue());
+      assertTrue(writeValue(matrixId, Variant.ofMatrix(nextMatrix)).isGood());
     }
   }
 
@@ -220,6 +273,26 @@ class DemoValuesIT {
       EnumDefinition def =
           (EnumDefinition) ((ExtensionObject) defVal.value().value()).decode(encodingContext);
       assertEquals(5, def.getFields().length);
+
+      // TestEnumType enforces membership (0, 1, 2) across scalar, array, and matrix fixtures.
+      NodeId testEnumScalar = demoNode("Demo.Values.Enumeration.Scalar.TestEnumType");
+      assertTrue(writeValue(testEnumScalar, Variant.ofInt32(2)).isGood());
+      assertEquals(
+          StatusCodes.Bad_OutOfRange, writeValue(testEnumScalar, Variant.ofInt32(3)).getValue());
+
+      NodeId testEnumArray = demoNode("Demo.Values.Enumeration.Array.TestEnumType");
+      assertTrue(writeValue(testEnumArray, Variant.ofInt32Array(new Integer[] {0, 1, 2})).isGood());
+      assertEquals(
+          StatusCodes.Bad_OutOfRange,
+          writeValue(testEnumArray, Variant.ofInt32Array(new Integer[] {0, 3})).getValue());
+
+      NodeId testEnumMatrix = demoNode("Demo.Values.Enumeration.Matrix.TestEnumType");
+      assertEquals(
+          StatusCodes.Bad_OutOfRange,
+          writeValue(
+                  testEnumMatrix,
+                  Variant.ofMatrix(Matrix.ofInt32(new Integer[][] {{0, 1}, {2, 3}})))
+              .getValue());
 
       // SparseStatusEnum accepts defined values (1,2,4,8,16) and rejects gap value 3 across
       // arities.
@@ -304,6 +377,52 @@ class DemoValuesIT {
     }
 
     @Test
+    void concurrentPartialOptionSetWritesDoNotLoseUpdates() throws Exception {
+      NodeId scalarId = demoNode("Demo.Values.OptionSet.Scalar.DemoOptionSet");
+      DemoOptionSet clearAll = DemoOptionSet.of(0x00, 0x00);
+      DemoOptionSet setBit0 =
+          new DemoOptionSet(
+              ByteString.of(new byte[] {0x01, 0x00}), ByteString.of(new byte[] {0x01, 0x00}));
+      DemoOptionSet setBit2 =
+          new DemoOptionSet(
+              ByteString.of(new byte[] {0x04, 0x00}), ByteString.of(new byte[] {0x04, 0x00}));
+
+      ExecutorService executor = Executors.newFixedThreadPool(2);
+      try {
+        for (int round = 0; round < 15; round++) {
+          assertTrue(writeValue(scalarId, Variant.ofExtensionObject(encode(clearAll))).isGood());
+
+          CyclicBarrier barrier = new CyclicBarrier(2);
+          Future<StatusCode> first =
+              executor.submit(() -> {
+                barrier.await(5, TimeUnit.SECONDS);
+                return writeValue(scalarId, Variant.ofExtensionObject(encode(setBit0)));
+              });
+          Future<StatusCode> second =
+              executor.submit(() -> {
+                barrier.await(5, TimeUnit.SECONDS);
+                return writeValue(scalarId, Variant.ofExtensionObject(encode(setBit2)));
+              });
+
+          assertTrue(first.get(10, TimeUnit.SECONDS).isGood());
+          assertTrue(second.get(10, TimeUnit.SECONDS).isGood());
+
+          DemoOptionSet merged =
+              (DemoOptionSet)
+                  ((ExtensionObject)
+                          client
+                              .readValue(0.0, TimestampsToReturn.Neither, scalarId)
+                              .value()
+                              .value())
+                      .decode(encodingContext);
+          assertArrayEquals(new byte[] {0x05, 0x00}, merged.getValue().bytesOrEmpty());
+        }
+      } finally {
+        executor.shutdownNow();
+      }
+    }
+
+    @Test
     void structWithOptionSetAndIntegerOptionSetsReadAndWriteAcrossArities() throws Exception {
       NodeId structMatrixId = demoNode("Demo.Values.OptionSet.Matrix.StructWithOptionSet");
       StructWithOptionSet partial =
@@ -384,7 +503,7 @@ class DemoValuesIT {
       for (String name : unionNames) {
         for (String arity : List.of("Scalar", "Array", "Matrix")) {
           assertDecodesDynamically(
-              dynamicContext, demoNode("Demo.Values.Union." + arity + "." + name));
+              dynamicContext, demoNode("Demo.Values.Union." + arity + "." + name), arity);
         }
       }
 
@@ -422,7 +541,7 @@ class DemoValuesIT {
       for (String name : structNames) {
         for (String arity : List.of("Scalar", "Array", "Matrix")) {
           assertDecodesDynamically(
-              dynamicContext, demoNode("Demo.Values.Structure." + arity + "." + name));
+              dynamicContext, demoNode("Demo.Values.Structure." + arity + "." + name), arity);
         }
       }
 
@@ -518,18 +637,41 @@ class DemoValuesIT {
       assertTrue(updatedText.statusCode().isGood());
       assertEquals(LocalizedText.english("Stopping"), updatedText.value().value());
 
-      // ArrayItem subtypes enforce EURange [0, 100]
+      // ArrayItem subtypes enforce EURange [0, 100]; XYArrayItem uses XVType[] with null axisSteps.
       assertTrue(
           writeValue(
                   demoNode("Demo.Values.DataAccess.YArrayItem"),
                   Variant.ofDoubleArray(new Double[] {5.0, 15.0, 25.0}))
               .isGood());
+
+      NodeId xyArrayItem = demoNode("Demo.Values.DataAccess.XYArrayItem");
+      assertEquals(
+          NodeIds.XVType, readAttribute(xyArrayItem, AttributeId.DataType).value().value());
+      NodeId xAxisDefId = findPropertyNodeId(xyArrayItem, "XAxisDefinition");
+      AxisInformation xAxisDef =
+          (AxisInformation)
+              ((ExtensionObject)
+                      client.readValue(0.0, TimestampsToReturn.Neither, xAxisDefId).value().value())
+                  .decode(encodingContext);
+      assertNull(xAxisDef.getAxisSteps());
+
+      assertTrue(
+          writeValue(
+                  xyArrayItem,
+                  Variant.ofExtensionObjectArray(
+                      ExtensionObject.encodeArray(
+                          encodingContext,
+                          new XVType[] {new XVType(1.5, 25.0f), new XVType(2.5, 75.0f)})))
+              .isGood());
       assertEquals(
           StatusCodes.Bad_OutOfRange,
           writeValue(
-                  demoNode("Demo.Values.DataAccess.XYArrayItem"),
-                  Variant.ofDoubleArray(new Double[] {1.0, 200.0}))
+                  xyArrayItem,
+                  Variant.ofExtensionObjectArray(
+                      ExtensionObject.encodeArray(
+                          encodingContext, new XVType[] {new XVType(1.0, 200.0f)})))
               .getValue());
+
       assertTrue(
           writeValue(
                   demoNode("Demo.Values.DataAccess.ImageItem"),
@@ -546,29 +688,47 @@ class DemoValuesIT {
 
   // region Helpers
 
-  private void assertDecodesDynamically(EncodingContext dynamicContext, NodeId nodeId)
-      throws Exception {
+  private void assertDecodesDynamically(
+      EncodingContext dynamicContext, NodeId nodeId, String expectedArity) throws Exception {
 
     DataValue dv = client.readValue(0.0, TimestampsToReturn.Neither, nodeId);
     assertTrue(dv.statusCode().isGood(), () -> nodeId + " read failed: " + dv.statusCode());
     Object raw = dv.value().value();
     assertNotNull(raw, () -> nodeId + " value should not be null");
 
-    if (raw instanceof ExtensionObject xo) {
-      assertNotNull(xo.decode(dynamicContext), () -> nodeId + " scalar decode failed");
-    } else if (raw instanceof ExtensionObject[] array) {
-      assertTrue(array.length > 0, () -> nodeId + " array should not be empty");
-      for (ExtensionObject xo : array) {
-        assertNotNull(xo.decode(dynamicContext), () -> nodeId + " array element decode failed");
+    switch (expectedArity) {
+      case "Scalar" -> {
+        ExtensionObject xo =
+            assertInstanceOf(
+                ExtensionObject.class, raw, () -> nodeId + " expected scalar ExtensionObject");
+        assertNotNull(xo.decode(dynamicContext), () -> nodeId + " scalar decode failed");
       }
-    } else if (raw instanceof Matrix matrix) {
-      ExtensionObject[] flat = assertInstanceOf(ExtensionObject[].class, matrix.getElements());
-      assertTrue(flat.length > 0, () -> nodeId + " matrix should not be empty");
-      for (ExtensionObject xo : flat) {
-        assertNotNull(xo.decode(dynamicContext), () -> nodeId + " matrix element decode failed");
+      case "Array" -> {
+        ExtensionObject[] array =
+            assertInstanceOf(
+                ExtensionObject[].class, raw, () -> nodeId + " expected 1-D ExtensionObject[]");
+        assertTrue(array.length > 0, () -> nodeId + " array should not be empty");
+        for (ExtensionObject xo : array) {
+          assertNotNull(xo.decode(dynamicContext), () -> nodeId + " array element decode failed");
+        }
       }
-    } else {
-      throw new AssertionError(nodeId + " unexpected payload type: " + raw.getClass());
+      case "Matrix" -> {
+        Matrix matrix =
+            assertInstanceOf(Matrix.class, raw, () -> nodeId + " expected Matrix payload");
+        assertTrue(
+            matrix.getValueRank() >= 2,
+            () -> nodeId + " expected matrix rank >= 2, got " + matrix.getValueRank());
+        ExtensionObject[] flat =
+            assertInstanceOf(
+                ExtensionObject[].class,
+                matrix.getElements(),
+                () -> nodeId + " expected ExtensionObject[] matrix elements");
+        assertTrue(flat.length > 0, () -> nodeId + " matrix should not be empty");
+        for (ExtensionObject xo : flat) {
+          assertNotNull(xo.decode(dynamicContext), () -> nodeId + " matrix element decode failed");
+        }
+      }
+      default -> throw new IllegalArgumentException("Unexpected arity: " + expectedArity);
     }
   }
 
@@ -586,8 +746,14 @@ class DemoValuesIT {
   }
 
   private StatusCode writeValue(NodeId nodeId, Variant value) throws Exception {
+    return writeValueWithIndexRange(nodeId, null, value);
+  }
+
+  private StatusCode writeValueWithIndexRange(
+      NodeId nodeId, @Nullable String indexRange, Variant value) throws Exception {
+
     WriteValue writeValue =
-        new WriteValue(nodeId, AttributeId.Value.uid(), null, DataValue.valueOnly(value));
+        new WriteValue(nodeId, AttributeId.Value.uid(), indexRange, DataValue.valueOnly(value));
     WriteResponse response = client.write(List.of(writeValue));
     return response.getResults()[0];
   }

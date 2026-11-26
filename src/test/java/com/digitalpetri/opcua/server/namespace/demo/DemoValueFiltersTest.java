@@ -8,10 +8,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.digitalpetri.opcua.server.namespace.demo.types.DecimalEncoding;
 import com.digitalpetri.opcua.server.namespace.demo.types.DemoOptionSet;
+import com.digitalpetri.opcua.server.namespace.demo.types.NestedNode;
 import com.digitalpetri.opcua.server.namespace.demo.types.RefinableStruct;
 import com.digitalpetri.opcua.test.types.UnionOfArray;
 import com.digitalpetri.opcua.test.types.UnionOfMatrix;
 import com.digitalpetri.opcua.test.types.UnionOfScalar;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Set;
@@ -19,6 +22,11 @@ import java.util.UUID;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.UaSerializationException;
+import org.eclipse.milo.opcua.stack.core.encoding.DefaultEncodingContext;
+import org.eclipse.milo.opcua.stack.core.encoding.EncodingContext;
+import org.eclipse.milo.opcua.stack.core.encoding.binary.OpcUaBinaryDecoder;
+import org.eclipse.milo.opcua.stack.core.encoding.binary.OpcUaBinaryEncoder;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
@@ -30,6 +38,8 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.structured.Range;
+import org.eclipse.milo.opcua.stack.core.types.structured.XVType;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -319,6 +329,113 @@ class DemoValueFiltersTest {
                   DemoValueFilters.validateRefinedStruct(
                       new RefinableStruct("S1", "Note", null, Variant.ofInt32(21)), 32));
       assertEquals(StatusCodes.Bad_TypeMismatch, wrongReading.getStatusCode().getValue());
+    }
+
+    // Part 6 §5.2.7: optional-field codecs must reject nonzero unassigned EncodingMask bits.
+    @Test
+    void optionalFieldCodecsRejectUnassignedEncodingMaskBits() {
+      EncodingContext context = new DefaultEncodingContext();
+      NestedNode.Codec nestedCodec = new NestedNode.Codec();
+      RefinableStruct.Codec refinableCodec = new RefinableStruct.Codec();
+
+      // NestedNode only assigns bit 0 (Child); mask 0 decodes cleanly, mask 2 must fail.
+      ByteBuf validNestedBuf = Unpooled.buffer();
+      try {
+        OpcUaBinaryEncoder encoder = new OpcUaBinaryEncoder(context).setBuffer(validNestedBuf);
+        nestedCodec.encodeType(context, encoder, new NestedNode(1, "Leaf", null));
+        NestedNode decoded =
+            nestedCodec.decodeType(
+                context, new OpcUaBinaryDecoder(context).setBuffer(validNestedBuf));
+        assertEquals(new NestedNode(1, "Leaf", null), decoded);
+      } finally {
+        validNestedBuf.release();
+      }
+
+      ByteBuf badNestedBuf = Unpooled.buffer();
+      try {
+        OpcUaBinaryEncoder encoder = new OpcUaBinaryEncoder(context).setBuffer(badNestedBuf);
+        encoder.encodeUInt32("EncodingMask", uint(2));
+        encoder.encodeInt32("Depth", 1);
+        encoder.encodeString("Label", "Bad");
+        UaSerializationException ex =
+            assertThrows(
+                UaSerializationException.class,
+                () ->
+                    nestedCodec.decodeType(
+                        context, new OpcUaBinaryDecoder(context).setBuffer(badNestedBuf)));
+        assertEquals(StatusCodes.Bad_DecodingError, ex.getStatusCode().getValue());
+      } finally {
+        badNestedBuf.release();
+      }
+
+      // RefinableStruct only assigns bits 0..1; mask 3 decodes cleanly, mask 4 must fail.
+      ByteBuf validRefinableBuf = Unpooled.buffer();
+      try {
+        RefinableStruct sample = new RefinableStruct("S1", "Note", true, Variant.ofDouble(12.5));
+        OpcUaBinaryEncoder encoder = new OpcUaBinaryEncoder(context).setBuffer(validRefinableBuf);
+        refinableCodec.encodeType(context, encoder, sample);
+        RefinableStruct decoded =
+            refinableCodec.decodeType(
+                context, new OpcUaBinaryDecoder(context).setBuffer(validRefinableBuf));
+        assertEquals(sample, decoded);
+      } finally {
+        validRefinableBuf.release();
+      }
+
+      ByteBuf badRefinableBuf = Unpooled.buffer();
+      try {
+        OpcUaBinaryEncoder encoder = new OpcUaBinaryEncoder(context).setBuffer(badRefinableBuf);
+        encoder.encodeUInt32("EncodingMask", uint(4));
+        encoder.encodeString("Label", "Bad");
+        encoder.encodeVariant("Reading", Variant.ofDouble(1.0));
+        UaSerializationException ex =
+            assertThrows(
+                UaSerializationException.class,
+                () ->
+                    refinableCodec.decodeType(
+                        context, new OpcUaBinaryDecoder(context).setBuffer(badRefinableBuf)));
+        assertEquals(StatusCodes.Bad_DecodingError, ex.getStatusCode().getValue());
+      } finally {
+        badRefinableBuf.release();
+      }
+    }
+
+    @Test
+    void xyArrayEuRangeValidationEnforcesXvTypeElementsAndBounds() throws UaException {
+      EncodingContext context = new DefaultEncodingContext();
+      NodeId xvEncodingId =
+          XVType.BINARY_ENCODING_ID.toNodeId(context.getNamespaceTable()).orElseThrow();
+      Range euRange = new Range(0.0, 100.0);
+
+      DemoValueFilters.validateXyArrayEuRange(
+          new XVType[] {new XVType(1.0, 0.0f), new XVType(2.0, 100.0f)},
+          euRange,
+          context,
+          xvEncodingId);
+
+      UaException outOfRange =
+          assertThrows(
+              UaException.class,
+              () ->
+                  DemoValueFilters.validateXyArrayEuRange(
+                      new XVType[] {new XVType(1.0, 100.5f)}, euRange, context, xvEncodingId));
+      assertEquals(StatusCodes.Bad_OutOfRange, outOfRange.getStatusCode().getValue());
+
+      UaException nanValue =
+          assertThrows(
+              UaException.class,
+              () ->
+                  DemoValueFilters.validateXyArrayEuRange(
+                      new XVType[] {new XVType(1.0, Float.NaN)}, euRange, context, xvEncodingId));
+      assertEquals(StatusCodes.Bad_OutOfRange, nanValue.getStatusCode().getValue());
+
+      UaException wrongPayload =
+          assertThrows(
+              UaException.class,
+              () ->
+                  DemoValueFilters.validateXyArrayEuRange(
+                      new Double[] {1.0, 10.0}, euRange, context, xvEncodingId));
+      assertEquals(StatusCodes.Bad_TypeMismatch, wrongPayload.getStatusCode().getValue());
     }
   }
 }

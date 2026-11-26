@@ -90,11 +90,33 @@ class DemoConstraintsIT {
 
   @AfterAll
   void tearDown() throws Exception {
-    if (client != null) {
-      client.disconnect();
+    Throwable disconnectFailure = null;
+    try {
+      if (client != null) {
+        client.disconnect();
+      }
+    } catch (Throwable t) {
+      disconnectFailure = t;
+    } finally {
+      if (server != null) {
+        try {
+          server.shutdown();
+        } catch (Throwable t) {
+          if (disconnectFailure != null) {
+            disconnectFailure.addSuppressed(t);
+          } else {
+            throw t;
+          }
+        }
+      }
     }
-    if (server != null) {
-      server.shutdown();
+
+    if (disconnectFailure instanceof Exception e) {
+      throw e;
+    } else if (disconnectFailure instanceof Error e) {
+      throw e;
+    } else if (disconnectFailure != null) {
+      throw new RuntimeException(disconnectFailure);
     }
   }
 
@@ -252,6 +274,13 @@ class DemoConstraintsIT {
 
       assertTrue(writeValue(subtypableId, Variant.ofExtensionObject(encode(derived))).isGood());
       assertTrue(writeValue(subtypableId, Variant.ofExtensionObject(encode(base))).isGood());
+
+      NullableFieldsStruct unrelated =
+          new NullableFieldsStruct(
+              "wrong", ByteString.NULL_VALUE, LocalizedText.NULL_VALUE, NodeId.NULL_VALUE, null);
+      assertEquals(
+          StatusCodes.Bad_TypeMismatch,
+          writeValue(subtypableId, Variant.ofExtensionObject(encode(unrelated))).getValue());
     }
 
     @Test

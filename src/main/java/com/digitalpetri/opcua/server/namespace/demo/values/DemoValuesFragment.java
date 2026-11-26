@@ -44,11 +44,14 @@ import com.digitalpetri.opcua.test.types.UnionOfMatrix;
 import com.digitalpetri.opcua.test.types.UnionOfScalar;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
 import org.eclipse.milo.opcua.sdk.core.CefactEngineeringUnits;
 import org.eclipse.milo.opcua.sdk.core.Reference;
@@ -182,13 +185,19 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
 
     String indexRange = writeValue.getIndexRange();
     if (indexRange != null && !indexRange.isEmpty()) {
-      return new StatusCode(StatusCodes.Bad_IndexRangeNoData);
+      return new StatusCode(StatusCodes.Bad_WriteNotSupported);
     }
 
     DataValue incoming = writeValue.getValue();
     Variant variant = incoming.value();
     Object raw = variant.value();
     int valueRank = variableNode.getValueRank();
+
+    if (valueRank >= 2 && raw instanceof ExtensionObject[] empty && empty.length == 0) {
+      Matrix emptyMatrix = new Matrix(empty, new int[valueRank], OpcUaDataType.ExtensionObject);
+      variant = Variant.ofMatrix(emptyMatrix);
+      raw = emptyMatrix;
+    }
 
     if (raw == null) {
       if (!Boolean.TRUE.equals(variableNode.getAllowNulls())) {
@@ -273,7 +282,7 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
     addUnionNodes(valuesId, nsTable, encodingContext);
     addStructureNodes(valuesId, nsTable, encodingContext);
     addAbstractNodes(valuesId, nsTable, encodingContext);
-    addDataAccessNodes(valuesId);
+    addDataAccessNodes(valuesId, encodingContext);
   }
 
   // region 1. Builtin/{Scalar, Array, Matrix}
@@ -466,35 +475,48 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
             "Contiguous, non-contiguous EnumValues, and restricting subtype Enumerations");
 
     NodeId testEnumId = DataTypeTestNodeIds.TestEnumType.toNodeId(nsTable).orElseThrow();
-    addVariable(
-        folders.scalar(),
-        "TestEnumType",
-        "Contiguous TestEnumType scalar (0=A, 1=B, 2=C)",
-        testEnumId,
-        ValueRanks.Scalar,
-        null,
-        Variant.ofEnum(TestEnumType.A));
-    addVariable(
-        folders.array(),
-        "TestEnumType",
-        "Contiguous TestEnumType 1-D array",
-        testEnumId,
-        ValueRanks.OneDimension,
-        ARRAY_DIMS,
-        Variant.of(new TestEnumType[] {TestEnumType.A, TestEnumType.B, TestEnumType.C}));
-    addVariable(
-        folders.matrix(),
-        "TestEnumType",
-        "Contiguous TestEnumType 2-D matrix",
-        testEnumId,
-        2,
-        MATRIX_DIMS,
-        Variant.of(
-            Matrix.ofEnum(
-                new TestEnumType[][] {
-                  {TestEnumType.A, TestEnumType.B, TestEnumType.C},
-                  {TestEnumType.C, TestEnumType.B, TestEnumType.A}
-                })));
+    Set<Integer> testEnumValues =
+        Arrays.stream(TestEnumType.values())
+            .map(TestEnumType::getValue)
+            .collect(Collectors.toUnmodifiableSet());
+
+    UaVariableNode testEnumScalar =
+        addVariable(
+            folders.scalar(),
+            "TestEnumType",
+            "Contiguous TestEnumType scalar (0=A, 1=B, 2=C)",
+            testEnumId,
+            ValueRanks.Scalar,
+            null,
+            Variant.ofEnum(TestEnumType.A));
+    testEnumScalar.getFilterChain().addLast(DemoValueFilters.enumValuesCheck(testEnumValues));
+
+    UaVariableNode testEnumArray =
+        addVariable(
+            folders.array(),
+            "TestEnumType",
+            "Contiguous TestEnumType 1-D array",
+            testEnumId,
+            ValueRanks.OneDimension,
+            ARRAY_DIMS,
+            Variant.of(new TestEnumType[] {TestEnumType.A, TestEnumType.B, TestEnumType.C}));
+    testEnumArray.getFilterChain().addLast(DemoValueFilters.enumValuesCheck(testEnumValues));
+
+    UaVariableNode testEnumMatrix =
+        addVariable(
+            folders.matrix(),
+            "TestEnumType",
+            "Contiguous TestEnumType 2-D matrix",
+            testEnumId,
+            2,
+            MATRIX_DIMS,
+            Variant.of(
+                Matrix.ofEnum(
+                    new TestEnumType[][] {
+                      {TestEnumType.A, TestEnumType.B, TestEnumType.C},
+                      {TestEnumType.C, TestEnumType.B, TestEnumType.A}
+                    })));
+    testEnumMatrix.getFilterChain().addLast(DemoValueFilters.enumValuesCheck(testEnumValues));
 
     NodeId sparseEnumId =
         new NodeId(namespaceIndex, DemoTypesFragment.SPARSE_STATUS_ENUM_IDENTIFIER);
@@ -1635,7 +1657,7 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
 
   // region 8. DataAccess/
 
-  private void addDataAccessNodes(NodeId valuesId) {
+  private void addDataAccessNodes(NodeId valuesId, EncodingContext encodingContext) {
     UaFolderNode folder =
         addFolder(
             valuesId,
@@ -1783,9 +1805,9 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
                   .nodeId(deriveChildNodeId(folderId, "XYArrayItem"))
                   .browseName(new QualifiedName(namespaceIndex, "XYArrayItem"))
                   .displayName(LocalizedText.english("XYArrayItem"))
-                  .description(LocalizedText.english("XYArrayItemType 1-D Double X/Y curve"))
+                  .description(LocalizedText.english("XYArrayItemType 1-D XVType X/Y curve"))
                   .parent(folderId, NodeIds.HasComponent));
-      configureReadWrite(xyArrayItem, NodeIds.Double, ValueRanks.OneDimension, ARRAY_DIMS);
+      configureReadWrite(xyArrayItem, NodeIds.XVType, ValueRanks.OneDimension, ARRAY_DIMS);
       xyArrayItem.setInstrumentRange(new Range(0.0, 100.0));
       xyArrayItem.setEuRange(new Range(0.0, 100.0));
       xyArrayItem.setEngineeringUnits(CefactEngineeringUnits.CODE_C62);
@@ -1797,10 +1819,16 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
               new Range(0.0, 5.0),
               LocalizedText.english("X Axis"),
               AxisScaleEnumeration.Linear,
-              new Double[] {0.0, 1.0, 2.0, 3.0, 4.0, 5.0}));
+              null));
       xyArrayItem.setValue(
-          new DataValue(Variant.ofDoubleArray(new Double[] {1.0, 10.0, 2.0, 20.0, 3.0, 30.0})));
-      xyArrayItem.getFilterChain().addLast(EuRangeCheckFilter.INSTANCE);
+          new DataValue(
+              Variant.ofExtensionObjectArray(
+                  ExtensionObject.encodeArray(
+                      encodingContext,
+                      new XVType[] {
+                        new XVType(1.0, 10.0f), new XVType(2.0, 20.0f), new XVType(3.0, 30.0f)
+                      }))));
+      xyArrayItem.getFilterChain().addLast(DemoValueFilters.xyArrayEuRangeCheck(encodingContext));
 
       // ImageItem
       ImageItemTypeNode imageItem =
