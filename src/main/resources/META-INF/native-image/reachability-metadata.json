@@ -97,6 +97,24 @@
       "type": "ch.qos.logback.core.spi.ContextAware"
     },
     {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.types.DemoOptionSet[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.types.DemoRecord[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.types.NestedNode[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.types.NullableFieldsStruct[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.types.RefinableStruct[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.types.StructWithOptionSet[]"
+    },
+    {
       "type": "com.digitalpetri.opcua.test.types.ConcreteTestTypeEx[]"
     },
     {
@@ -107,6 +125,9 @@
     },
     {
       "type": "com.digitalpetri.opcua.test.types.UnionOfArray[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.test.types.UnionOfMatrix[]"
     },
     {
       "type": "com.digitalpetri.opcua.test.types.UnionOfScalar[]"
@@ -1871,7 +1892,18 @@
       ]
     },
     {
-      "type": "org.opcfoundation.ua.ListOfRolePermissions"
+      "type": "org.opcfoundation.ua.ListOfRolePermissions",
+      "fields": [
+        {
+          "name": "rolePermission"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "org.opcfoundation.ua.LocalizedText",
@@ -1905,6 +1937,9 @@
       "type": "org.opcfoundation.ua.ModelTableEntry",
       "fields": [
         {
+          "name": "accessRestrictions"
+        },
+        {
           "name": "modelUri"
         },
         {
@@ -1912,6 +1947,9 @@
         },
         {
           "name": "requiredModel"
+        },
+        {
+          "name": "rolePermissions"
         },
         {
           "name": "version"
@@ -2003,7 +2041,21 @@
       ]
     },
     {
-      "type": "org.opcfoundation.ua.RolePermission"
+      "type": "org.opcfoundation.ua.RolePermission",
+      "fields": [
+        {
+          "name": "permissions"
+        },
+        {
+          "name": "value"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "org.opcfoundation.ua.StructureTranslationType"
@@ -2054,6 +2106,9 @@
       "type": "org.opcfoundation.ua.UANode",
       "fields": [
         {
+          "name": "accessRestrictions"
+        },
+        {
           "name": "browseName"
         },
         {
@@ -2069,6 +2124,12 @@
           "name": "documentation"
         },
         {
+          "name": "extensions"
+        },
+        {
+          "name": "hasNoPermissions"
+        },
+        {
           "name": "nodeId"
         },
         {
@@ -2078,7 +2139,16 @@
           "name": "releaseStatus"
         },
         {
+          "name": "rolePermissions"
+        },
+        {
           "name": "symbolicName"
+        },
+        {
+          "name": "userWriteMask"
+        },
+        {
+          "name": "writeMask"
         }
       ]
     },
@@ -2218,6 +2288,9 @@
           "name": "dataType"
         },
         {
+          "name": "value"
+        },
+        {
           "name": "valueRank"
         }
       ],
@@ -2229,7 +2302,18 @@
       ]
     },
     {
-      "type": "org.opcfoundation.ua.UAVariableType$Value"
+      "type": "org.opcfoundation.ua.UAVariableType$Value",
+      "fields": [
+        {
+          "name": "any"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "org.opcfoundation.ua.UAView"

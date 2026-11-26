@@ -309,7 +309,10 @@ public class OpcUaDemoServer extends AbstractLifecycle {
        * reverse order, during startup rollback or shutdown.
        */
 
-      if (config.getBoolean("address-space.data-type-test.enabled")) {
+      boolean valuesEnabled = config.getBoolean("address-space.values.enabled");
+      boolean constraintsEnabled = config.getBoolean("address-space.constraints.enabled");
+
+      if (valuesEnabled || constraintsEnabled) {
         server.getNamespaceTable().set(3, DataTypeTestNamespace.NAMESPACE_URI);
         server.addLifecycleParticipant(DataTypeTestNamespace.create(server));
       }
@@ -342,6 +345,7 @@ public class OpcUaDemoServer extends AbstractLifecycle {
                 demoNamespace,
                 dataDirPath,
                 config.getBoolean("address-space.aliases.find-alias-verbose-enabled"),
+                valuesEnabled,
                 config.getBoolean("address-space.dynamic.enabled")));
       }
 

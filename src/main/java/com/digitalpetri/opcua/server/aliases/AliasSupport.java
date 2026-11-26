@@ -31,6 +31,7 @@ public final class AliasSupport extends AbstractLifecycle {
 
   private final DemoNamespace demoNamespace;
   private final AliasManager aliasManager;
+  private final boolean valuesNodesEnabled;
   private final boolean dynamicNodesEnabled;
   private final List<CreatedAlias> createdAliases = new ArrayList<>();
   private final List<NodeId> createdCategoryIds = new ArrayList<>();
@@ -44,6 +45,8 @@ public final class AliasSupport extends AbstractLifecycle {
    * @param demoNamespace the namespace that hosts the demo category and aliases.
    * @param dataDirPath the server data directory used for persistent version state.
    * @param findAliasVerboseEnabled whether to expose the optional verbose lookup Methods.
+   * @param valuesNodesEnabled whether the static Demo/Values nodes and their alias category are
+   *     enabled.
    * @param dynamicNodesEnabled whether the dynamic demo nodes and their alias category are enabled.
    */
   public AliasSupport(
@@ -51,9 +54,11 @@ public final class AliasSupport extends AbstractLifecycle {
       DemoNamespace demoNamespace,
       Path dataDirPath,
       boolean findAliasVerboseEnabled,
+      boolean valuesNodesEnabled,
       boolean dynamicNodesEnabled) {
 
     this.demoNamespace = demoNamespace;
+    this.valuesNodesEnabled = valuesNodesEnabled;
     this.dynamicNodesEnabled = dynamicNodesEnabled;
 
     var managerConfig =
@@ -73,9 +78,14 @@ public final class AliasSupport extends AbstractLifecycle {
     aliasManager.startup();
 
     try {
-      NodeId staticCategoryId = addCategory(STATIC_CATEGORY_IDENTIFIER, "MiloDemoStatic");
-      for (String dataType : ALIASED_DATA_TYPES) {
-        addAlias(staticCategoryId, "Demo.Static." + dataType, "Demo.Variants.Scalar." + dataType);
+      if (valuesNodesEnabled) {
+        NodeId staticCategoryId = addCategory(STATIC_CATEGORY_IDENTIFIER, "MiloDemoStatic");
+        for (String dataType : ALIASED_DATA_TYPES) {
+          addAlias(
+              staticCategoryId,
+              "Demo.Static." + dataType,
+              "Demo.Values.Builtin.Scalar." + dataType);
+        }
       }
 
       if (dynamicNodesEnabled) {

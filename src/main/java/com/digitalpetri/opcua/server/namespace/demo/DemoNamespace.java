@@ -1,8 +1,12 @@
 package com.digitalpetri.opcua.server.namespace.demo;
 
 import com.digitalpetri.opcua.server.namespace.demo.alarms.AlarmNodesFragment;
+import com.digitalpetri.opcua.server.namespace.demo.constraints.DemoConstraintsFragment;
 import com.digitalpetri.opcua.server.namespace.demo.ctt.CttNodes;
 import com.digitalpetri.opcua.server.namespace.demo.debug.DebugNodesFragment;
+import com.digitalpetri.opcua.server.namespace.demo.methods.DemoMethodsFragment;
+import com.digitalpetri.opcua.server.namespace.demo.types.DemoTypesFragment;
+import com.digitalpetri.opcua.server.namespace.demo.values.DemoValuesFragment;
 import com.typesafe.config.Config;
 import java.time.Duration;
 import org.eclipse.milo.opcua.sdk.core.Reference;
@@ -21,7 +25,6 @@ import org.eclipse.milo.opcua.sdk.server.nodes.instantiation.InstantiationReques
 import org.eclipse.milo.opcua.stack.core.NodeIds;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
@@ -83,22 +86,30 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
       lifecycleManager.addLifecycle(massFragment);
     }
 
-    boolean dataTypeTestEnabled = config.getBoolean("address-space.data-type-test.enabled");
-    if (dataTypeTestEnabled) {
-      var dataTypeTestFragment = new DataTypeTestNodesFragment(server, this);
-      lifecycleManager.addLifecycle(dataTypeTestFragment);
+    boolean valuesEnabled = config.getBoolean("address-space.values.enabled");
+    boolean constraintsEnabled = config.getBoolean("address-space.constraints.enabled");
+    boolean methodsEnabled = config.getBoolean("address-space.methods.enabled");
+
+    if (valuesEnabled || constraintsEnabled || methodsEnabled) {
+      lifecycleManager.addLifecycle(new DemoTypesFragment(server, this));
+    }
+
+    if (valuesEnabled) {
+      lifecycleManager.addLifecycle(new DemoValuesFragment(server, this));
+    }
+
+    if (constraintsEnabled) {
+      lifecycleManager.addLifecycle(new DemoConstraintsFragment(server, this));
+    }
+
+    if (methodsEnabled) {
+      lifecycleManager.addLifecycle(new DemoMethodsFragment(server, this));
     }
 
     boolean dynamicNodesEnabled = config.getBoolean("address-space.dynamic.enabled");
     if (dynamicNodesEnabled) {
       var dynamicFragment = new DynamicNodesFragment(server, this);
       lifecycleManager.addLifecycle(dynamicFragment);
-    }
-
-    boolean nullNodesEnabled = config.getBoolean("address-space.null.enabled");
-    if (nullNodesEnabled) {
-      var nullFragment = new NullNodesFragment(server, this);
-      lifecycleManager.addLifecycle(nullFragment);
     }
 
     boolean turtleNodesEnabled = config.getBoolean("address-space.turtles.enabled");
@@ -112,9 +123,6 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
 
     var debugFragment = new DebugNodesFragment(server, this);
     lifecycleManager.addLifecycle(debugFragment);
-
-    var variantFragment = new VariantNodesFragment(server, this);
-    lifecycleManager.addLifecycle(variantFragment);
   }
 
   @Override
@@ -187,25 +195,6 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
                     NodeIds.Organizes,
                     NodeIds.ObjectsFolder.expanded(),
                     Direction.INVERSE));
-
-            demoFolder.addReference(
-                new Reference(
-                    demoFolder.getNodeId(),
-                    NodeIds.HasComponent,
-                    ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Scalar"),
-                    Direction.FORWARD));
-            demoFolder.addReference(
-                new Reference(
-                    demoFolder.getNodeId(),
-                    NodeIds.HasComponent,
-                    ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Array"),
-                    Direction.FORWARD));
-            demoFolder.addReference(
-                new Reference(
-                    demoFolder.getNodeId(),
-                    NodeIds.HasComponent,
-                    ExpandedNodeId.parse("ns=2;s=CTT.Static.AllProfiles.Matrix"),
-                    Direction.FORWARD));
           });
     }
 

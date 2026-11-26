@@ -47,7 +47,7 @@ class DataTypeTestNamespaceIT {
   @BeforeEach
   void setUp(@TempDir Path tempDir) throws Exception {
     Map<String, Object> configMap = new HashMap<>();
-    configMap.put("address-space.data-type-test.enabled", true);
+    configMap.put("address-space.values.enabled", true);
     Config customConfig = ConfigFactory.parseMap(configMap);
 
     server = OpcUaTestServerBuilder.builder().withDataDir(tempDir).withConfig(customConfig).build();

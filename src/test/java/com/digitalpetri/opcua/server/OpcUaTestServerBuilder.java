@@ -185,11 +185,12 @@ public class OpcUaTestServerBuilder {
     addressSpace.put(optionalStateFixtures + "shelving-heartbeat-interval", "10 seconds");
     addressSpace.put(optionalStateFixtures + "shelving-cycling-max-time-shelved", "90 seconds");
     addressSpace.put(optionalStateFixtures + "shelving-steady-max-time-shelved", "30 seconds");
-    addressSpace.put("data-type-test.enabled", false);
+    addressSpace.put("constraints.enabled", false);
     addressSpace.put("dynamic.enabled", false);
     addressSpace.put("mass.enabled", false);
-    addressSpace.put("null.enabled", false);
+    addressSpace.put("methods.enabled", false);
     addressSpace.put("turtles.enabled", false);
+    addressSpace.put("values.enabled", false);
     testDefaults.put("address-space", addressSpace);
 
     // RBAC configuration - minimal setup for testing
