@@ -7,12 +7,18 @@ import com.digitalpetri.opcua.test.types.UnionOfArray;
 import com.digitalpetri.opcua.test.types.UnionOfMatrix;
 import com.digitalpetri.opcua.test.types.UnionOfScalar;
 import java.lang.reflect.Array;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 import org.eclipse.milo.opcua.sdk.core.QualifiedProperty;
 import org.eclipse.milo.opcua.sdk.core.ValueRanks;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
+import org.eclipse.milo.opcua.sdk.server.model.variables.MultiStateDiscreteTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.MultiStateValueDiscreteTypeNode;
 import org.eclipse.milo.opcua.sdk.server.model.variables.XYArrayItemTypeNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
@@ -38,18 +44,21 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UNumber;
 import org.eclipse.milo.opcua.stack.core.types.structured.Range;
 import org.eclipse.milo.opcua.stack.core.types.structured.XVType;
 import org.eclipse.milo.opcua.stack.core.util.ArrayUtil;
 import org.eclipse.milo.opcua.stack.core.util.Namespaces;
+import org.eclipse.milo.opcua.stack.core.util.Tree;
 import org.jspecify.annotations.Nullable;
 
 /**
  * {@link AttributeFilter} implementations enforcing OPC UA value-write rules that Milo 1.2.0-RC3's
  * {@code AttributeWriter} does not enforce yet: {@code OptionSet} bit-mask merging (scalar, array,
  * and matrix), typed null rejection under {@code AllowNulls = false}, Variable limit Properties,
- * Enumeration and {@code MultiStateValueDiscrete} membership, {@code NoSubDataTypes}, {@code
- * SubtypeRestriction}, and {@code DataTypeRefinement}.
+ * Structure DataType conformance, Enumeration, {@code MultiStateDiscrete}, and {@code
+ * MultiStateValueDiscrete} membership, {@code NoSubDataTypes}, {@code SubtypeRestriction}, and
+ * {@code DataTypeRefinement}.
  */
 public final class DemoValueFilters {
 
@@ -142,6 +151,62 @@ public final class DemoValueFilters {
           ctx.writeAttribute(attributeId, value);
         }
       };
+
+  /**
+   * Filter rejecting {@code MultiStateDiscreteType} values that are not an index into the node's
+   * {@code EnumStrings} array with {@code Bad_OutOfRange} (Part 8 §5.3.3.3).
+   */
+  public static final AttributeFilter MULTI_STATE_DISCRETE =
+      new AttributeFilter() {
+        @Override
+        public void writeAttribute(
+            AttributeFilterContext ctx, AttributeId attributeId, @Nullable Object value)
+            throws UaException {
+
+          if (attributeId == AttributeId.Value
+              && value instanceof DataValue dataValue
+              && ctx.getNode() instanceof MultiStateDiscreteTypeNode multiStateNode) {
+
+            validateMultiStateIndex(dataValue.value().value(), multiStateNode.getEnumStrings());
+          }
+          ctx.writeAttribute(attributeId, value);
+        }
+      };
+
+  /**
+   * Creates a filter accepting only Structure values whose DataType is {@code declaredDataTypeId}
+   * or one of its subtypes, rejecting anything else with {@code Bad_TypeMismatch}.
+   *
+   * <p>Milo 1.2.0-RC3's {@code AttributeWriter} only checks that a value is an {@link
+   * ExtensionObject}, so without this filter an encoded {@code Range} could be written to a {@code
+   * DemoRecord} variable. Scalar, 1-D array, and matrix values are checked element by element; a
+   * root null value is passed through so {@code AllowNulls} rules still apply.
+   *
+   * @param encodingContext the server's static {@link EncodingContext}.
+   * @param dataTypeTree supplies the server's current {@link DataTypeTree}. It is read on every
+   *     write because fragments rebuild the tree after registering custom DataTypes.
+   * @param declaredDataTypeId the variable's declared Structure DataType.
+   * @return a new {@link AttributeFilter}.
+   */
+  public static AttributeFilter structureTypeCheck(
+      EncodingContext encodingContext,
+      Supplier<DataTypeTree> dataTypeTree,
+      NodeId declaredDataTypeId) {
+
+    return new AttributeFilter() {
+      @Override
+      public void writeAttribute(
+          AttributeFilterContext ctx, AttributeId attributeId, @Nullable Object value)
+          throws UaException {
+
+        if (attributeId == AttributeId.Value && value instanceof DataValue dataValue) {
+          validateStructureType(
+              dataValue.value().value(), encodingContext, dataTypeTree.get(), declaredDataTypeId);
+        }
+        ctx.writeAttribute(attributeId, value);
+      }
+    };
+  }
 
   /**
    * Creates a filter enforcing Part 3 §8.40 {@code OptionSet} write validation and {@code
@@ -525,10 +590,15 @@ public final class DemoValueFilters {
                 "MultiStateValueDiscrete value is not defined in EnumValues: " + raw);
           }
 
-          ctx.writeAttribute(attributeId, value);
-
           if (ctx.getNode() instanceof MultiStateValueDiscreteTypeNode msvNode) {
-            msvNode.setValueAsText(valueTexts.get(intValue));
+            // Part 8 §5.3.3.4: ValueAsText must describe Value. Holding the node lock across both
+            // updates keeps concurrent writes from leaving ValueAsText describing an older Value.
+            synchronized (msvNode) {
+              ctx.writeAttribute(attributeId, value);
+              msvNode.setValueAsText(valueTexts.get(intValue));
+            }
+          } else {
+            ctx.writeAttribute(attributeId, value);
           }
           return;
         }
@@ -817,6 +887,47 @@ public final class DemoValueFilters {
     }
   }
 
+  static void validateMultiStateIndex(
+      @Nullable Object value, LocalizedText @Nullable [] enumStrings) throws UaException {
+
+    int stateCount = enumStrings != null ? enumStrings.length : 0;
+
+    if (!(value instanceof UNumber index)
+        || index.toBigInteger().compareTo(BigInteger.valueOf(stateCount)) >= 0) {
+      throw new UaException(
+          StatusCodes.Bad_OutOfRange,
+          "MultiStateDiscrete value is not an EnumStrings index [0, %d): %s"
+              .formatted(stateCount, value));
+    }
+  }
+
+  static void validateStructureType(
+      @Nullable Object value,
+      EncodingContext encodingContext,
+      DataTypeTree dataTypeTree,
+      NodeId declaredDataTypeId)
+      throws UaException {
+
+    if (value == null) {
+      return;
+    }
+
+    Object elements = value instanceof Matrix matrix ? matrix.getElements() : value;
+    if (elements == null) {
+      return;
+    }
+
+    Set<NodeId> allowedEncodingIds = binaryEncodingIdsOfSubtypes(dataTypeTree, declaredDataTypeId);
+
+    if (elements instanceof Object[] array) {
+      for (Object element : array) {
+        validateStructureElement(element, encodingContext, allowedEncodingIds);
+      }
+    } else {
+      validateStructureElement(elements, encodingContext, allowedEncodingIds);
+    }
+  }
+
   static void validateRefinedStruct(RefinableStruct struct, int maxOptionalNoteBytes)
       throws UaException {
 
@@ -889,6 +1000,58 @@ public final class DemoValueFilters {
           "Structure encoding is not permitted: " + xo.getEncodingOrTypeId());
     }
 
+    decodeStructure(xo, encodingContext);
+  }
+
+  /**
+   * Returns the {@code Default Binary} encoding NodeIds of {@code dataTypeId} and all of its
+   * subtypes.
+   *
+   * <p>Conformance is decided by encoding NodeId rather than by the decoded value's {@code TypeId}
+   * because generated Union classes report the abstract {@code Union} DataType as their TypeId.
+   */
+  private static Set<NodeId> binaryEncodingIdsOfSubtypes(
+      DataTypeTree dataTypeTree, NodeId dataTypeId) {
+
+    Tree<DataType> root = dataTypeTree.getTreeNode(dataTypeId);
+    if (root == null) {
+      return Set.of();
+    }
+
+    var encodingIds = new HashSet<NodeId>();
+    root.traverse(dataType -> {
+      NodeId encodingId = dataType.getBinaryEncodingId();
+      if (encodingId != null) {
+        encodingIds.add(encodingId);
+      }
+    });
+    return encodingIds;
+  }
+
+  private static void validateStructureElement(
+      @Nullable Object element, EncodingContext encodingContext, Set<NodeId> allowedEncodingIds)
+      throws UaException {
+
+    if (element instanceof UaStructuredType struct) {
+      NodeId encodingId =
+          struct
+              .getBinaryEncodingId()
+              .toNodeId(encodingContext.getNamespaceTable())
+              .orElse(NodeId.NULL_VALUE);
+
+      if (!allowedEncodingIds.contains(encodingId)) {
+        throw new UaException(
+            StatusCodes.Bad_TypeMismatch,
+            "Structure encoding is not permitted: " + struct.getBinaryEncodingId());
+      }
+    } else {
+      validateAllowedBinaryEncoding(element, encodingContext, allowedEncodingIds);
+    }
+  }
+
+  private static UaStructuredType decodeStructure(
+      ExtensionObject.Binary xo, EncodingContext encodingContext) throws UaException {
+
     try {
       UaStructuredType decoded = xo.decode(encodingContext);
       if (decoded == null) {
@@ -896,6 +1059,7 @@ public final class DemoValueFilters {
             StatusCodes.Bad_TypeMismatch,
             "Failed to decode structure body for encoding " + xo.getEncodingOrTypeId());
       }
+      return decoded;
     } catch (UaSerializationException | IndexOutOfBoundsException e) {
       throw new UaException(StatusCodes.Bad_TypeMismatch, e);
     }

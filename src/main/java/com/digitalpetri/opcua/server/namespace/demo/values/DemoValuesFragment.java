@@ -881,55 +881,61 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
             "OPC UA Union DataTypes (scalar, array, and matrix branches) across all arities");
 
     NodeId unionScalarId = DataTypeTestNodeIds.UnionOfScalar.toNodeId(nsTable).orElseThrow();
-    addVariable(
-        folders.scalar(),
-        "UnionOfScalar",
-        "UnionOfScalar with active Boolean branch",
-        unionScalarId,
-        ValueRanks.Scalar,
-        null,
-        Variant.ofExtensionObject(encode(encodingContext, UnionOfScalar.ofBoolean(true))));
-    addVariable(
-        folders.scalar(),
-        "UnionOfScalarNull",
-        "UnionOfScalar with SwitchField = 0 (typed null union)",
-        unionScalarId,
-        ValueRanks.Scalar,
-        null,
-        Variant.ofExtensionObject(encode(encodingContext, UnionOfScalar.ofNull())));
-    addVariable(
-        folders.array(),
-        "UnionOfScalar",
-        "1-D array of UnionOfScalar covering every branch including SwitchField = 0",
-        unionScalarId,
-        ValueRanks.OneDimension,
-        ARRAY_DIMS,
-        Variant.ofExtensionObjectArray(
-            new ExtensionObject[] {
-              encode(encodingContext, UnionOfScalar.ofBoolean(true)),
-              encode(encodingContext, UnionOfScalar.ofSByte((byte) 42)),
-              encode(encodingContext, UnionOfScalar.ofByte(ubyte(7))),
-              encode(encodingContext, UnionOfScalar.ofNull())
-            }));
-    addVariable(
-        folders.matrix(),
-        "UnionOfScalar",
-        "2-D matrix of UnionOfScalar values",
-        unionScalarId,
-        2,
-        MATRIX_DIMS,
-        Variant.ofMatrix(
-            Matrix.ofExtensionObject(
-                new ExtensionObject[][] {
-                  {
-                    encode(encodingContext, UnionOfScalar.ofBoolean(true)),
-                    encode(encodingContext, UnionOfScalar.ofSByte((byte) -1))
-                  },
-                  {
-                    encode(encodingContext, UnionOfScalar.ofByte(ubyte(9))),
-                    encode(encodingContext, UnionOfScalar.ofNull())
-                  }
+    List<UaVariableNode> unionOfScalarNodes = new ArrayList<>();
+    unionOfScalarNodes.add(
+        addVariable(
+            folders.scalar(),
+            "UnionOfScalar",
+            "UnionOfScalar with active Boolean branch",
+            unionScalarId,
+            ValueRanks.Scalar,
+            null,
+            Variant.ofExtensionObject(encode(encodingContext, UnionOfScalar.ofBoolean(true)))));
+    unionOfScalarNodes.add(
+        addVariable(
+            folders.scalar(),
+            "UnionOfScalarNull",
+            "UnionOfScalar with SwitchField = 0 (typed null union)",
+            unionScalarId,
+            ValueRanks.Scalar,
+            null,
+            Variant.ofExtensionObject(encode(encodingContext, UnionOfScalar.ofNull()))));
+    unionOfScalarNodes.add(
+        addVariable(
+            folders.array(),
+            "UnionOfScalar",
+            "1-D array of UnionOfScalar covering every branch including SwitchField = 0",
+            unionScalarId,
+            ValueRanks.OneDimension,
+            ARRAY_DIMS,
+            Variant.ofExtensionObjectArray(
+                new ExtensionObject[] {
+                  encode(encodingContext, UnionOfScalar.ofBoolean(true)),
+                  encode(encodingContext, UnionOfScalar.ofSByte((byte) 42)),
+                  encode(encodingContext, UnionOfScalar.ofByte(ubyte(7))),
+                  encode(encodingContext, UnionOfScalar.ofNull())
                 })));
+    unionOfScalarNodes.add(
+        addVariable(
+            folders.matrix(),
+            "UnionOfScalar",
+            "2-D matrix of UnionOfScalar values",
+            unionScalarId,
+            2,
+            MATRIX_DIMS,
+            Variant.ofMatrix(
+                Matrix.ofExtensionObject(
+                    new ExtensionObject[][] {
+                      {
+                        encode(encodingContext, UnionOfScalar.ofBoolean(true)),
+                        encode(encodingContext, UnionOfScalar.ofSByte((byte) -1))
+                      },
+                      {
+                        encode(encodingContext, UnionOfScalar.ofByte(ubyte(9))),
+                        encode(encodingContext, UnionOfScalar.ofNull())
+                      }
+                    }))));
+    unionOfScalarNodes.forEach(node -> addStructureTypeCheck(node, unionScalarId));
 
     NodeId unionArrayId = DataTypeTestNodeIds.UnionOfArray.toNodeId(nsTable).orElseThrow();
     addStructureArities(
@@ -1395,7 +1401,9 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
     NodeId opaqueStructId = new NodeId(namespaceIndex, DemoTypesFragment.OPAQUE_STRUCT_IDENTIFIER);
     NodeId opaqueEncodingId =
         new NodeId(namespaceIndex, DemoTypesFragment.OPAQUE_STRUCT_ENCODING_IDENTIFIER);
-    addStructureArities(
+    // OpaqueStruct and UnknownEncoding intentionally carry ExtensionObjects the server cannot
+    // decode, so they skip the Structure DataType check.
+    addUncheckedStructureArities(
         folders,
         "OpaqueStruct",
         "Structure whose DataType intentionally omits DataTypeDefinition",
@@ -1410,7 +1418,7 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
 
     NodeId unknownEncodingId =
         new NodeId(namespaceIndex, DemoTypesFragment.UNKNOWN_ENCODING_IDENTIFIER);
-    addStructureArities(
+    addUncheckedStructureArities(
         folders,
         "UnknownEncoding",
         "Structure carrying an ExtensionObject whose encoding NodeId does not exist",
@@ -1425,6 +1433,10 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
                 unknownEncodingId));
   }
 
+  /**
+   * Adds scalar, 1-D array, and 2-D matrix variables of a Structure DataType that reject writes of
+   * any other Structure DataType.
+   */
   private void addStructureArities(
       ArityFolders folders,
       String name,
@@ -1433,37 +1445,67 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
       Supplier<ExtensionObject> first,
       Supplier<ExtensionObject> second) {
 
-    addVariable(
-        folders.scalar(),
-        name,
-        description + " (scalar)",
-        dataTypeId,
-        ValueRanks.Scalar,
-        null,
-        Variant.ofExtensionObject(first.get()));
+    List<UaVariableNode> nodes =
+        addUncheckedStructureArities(folders, name, description, dataTypeId, first, second);
 
-    addVariable(
-        folders.array(),
-        name,
-        description + " (1-D array)",
-        dataTypeId,
-        ValueRanks.OneDimension,
-        ARRAY_DIMS,
-        Variant.ofExtensionObjectArray(new ExtensionObject[] {first.get(), second.get()}));
+    nodes.forEach(node -> addStructureTypeCheck(node, dataTypeId));
+  }
 
-    addVariable(
-        folders.matrix(),
-        name,
-        description + " (2-D matrix)",
-        dataTypeId,
-        2,
-        MATRIX_DIMS,
-        Variant.ofMatrix(
-            Matrix.ofExtensionObject(
-                new ExtensionObject[][] {
-                  {first.get(), second.get()},
-                  {second.get(), first.get()}
-                })));
+  /**
+   * Adds scalar, 1-D array, and 2-D matrix variables of a Structure DataType without checking the
+   * DataType of written values beyond Milo's {@link ExtensionObject} check.
+   */
+  private List<UaVariableNode> addUncheckedStructureArities(
+      ArityFolders folders,
+      String name,
+      String description,
+      NodeId dataTypeId,
+      Supplier<ExtensionObject> first,
+      Supplier<ExtensionObject> second) {
+
+    UaVariableNode scalar =
+        addVariable(
+            folders.scalar(),
+            name,
+            description + " (scalar)",
+            dataTypeId,
+            ValueRanks.Scalar,
+            null,
+            Variant.ofExtensionObject(first.get()));
+
+    UaVariableNode array =
+        addVariable(
+            folders.array(),
+            name,
+            description + " (1-D array)",
+            dataTypeId,
+            ValueRanks.OneDimension,
+            ARRAY_DIMS,
+            Variant.ofExtensionObjectArray(new ExtensionObject[] {first.get(), second.get()}));
+
+    UaVariableNode matrix =
+        addVariable(
+            folders.matrix(),
+            name,
+            description + " (2-D matrix)",
+            dataTypeId,
+            2,
+            MATRIX_DIMS,
+            Variant.ofMatrix(
+                Matrix.ofExtensionObject(
+                    new ExtensionObject[][] {
+                      {first.get(), second.get()},
+                      {second.get(), first.get()}
+                    })));
+
+    return List.of(scalar, array, matrix);
+  }
+
+  private void addStructureTypeCheck(UaVariableNode node, NodeId dataTypeId) {
+    node.getFilterChain()
+        .addLast(
+            DemoValueFilters.structureTypeCheck(
+                getServer().getStaticEncodingContext(), getServer()::getDataTypeTree, dataTypeId));
   }
 
   // endregion
@@ -1590,7 +1632,7 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
                 encodingContext,
                 new ConcreteTestTypeEx((short) 2, 2.5, "derived", false, uint(42)));
 
-    addStructureArities(
+    addUncheckedStructureArities(
         folders,
         "Structure",
         "Abstract Structure (i=22) holding heterogeneous ConcreteTestType and ConcreteTestTypeEx",
@@ -1629,30 +1671,33 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
         abstractTestTypeId,
         baseXo,
         derivedXo);
-    addEmptyAbstractVariable(
-        folders.scalar(),
-        "AbstractTestTypeEmpty",
-        "Writable AbstractTestType scalar initialized to null (AllowNulls=true)",
-        abstractTestTypeId,
-        ValueRanks.Scalar,
-        null);
-    addEmptyAbstractVariable(
-        folders.array(),
-        "AbstractTestTypeEmpty",
-        "Writable AbstractTestType 1-D array initialized to null (AllowNulls=true)",
-        abstractTestTypeId,
-        ValueRanks.OneDimension,
-        ARRAY_DIMS);
-    addEmptyAbstractVariable(
-        folders.matrix(),
-        "AbstractTestTypeEmpty",
-        "Writable AbstractTestType 2-D matrix initialized to null (AllowNulls=true)",
-        abstractTestTypeId,
-        2,
-        MATRIX_DIMS);
+    List<UaVariableNode> emptyAbstractTestTypeNodes =
+        List.of(
+            addEmptyAbstractVariable(
+                folders.scalar(),
+                "AbstractTestTypeEmpty",
+                "Writable AbstractTestType scalar initialized to null (AllowNulls=true)",
+                abstractTestTypeId,
+                ValueRanks.Scalar,
+                null),
+            addEmptyAbstractVariable(
+                folders.array(),
+                "AbstractTestTypeEmpty",
+                "Writable AbstractTestType 1-D array initialized to null (AllowNulls=true)",
+                abstractTestTypeId,
+                ValueRanks.OneDimension,
+                ARRAY_DIMS),
+            addEmptyAbstractVariable(
+                folders.matrix(),
+                "AbstractTestTypeEmpty",
+                "Writable AbstractTestType 2-D matrix initialized to null (AllowNulls=true)",
+                abstractTestTypeId,
+                2,
+                MATRIX_DIMS));
+    emptyAbstractTestTypeNodes.forEach(node -> addStructureTypeCheck(node, abstractTestTypeId));
   }
 
-  private void addEmptyAbstractVariable(
+  private UaVariableNode addEmptyAbstractVariable(
       NodeId folderId,
       String name,
       String description,
@@ -1670,6 +1715,7 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
             arrayDimensions,
             Variant.NULL_VALUE);
     node.setAllowNulls(true);
+    return node;
   }
 
   // endregion
@@ -1752,6 +1798,7 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
             LocalizedText.english("Fault")
           });
       multiState.setValue(new DataValue(Variant.ofUInt32(uint(1))));
+      multiState.getFilterChain().addLast(DemoValueFilters.MULTI_STATE_DISCRETE);
 
       // MultiStateValueDiscrete
       MultiStateValueDiscreteTypeNode multiStateValue =
