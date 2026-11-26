@@ -17,9 +17,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataType;
+import org.eclipse.milo.opcua.sdk.core.typetree.DataTypeTree;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
+import org.eclipse.milo.opcua.stack.core.OpcUaDataType;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.UaSerializationException;
@@ -38,8 +42,13 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.structured.AnonymousIdentityToken;
+import org.eclipse.milo.opcua.stack.core.types.structured.DataTypeDefinition;
 import org.eclipse.milo.opcua.stack.core.types.structured.Range;
+import org.eclipse.milo.opcua.stack.core.types.structured.UserNameIdentityToken;
 import org.eclipse.milo.opcua.stack.core.types.structured.XVType;
+import org.eclipse.milo.opcua.stack.core.util.Tree;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -455,6 +464,186 @@ class DemoValueFiltersTest {
                   DemoValueFilters.validateXyArrayEuRange(
                       new Double[] {1.0, 10.0}, euRange, context, xvEncodingId));
       assertEquals(StatusCodes.Bad_TypeMismatch, wrongPayload.getStatusCode().getValue());
+    }
+  }
+
+  @Nested
+  class StructureTypeValidation {
+
+    private final EncodingContext context = new DefaultEncodingContext();
+
+    // Structure -> UserIdentityToken -> {AnonymousIdentityToken, UserNameIdentityToken}; Range is
+    // an unrelated Structure subtype.
+    private final DataTypeTree dataTypeTree = identityTokenTree();
+
+    private final ExtensionObject anonymous =
+        ExtensionObject.encode(context, new AnonymousIdentityToken("anonymous"));
+    private final ExtensionObject userName =
+        ExtensionObject.encode(
+            context, new UserNameIdentityToken("user", "user", ByteString.of(new byte[0]), null));
+    private final ExtensionObject range = ExtensionObject.encode(context, new Range(0.0, 1.0));
+
+    @Test
+    void declaredTypeAndSubtypesAreAcceptedAcrossArities() {
+      assertDoesNotThrow(() -> validate(anonymous, NodeIds.AnonymousIdentityToken));
+      assertDoesNotThrow(() -> validate(anonymous, NodeIds.UserIdentityToken));
+      assertDoesNotThrow(
+          () -> validate(new ExtensionObject[] {anonymous, userName}, NodeIds.UserIdentityToken));
+      assertDoesNotThrow(() ->
+          validate(
+              Matrix.ofExtensionObject(
+                  new ExtensionObject[][] {{anonymous, userName}, {userName, anonymous}}),
+              NodeIds.UserIdentityToken));
+
+      // Values written in-process may already be decoded.
+      assertDoesNotThrow(
+          () -> validate(new AnonymousIdentityToken("decoded"), NodeIds.UserIdentityToken));
+    }
+
+    @Test
+    void unrelatedSupertypeAndSiblingEncodingsAreRejectedAcrossArities() {
+      assertTypeMismatch(range, NodeIds.UserIdentityToken);
+      assertTypeMismatch(new ExtensionObject[] {anonymous, range}, NodeIds.UserIdentityToken);
+      assertTypeMismatch(
+          Matrix.ofExtensionObject(
+              new ExtensionObject[][] {{anonymous, anonymous}, {range, range}}),
+          NodeIds.UserIdentityToken);
+
+      // A sibling subtype does not conform, and neither does the declared type's supertype.
+      assertTypeMismatch(userName, NodeIds.AnonymousIdentityToken);
+      assertTypeMismatch(anonymous, NodeIds.Range);
+    }
+
+    @Test
+    void malformedNullAndNonStructureElementsAreRejected() {
+      ExtensionObject.Binary rangeBinary = (ExtensionObject.Binary) range;
+      NodeId rangeEncodingId = rangeBinary.getEncodingOrTypeId();
+      byte[] truncatedBody = Arrays.copyOf(rangeBinary.getBody().bytesOrEmpty(), 3);
+
+      assertTypeMismatch(
+          ExtensionObject.of(ByteString.of(truncatedBody), rangeEncodingId), NodeIds.Range);
+      assertTypeMismatch(ExtensionObject.of(ByteString.NULL_VALUE, rangeEncodingId), NodeIds.Range);
+      assertTypeMismatch(
+          ExtensionObject.of(ByteString.of(new byte[] {1, 2, 3, 4}), new NodeId(0, 999_999)),
+          NodeIds.Range);
+      assertTypeMismatch(new ExtensionObject[] {range, null}, NodeIds.Range);
+      assertTypeMismatch(1.5, NodeIds.Range);
+    }
+
+    // Nulls are governed by AllowNulls; empty arrays and matrices have no elements to check.
+    @Test
+    void rootNullAndEmptyArraysAndMatricesAreAccepted() {
+      assertDoesNotThrow(() -> validate(null, NodeIds.Range));
+      assertDoesNotThrow(() -> validate(new ExtensionObject[0], NodeIds.Range));
+      assertDoesNotThrow(() ->
+          validate(
+              new Matrix(new ExtensionObject[0], new int[] {0, 0}, OpcUaDataType.ExtensionObject),
+              NodeIds.Range));
+    }
+
+    private void validate(@Nullable Object value, NodeId declaredDataTypeId) throws UaException {
+      DemoValueFilters.validateStructureType(value, context, dataTypeTree, declaredDataTypeId);
+    }
+
+    private void assertTypeMismatch(Object value, NodeId declaredDataTypeId) {
+      UaException ex = assertThrows(UaException.class, () -> validate(value, declaredDataTypeId));
+      assertEquals(StatusCodes.Bad_TypeMismatch, ex.getStatusCode().getValue());
+    }
+
+    private static DataTypeTree identityTokenTree() {
+      Tree<DataType> structure = new Tree<>(null, new TestDataType(NodeIds.Structure, null));
+      Tree<DataType> identityToken =
+          structure.addChild(new TestDataType(NodeIds.UserIdentityToken, null));
+      identityToken.addChild(
+          new TestDataType(
+              NodeIds.AnonymousIdentityToken, ns0(AnonymousIdentityToken.BINARY_ENCODING_ID)));
+      identityToken.addChild(
+          new TestDataType(
+              NodeIds.UserNameIdentityToken, ns0(UserNameIdentityToken.BINARY_ENCODING_ID)));
+      structure.addChild(new TestDataType(NodeIds.Range, ns0(Range.BINARY_ENCODING_ID)));
+
+      return new DataTypeTree(structure);
+    }
+
+    private static NodeId ns0(ExpandedNodeId nodeId) {
+      return nodeId.toNodeId(new DefaultEncodingContext().getNamespaceTable()).orElseThrow();
+    }
+
+    private record TestDataType(NodeId nodeId, @Nullable NodeId binaryEncodingId)
+        implements DataType {
+
+      @Override
+      public QualifiedName getBrowseName() {
+        return new QualifiedName(0, nodeId.toParseableString());
+      }
+
+      @Override
+      public NodeId getNodeId() {
+        return nodeId;
+      }
+
+      @Override
+      public @Nullable NodeId getBinaryEncodingId() {
+        return binaryEncodingId;
+      }
+
+      @Override
+      public @Nullable NodeId getXmlEncodingId() {
+        return null;
+      }
+
+      @Override
+      public @Nullable NodeId getJsonEncodingId() {
+        return null;
+      }
+
+      @Override
+      public @Nullable DataTypeDefinition getDataTypeDefinition() {
+        return null;
+      }
+
+      @Override
+      public Boolean isAbstract() {
+        return false;
+      }
+    }
+  }
+
+  @Nested
+  class MultiStateDiscreteValidation {
+
+    private final LocalizedText[] enumStrings = {
+      LocalizedText.english("Off"),
+      LocalizedText.english("Auto"),
+      LocalizedText.english("Manual"),
+      LocalizedText.english("Fault")
+    };
+
+    // Part 8 §5.3.3.3: the value is an index into EnumStrings.
+    @Test
+    void definedIndicesAreAccepted() {
+      for (int i = 0; i < enumStrings.length; i++) {
+        UInteger index = uint(i);
+        assertDoesNotThrow(() -> DemoValueFilters.validateMultiStateIndex(index, enumStrings));
+      }
+    }
+
+    @Test
+    void undefinedIndicesAndNullAreRejectedAsOutOfRange() {
+      Object[] invalid = {uint(4), UInteger.MAX, null};
+
+      for (Object value : invalid) {
+        UaException ex =
+            assertThrows(
+                UaException.class,
+                () -> DemoValueFilters.validateMultiStateIndex(value, enumStrings));
+        assertEquals(StatusCodes.Bad_OutOfRange, ex.getStatusCode().getValue());
+      }
+
+      UaException noStates =
+          assertThrows(
+              UaException.class, () -> DemoValueFilters.validateMultiStateIndex(uint(0), null));
+      assertEquals(StatusCodes.Bad_OutOfRange, noStates.getStatusCode().getValue());
     }
   }
 }

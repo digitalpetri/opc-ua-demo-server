@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.digitalpetri.opcua.server.OpcUaDemoServer;
@@ -21,19 +22,29 @@ import com.digitalpetri.opcua.server.namespace.demo.types.DemoTypesFragment;
 import com.digitalpetri.opcua.server.namespace.demo.types.StructWithOptionSet;
 import com.digitalpetri.opcua.test.types.ConcreteTestType;
 import com.digitalpetri.opcua.test.types.ConcreteTestTypeEx;
+import com.digitalpetri.opcua.test.types.UnionOfArray;
 import com.digitalpetri.opcua.test.types.UnionOfScalar;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.math.BigDecimal;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.server.AccessContext;
+import org.eclipse.milo.opcua.sdk.server.model.variables.MultiStateValueDiscreteTypeNode;
+import org.eclipse.milo.opcua.sdk.server.model.variables.PropertyTypeNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilter;
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilterContext;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.NodeIds;
@@ -60,6 +71,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.AxisInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.EnumDefinition;
+import org.eclipse.milo.opcua.stack.core.types.structured.Range;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.WriteResponse;
@@ -731,6 +743,106 @@ class DemoValuesIT {
       assertTrue(writeValue(emptyAbstractMatrix, Variant.ofMatrix(subtypes)).isGood());
       assertTrue(writeValue(emptyAbstractMatrix, Variant.NULL_VALUE).isGood());
     }
+
+    // Milo only checks the ExtensionObject backing class, so a Structure variable must reject
+    // encodings of unrelated DataTypes and bodies that do not decode.
+    @Test
+    void structureVariablesRejectUnrelatedEncodingsAcrossArities() throws Exception {
+      ExtensionObject range = encode(new Range(0.0, 1.0));
+      ExtensionObject first = encode(new DemoRecord(3, "Third", 7.5, true));
+      ExtensionObject second = encode(new DemoRecord(4, "Fourth", 8.5, false));
+
+      NodeId scalar = demoNode("Demo.Values.Structure.Scalar.DemoRecord");
+      assertTypeMismatch(scalar, Variant.ofExtensionObject(range));
+      assertWriteGood(scalar, Variant.ofExtensionObject(first));
+
+      NodeId array = demoNode("Demo.Values.Structure.Array.DemoRecord");
+      assertTypeMismatch(
+          array, Variant.ofExtensionObjectArray(new ExtensionObject[] {first, range}));
+      assertWriteGood(array, Variant.ofExtensionObjectArray(new ExtensionObject[] {first, second}));
+
+      NodeId matrix = demoNode("Demo.Values.Structure.Matrix.DemoRecord");
+      assertTypeMismatch(
+          matrix,
+          Variant.ofMatrix(
+              Matrix.ofExtensionObject(
+                  new ExtensionObject[][] {{first, second}, {second, range}})));
+      assertWriteGood(
+          matrix,
+          Variant.ofMatrix(
+              Matrix.ofExtensionObject(
+                  new ExtensionObject[][] {{first, second}, {second, first}})));
+
+      // Unions and the abstract AbstractTestType are checked the same way.
+      NodeId unionScalar = demoNode("Demo.Values.Union.Scalar.UnionOfScalar");
+      assertTypeMismatch(unionScalar, Variant.ofExtensionObject(range));
+      assertWriteGood(
+          unionScalar, Variant.ofExtensionObject(encode(UnionOfScalar.ofSByte((byte) 5))));
+
+      NodeId unionArray = demoNode("Demo.Values.Union.Array.UnionOfArray");
+      ExtensionObject unionOfArray = encode(UnionOfArray.ofBoolean(new Boolean[] {true}));
+      assertTypeMismatch(
+          unionArray, Variant.ofExtensionObjectArray(new ExtensionObject[] {unionOfArray, range}));
+      assertWriteGood(
+          unionArray,
+          Variant.ofExtensionObjectArray(new ExtensionObject[] {unionOfArray, unionOfArray}));
+
+      NodeId abstractScalar = demoNode("Demo.Values.Abstract.Scalar.AbstractTestType");
+      assertTypeMismatch(abstractScalar, Variant.ofExtensionObject(range));
+      assertTypeMismatch(abstractScalar, Variant.ofExtensionObject(first));
+      assertWriteGood(
+          abstractScalar,
+          Variant.ofExtensionObject(
+              encode(new ConcreteTestTypeEx((short) 5, 5.0, "e", true, uint(5)))));
+
+      NodeId abstractEmpty = demoNode("Demo.Values.Abstract.Scalar.AbstractTestTypeEmpty");
+      assertTypeMismatch(abstractEmpty, Variant.ofExtensionObject(range));
+      assertWriteGood(abstractEmpty, Variant.NULL_VALUE);
+    }
+
+    @Test
+    void structureVariablesRejectMalformedBodiesAndAcceptSubtypes() throws Exception {
+      NodeId scalar = demoNode("Demo.Values.Structure.Scalar.DemoRecord");
+      ExtensionObject.Binary record =
+          (ExtensionObject.Binary) encode(new DemoRecord(5, "Fifth", 9.5, true));
+      NodeId recordEncodingId = record.getEncodingOrTypeId();
+      byte[] truncatedBody = Arrays.copyOf(record.getBody().bytesOrEmpty(), 3);
+
+      assertTypeMismatch(
+          scalar,
+          Variant.ofExtensionObject(
+              ExtensionObject.of(ByteString.of(truncatedBody), recordEncodingId)));
+      assertTypeMismatch(
+          scalar,
+          Variant.ofExtensionObject(ExtensionObject.of(ByteString.NULL_VALUE, recordEncodingId)));
+      assertWriteGood(scalar, Variant.ofExtensionObject(record));
+
+      // ConcreteTestTypeEx is a subtype of ConcreteTestType, not the other way around.
+      ExtensionObject base = encode(new ConcreteTestType((short) 6, 6.0, "base", true));
+      ExtensionObject derived =
+          encode(new ConcreteTestTypeEx((short) 7, 7.0, "ex", false, uint(7)));
+      assertWriteGood(
+          demoNode("Demo.Values.Structure.Scalar.ConcreteTestType"),
+          Variant.ofExtensionObject(derived));
+      assertWriteGood(
+          demoNode("Demo.Values.Structure.Array.ConcreteTestType"),
+          Variant.ofExtensionObjectArray(new ExtensionObject[] {base, derived}));
+      assertTypeMismatch(
+          demoNode("Demo.Values.Structure.Scalar.ConcreteTestTypeEx"),
+          Variant.ofExtensionObject(base));
+
+      // Empty arrays and matrices have no elements to reject.
+      NodeId emptyAbstractArray = demoNode("Demo.Values.Abstract.Array.AbstractTestTypeEmpty");
+      assertWriteGood(emptyAbstractArray, Variant.ofExtensionObjectArray(new ExtensionObject[0]));
+      assertWriteGood(emptyAbstractArray, Variant.NULL_VALUE);
+
+      NodeId emptyAbstractMatrix = demoNode("Demo.Values.Abstract.Matrix.AbstractTestTypeEmpty");
+      assertWriteGood(
+          emptyAbstractMatrix,
+          Variant.ofMatrix(
+              new Matrix(new ExtensionObject[0], new int[] {0, 0}, OpcUaDataType.ExtensionObject)));
+      assertWriteGood(emptyAbstractMatrix, Variant.NULL_VALUE);
+    }
   }
 
   @Nested
@@ -751,10 +863,18 @@ class DemoValuesIT {
       assertTrue(
           writeValue(demoNode("Demo.Values.DataAccess.TwoStateDiscrete"), Variant.ofBoolean(true))
               .isGood());
-      assertTrue(
-          writeValue(
-                  demoNode("Demo.Values.DataAccess.MultiStateDiscrete"), Variant.ofUInt32(uint(2)))
-              .isGood());
+
+      // Part 8 §5.3.3.3: MultiStateDiscrete values index EnumStrings (Off, Auto, Manual, Fault).
+      NodeId multiState = demoNode("Demo.Values.DataAccess.MultiStateDiscrete");
+      for (int i = 0; i < 4; i++) {
+        assertTrue(writeValue(multiState, Variant.ofUInt32(uint(i))).isGood());
+      }
+      assertEquals(
+          StatusCodes.Bad_OutOfRange, writeValue(multiState, Variant.ofUInt32(uint(4))).getValue());
+      assertEquals(
+          StatusCodes.Bad_OutOfRange,
+          writeValue(multiState, Variant.ofUInt32(UInteger.MAX)).getValue());
+      assertTrue(writeValue(multiState, Variant.ofUInt32(uint(1))).isGood());
 
       // MultiStateValueDiscrete rejects unlisted values and updates ValueAsText on valid writes.
       NodeId msv = demoNode("Demo.Values.DataAccess.MultiStateValueDiscrete");
@@ -816,6 +936,75 @@ class DemoValuesIT {
                           })))
               .isGood());
     }
+
+    // Part 8 §5.3.3.4: ValueAsText must describe Value. The first write pauses while updating
+    // ValueAsText; a second write must wait for it instead of interleaving, or the first write's
+    // stale text would overwrite the second write's text.
+    @Test
+    void concurrentMultiStateValueDiscreteWritesKeepValueAsTextSynchronized() throws Exception {
+      NodeId msvId = demoNode("Demo.Values.DataAccess.MultiStateValueDiscrete");
+      var msvNode =
+          (MultiStateValueDiscreteTypeNode)
+              server.getServer().getAddressSpaceManager().getManagedNode(msvId).orElseThrow();
+      PropertyTypeNode valueAsTextNode = msvNode.getValueAsTextNode();
+
+      var firstTextUpdateStarted = new CountDownLatch(1);
+      var releaseFirstTextUpdate = new CountDownLatch(1);
+      var paused = new AtomicBoolean(false);
+
+      AttributeFilter pauseFirstTextUpdate =
+          new AttributeFilter() {
+            @Override
+            public void setAttribute(
+                AttributeFilterContext ctx, AttributeId attributeId, @Nullable Object value) {
+
+              if (attributeId == AttributeId.Value && paused.compareAndSet(false, true)) {
+                firstTextUpdateStarted.countDown();
+                try {
+                  releaseFirstTextUpdate.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+                }
+              }
+              ctx.setAttribute(attributeId, value);
+            }
+          };
+
+      ExecutorService executor = Executors.newFixedThreadPool(2);
+      valueAsTextNode.getFilterChain().addLast(pauseFirstTextUpdate);
+      try {
+        Future<?> first = executor.submit(() -> writeInternal(msvNode, 10));
+        assertTrue(firstTextUpdateStarted.await(5, TimeUnit.SECONDS));
+
+        Future<?> second = executor.submit(() -> writeInternal(msvNode, 30));
+        assertThrows(TimeoutException.class, () -> second.get(500, TimeUnit.MILLISECONDS));
+
+        releaseFirstTextUpdate.countDown();
+        first.get(5, TimeUnit.SECONDS);
+        second.get(5, TimeUnit.SECONDS);
+      } finally {
+        releaseFirstTextUpdate.countDown();
+        valueAsTextNode.getFilterChain().remove(pauseFirstTextUpdate);
+        executor.shutdownNow();
+      }
+
+      assertEquals(30, client.readValue(0.0, TimestampsToReturn.Neither, msvId).value().value());
+      NodeId valueAsTextId = valueAsTextNode.getNodeId();
+      assertEquals(
+          LocalizedText.english("Stopping"),
+          client.readValue(0.0, TimestampsToReturn.Neither, valueAsTextId).value().value());
+
+      // Restore the initial Running state other tests expect.
+      assertTrue(writeValue(msvId, Variant.ofInt32(20)).isGood());
+    }
+
+    private static Void writeInternal(MultiStateValueDiscreteTypeNode node, int value)
+        throws Exception {
+
+      node.writeAttribute(
+          AccessContext.INTERNAL, AttributeId.Value, DataValue.valueOnly(Variant.ofInt32(value)));
+      return null;
+    }
   }
 
   // region Helpers
@@ -871,6 +1060,18 @@ class DemoValuesIT {
 
   private ExtensionObject encode(UaStructuredType struct) {
     return ExtensionObject.encode(encodingContext, struct);
+  }
+
+  private void assertWriteGood(NodeId nodeId, Variant value) throws Exception {
+    StatusCode status = writeValue(nodeId, value);
+    assertTrue(status.isGood(), () -> nodeId + " rejected " + value + ": " + status);
+  }
+
+  private void assertTypeMismatch(NodeId nodeId, Variant value) throws Exception {
+    assertEquals(
+        StatusCodes.Bad_TypeMismatch,
+        writeValue(nodeId, value).getValue(),
+        () -> nodeId + " accepted " + value);
   }
 
   private DataValue readAttribute(NodeId nodeId, AttributeId attributeId) throws Exception {
