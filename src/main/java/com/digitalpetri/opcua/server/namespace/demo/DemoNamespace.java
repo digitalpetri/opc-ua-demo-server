@@ -3,6 +3,7 @@ package com.digitalpetri.opcua.server.namespace.demo;
 import com.digitalpetri.opcua.server.namespace.demo.alarms.AlarmNodesFragment;
 import com.digitalpetri.opcua.server.namespace.demo.ctt.CttNodes;
 import com.digitalpetri.opcua.server.namespace.demo.debug.DebugNodesFragment;
+import com.digitalpetri.opcua.server.namespace.demo.editor.ValueEditorTestNodesFragment;
 import com.typesafe.config.Config;
 import java.time.Duration;
 import org.eclipse.milo.opcua.sdk.core.Reference;
@@ -105,6 +106,12 @@ public class DemoNamespace extends AddressSpaceComposite implements Namespace, L
     if (turtleNodesEnabled) {
       var turtleFragment = new TurtleNodesFragment(server, this);
       lifecycleManager.addLifecycle(turtleFragment);
+    }
+
+    boolean valueEditorTestEnabled = config.getBoolean("address-space.value-editor-test.enabled");
+    if (valueEditorTestEnabled) {
+      var valueEditorTestFragment = new ValueEditorTestNodesFragment(server, this);
+      lifecycleManager.addLifecycle(valueEditorTestFragment);
     }
 
     var rbacFragment = new RbacNodesFragment(server, this);

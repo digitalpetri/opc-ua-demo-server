@@ -190,6 +190,7 @@ public class OpcUaTestServerBuilder {
     addressSpace.put("mass.enabled", false);
     addressSpace.put("null.enabled", false);
     addressSpace.put("turtles.enabled", false);
+    addressSpace.put("value-editor-test.enabled", false);
     testDefaults.put("address-space", addressSpace);
 
     // RBAC configuration - minimal setup for testing

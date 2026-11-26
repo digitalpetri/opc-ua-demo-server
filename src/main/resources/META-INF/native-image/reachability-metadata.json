@@ -97,6 +97,33 @@
       "type": "ch.qos.logback.core.spi.ContextAware"
     },
     {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.editor.BaseRecord[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.editor.DemoOptionSet[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.editor.DemoRecord[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.editor.DemoUnion[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.editor.DerivedRecord[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.editor.NestedNode[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.editor.NullableFieldsStruct[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.editor.RefinableStruct[]"
+    },
+    {
+      "type": "com.digitalpetri.opcua.server.namespace.demo.editor.StructWithOptionSet[]"
+    },
+    {
       "type": "com.digitalpetri.opcua.test.types.ConcreteTestTypeEx[]"
     },
     {
