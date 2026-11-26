@@ -79,7 +79,11 @@ class AliasSupportIT {
     server =
         OpcUaTestServerBuilder.builder()
             .withDataDir(tempDir)
-            .withConfig(ConfigFactory.parseMap(Map.of("address-space.dynamic.enabled", true)))
+            .withConfig(
+                ConfigFactory.parseMap(
+                    Map.of(
+                        "address-space.values.enabled", true,
+                        "address-space.dynamic.enabled", true)))
             .build(transportProfile -> {
               if (transportProfile != TransportProfile.TCP_UASC_UABINARY) {
                 return null;
@@ -228,7 +232,11 @@ class AliasSupportIT {
 
   @Test
   void disablingDynamicNodesOmitsTheirAliasCategory(@TempDir Path tempDir) throws Exception {
-    server = OpcUaTestServerBuilder.builder().withDataDir(tempDir).build();
+    server =
+        OpcUaTestServerBuilder.builder()
+            .withDataDir(tempDir)
+            .withConfig(ConfigFactory.parseMap(Map.of("address-space.values.enabled", true)))
+            .build();
     server.startup();
 
     client = OpcUaTestClient.create(server.getServer());
@@ -248,6 +256,24 @@ class AliasSupportIT {
   }
 
   @Test
+  void disablingValuesNodesOmitsStaticAliasCategory(@TempDir Path tempDir) throws Exception {
+    server = OpcUaTestServerBuilder.builder().withDataDir(tempDir).build();
+    server.startup();
+
+    client = OpcUaTestClient.create(server.getServer());
+    client.connect();
+
+    AliasNameDataType[] aliases = findAliases(NodeIds.Aliases_FindAlias, "Demo.%");
+    assertEquals(0, aliases.length);
+    assertTrue(
+        server
+            .getServer()
+            .getAddressSpaceManager()
+            .getManagedNode(NodeId.parse("ns=2;s=" + AliasSupport.STATIC_CATEGORY_IDENTIFIER))
+            .isEmpty());
+  }
+
+  @Test
   void malformedVersionStoreRollsBackStartedNamespacesAndServer(@TempDir Path tempDir)
       throws Exception {
 
@@ -255,7 +281,11 @@ class AliasSupportIT {
     Files.createDirectories(versionStorePath.getParent());
     Files.writeString(versionStorePath, "invalid-node-id=1\n");
 
-    server = OpcUaTestServerBuilder.builder().withDataDir(tempDir).build();
+    server =
+        OpcUaTestServerBuilder.builder()
+            .withDataDir(tempDir)
+            .withConfig(ConfigFactory.parseMap(Map.of("address-space.values.enabled", true)))
+            .build();
 
     RuntimeException exception = assertThrows(RuntimeException.class, server::startup);
     // The SDK attaches rollback failures to the original startup failure as suppressed exceptions.
@@ -270,7 +300,7 @@ class AliasSupportIT {
         server
             .getServer()
             .getAddressSpaceManager()
-            .getManagedNode(NodeId.parse("ns=2;s=Demo.Variants.Scalar.Double"))
+            .getManagedNode(NodeId.parse("ns=2;s=Demo.Values.Builtin.Scalar.Double"))
             .isEmpty());
 
     // AbstractLifecycle is stopped after the failed startup and a second shutdown would be a no-op.
@@ -281,7 +311,11 @@ class AliasSupportIT {
     server =
         OpcUaTestServerBuilder.builder()
             .withDataDir(tempDir)
-            .withConfig(ConfigFactory.parseMap(Map.of("address-space.dynamic.enabled", true)))
+            .withConfig(
+                ConfigFactory.parseMap(
+                    Map.of(
+                        "address-space.values.enabled", true,
+                        "address-space.dynamic.enabled", true)))
             .build();
     server.startup();
 
@@ -346,7 +380,7 @@ class AliasSupportIT {
     var targets = new LinkedHashMap<String, NodeId>();
     for (String dataType : List.of("Boolean", "Int32", "UInt32", "Double", "String", "DateTime")) {
       targets.put(
-          "Demo.Static." + dataType, NodeId.parse("ns=2;s=Demo.Variants.Scalar." + dataType));
+          "Demo.Static." + dataType, NodeId.parse("ns=2;s=Demo.Values.Builtin.Scalar." + dataType));
       targets.put("Demo.Dynamic." + dataType, NodeId.parse("ns=2;s=Demo.Dynamic." + dataType));
     }
     return targets;

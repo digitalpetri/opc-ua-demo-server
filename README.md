@@ -94,7 +94,7 @@ OPC UA Part 17 Alias Names support is enabled by default. The server publishes t
 the standard `TagVariables` category:
 
 - `MiloDemoStatic` contains `Demo.Static.<Type>` aliases for fixed, writable Variables under
-  `ns=2;s=Demo.Variants.Scalar.<Type>`.
+  `ns=2;s=Demo.Values.Builtin.Scalar.<Type>`. This category follows `address-space.values.enabled`.
 - `MiloDemoDynamic` contains `Demo.Dynamic.<Type>` aliases for changing, read-only Variables under
   `ns=2;s=Demo.Dynamic.<Type>`. This category follows `address-space.dynamic.enabled`.
 

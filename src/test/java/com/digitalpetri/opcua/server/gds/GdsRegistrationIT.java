@@ -782,7 +782,9 @@ class GdsRegistrationIT {
                         "rate-limit-enabled", false,
                         "address-space.mass.enabled", false,
                         "address-space.ctt.enabled", false,
-                        "address-space.data-type-test.enabled", false)));
+                        "address-space.values.enabled", false,
+                        "address-space.constraints.enabled", false,
+                        "address-space.methods.enabled", false)));
     Files.writeString(
         directory.resolve("demo/server.conf"),
         nativeConfig.root().render(ConfigRenderOptions.defaults()));
