@@ -548,7 +548,7 @@ public final class DemoConstraintsFragment extends DemoAddressSpaceFragment {
             AccessLevelExType.Field.NoSubDataTypes));
     noSubDataTypes
         .getFilterChain()
-        .addLast(DemoValueFilters.noSubDataTypes(concreteTestTypeEncodingId));
+        .addLast(DemoValueFilters.noSubDataTypes(encodingContext, concreteTestTypeEncodingId));
 
     UaVariableNode subtypable =
         addVariable(
@@ -570,7 +570,7 @@ public final class DemoConstraintsFragment extends DemoAddressSpaceFragment {
         .getFilterChain()
         .addLast(
             DemoValueFilters.allowedBinaryEncodings(
-                Set.of(concreteTestTypeEncodingId, concreteTestTypeExEncodingId)));
+                encodingContext, Set.of(concreteTestTypeEncodingId, concreteTestTypeExEncodingId)));
 
     // WriteOnly (AccessLevel = CurrentWrite -> Bad_NotReadable)
     UaVariableNode writeOnly =

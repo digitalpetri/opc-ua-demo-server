@@ -276,13 +276,20 @@ public final class DemoValueFilters {
           }
 
           synchronized (variableNode) {
+            Object currentRaw = variableNode.getValue().value().value();
+            int[] currentDims =
+                currentRaw instanceof Matrix currentMatrix ? currentMatrix.getDimensions() : null;
             DemoOptionSet[] currentFlat =
-                decodeCurrentOptionSetElements(
-                    encodingContext, variableNode.getValue().value().value());
+                decodeCurrentOptionSetElements(encodingContext, currentRaw);
 
             ExtensionObject[] encodedFlat =
-                mergeOptionSetElements(
-                    encodingContext, expectedBinaryEncodingId, currentFlat, elements);
+                mergeOptionSetMatrixElements(
+                    encodingContext,
+                    expectedBinaryEncodingId,
+                    currentFlat,
+                    currentDims,
+                    elements,
+                    matrix.getDimensions());
 
             Matrix updatedMatrix =
                 new Matrix(encodedFlat, matrix.getDimensions(), OpcUaDataType.ExtensionObject);
@@ -441,13 +448,20 @@ public final class DemoValueFilters {
           }
 
           synchronized (variableNode) {
+            Object currentRaw = variableNode.getValue().value().value();
+            int[] currentDims =
+                currentRaw instanceof Matrix currentMatrix ? currentMatrix.getDimensions() : null;
             DemoOptionSet[] currentOptions =
-                decodeCurrentStructOptionsElements(
-                    encodingContext, variableNode.getValue().value().value());
+                decodeCurrentStructOptionsElements(encodingContext, currentRaw);
 
             ExtensionObject[] encodedFlat =
-                mergeStructWithOptionSetElements(
-                    encodingContext, expectedBinaryEncodingId, currentOptions, elements);
+                mergeStructWithOptionSetMatrixElements(
+                    encodingContext,
+                    expectedBinaryEncodingId,
+                    currentOptions,
+                    currentDims,
+                    elements,
+                    matrix.getDimensions());
 
             Matrix updatedMatrix =
                 new Matrix(encodedFlat, matrix.getDimensions(), OpcUaDataType.ExtensionObject);
@@ -524,25 +538,30 @@ public final class DemoValueFilters {
   }
 
   /**
-   * Creates a filter enforcing {@code AccessLevelEx.NoSubDataTypes} by accepting only values whose
-   * binary encoding matches {@code expectedBinaryEncodingId} exactly.
+   * Creates a filter enforcing {@code AccessLevelEx.NoSubDataTypes} by accepting only decodable
+   * binary {@link ExtensionObject} values whose encoding matches {@code expectedBinaryEncodingId}
+   * exactly.
    *
+   * @param encodingContext the server's static {@link EncodingContext}.
    * @param expectedBinaryEncodingId the exact allowed {@code Default Binary} encoding NodeId.
    * @return a new {@link AttributeFilter}.
    */
-  public static AttributeFilter noSubDataTypes(NodeId expectedBinaryEncodingId) {
-    return allowedBinaryEncodings(Set.of(expectedBinaryEncodingId));
+  public static AttributeFilter noSubDataTypes(
+      EncodingContext encodingContext, NodeId expectedBinaryEncodingId) {
+    return allowedBinaryEncodings(encodingContext, Set.of(expectedBinaryEncodingId));
   }
 
   /**
    * Creates a filter accepting only scalar binary {@link ExtensionObject} values whose encoding
-   * NodeId belongs to {@code allowedBinaryEncodingIds}, rejecting all other values with {@code
-   * Bad_TypeMismatch}.
+   * NodeId belongs to {@code allowedBinaryEncodingIds} and whose body decodes cleanly with {@code
+   * encodingContext}, rejecting all other values with {@code Bad_TypeMismatch}.
    *
+   * @param encodingContext the server's static {@link EncodingContext}.
    * @param allowedBinaryEncodingIds the permitted {@code Default Binary} encoding NodeIds.
    * @return a new {@link AttributeFilter}.
    */
-  public static AttributeFilter allowedBinaryEncodings(Set<NodeId> allowedBinaryEncodingIds) {
+  public static AttributeFilter allowedBinaryEncodings(
+      EncodingContext encodingContext, Set<NodeId> allowedBinaryEncodingIds) {
     Set<NodeId> allowed = Set.copyOf(allowedBinaryEncodingIds);
 
     return new AttributeFilter() {
@@ -552,18 +571,7 @@ public final class DemoValueFilters {
           throws UaException {
 
         if (attributeId == AttributeId.Value && value instanceof DataValue dataValue) {
-          Object raw = dataValue.value().value();
-          if (raw instanceof ExtensionObject xo) {
-            if (!(xo instanceof ExtensionObject.Binary)
-                || !allowed.contains(xo.getEncodingOrTypeId())) {
-              throw new UaException(
-                  StatusCodes.Bad_TypeMismatch,
-                  "Structure encoding is not permitted: " + xo.getEncodingOrTypeId());
-            }
-          } else {
-            throw new UaException(
-                StatusCodes.Bad_TypeMismatch, "Expected an allowed structured binary value");
-          }
+          validateAllowedBinaryEncoding(dataValue.value().value(), encodingContext, allowed);
         }
         ctx.writeAttribute(attributeId, value);
       }
@@ -866,6 +874,60 @@ public final class DemoValueFilters {
     }
   }
 
+  static void validateAllowedBinaryEncoding(
+      @Nullable Object raw, EncodingContext encodingContext, Set<NodeId> allowedBinaryEncodingIds)
+      throws UaException {
+
+    if (!(raw instanceof ExtensionObject.Binary xo) || xo.isNull()) {
+      throw new UaException(
+          StatusCodes.Bad_TypeMismatch, "Expected an allowed non-null binary ExtensionObject");
+    }
+
+    if (!allowedBinaryEncodingIds.contains(xo.getEncodingOrTypeId())) {
+      throw new UaException(
+          StatusCodes.Bad_TypeMismatch,
+          "Structure encoding is not permitted: " + xo.getEncodingOrTypeId());
+    }
+
+    try {
+      UaStructuredType decoded = xo.decode(encodingContext);
+      if (decoded == null) {
+        throw new UaException(
+            StatusCodes.Bad_TypeMismatch,
+            "Failed to decode structure body for encoding " + xo.getEncodingOrTypeId());
+      }
+    } catch (UaSerializationException | IndexOutOfBoundsException e) {
+      throw new UaException(StatusCodes.Bad_TypeMismatch, e);
+    }
+  }
+
+  static int mapMatrixCoordinate(int flatIndex, int[] incomingDims, int @Nullable [] currentDims) {
+
+    if (currentDims == null || currentDims.length != incomingDims.length) {
+      return -1;
+    }
+
+    int remaining = flatIndex;
+    int currentFlatIndex = 0;
+    int currentStride = 1;
+    for (int d = incomingDims.length - 1; d >= 0; d--) {
+      int incomingDim = incomingDims[d];
+      if (incomingDim <= 0) {
+        return -1;
+      }
+      int coord = remaining % incomingDim;
+      remaining /= incomingDim;
+
+      int currentDim = currentDims[d];
+      if (coord >= currentDim) {
+        return -1;
+      }
+      currentFlatIndex += coord * currentStride;
+      currentStride *= currentDim;
+    }
+    return currentFlatIndex;
+  }
+
   private static ExtensionObject[] mergeOptionSetElements(
       EncodingContext encodingContext,
       NodeId expectedBinaryEncodingId,
@@ -880,6 +942,31 @@ public final class DemoValueFilters {
               encodingContext, expectedBinaryEncodingId, DemoOptionSet.class, incomingElements[i]);
       DemoOptionSet current =
           i < currentElements.length ? currentElements[i] : DemoOptionSet.of(0, 0);
+      DemoOptionSet merged = DemoOptionSet.mergeWrite(current, written);
+      encoded[i] = ExtensionObject.encode(encodingContext, merged);
+    }
+    return encoded;
+  }
+
+  private static ExtensionObject[] mergeOptionSetMatrixElements(
+      EncodingContext encodingContext,
+      NodeId expectedBinaryEncodingId,
+      DemoOptionSet[] currentElements,
+      int @Nullable [] currentDims,
+      Object[] incomingElements,
+      int[] incomingDims)
+      throws UaException {
+
+    ExtensionObject[] encoded = new ExtensionObject[incomingElements.length];
+    for (int i = 0; i < incomingElements.length; i++) {
+      DemoOptionSet written =
+          decodeExpectedStruct(
+              encodingContext, expectedBinaryEncodingId, DemoOptionSet.class, incomingElements[i]);
+      int mappedIndex = mapMatrixCoordinate(i, incomingDims, currentDims);
+      DemoOptionSet current =
+          (mappedIndex >= 0 && mappedIndex < currentElements.length)
+              ? currentElements[mappedIndex]
+              : DemoOptionSet.of(0, 0);
       DemoOptionSet merged = DemoOptionSet.mergeWrite(current, written);
       encoded[i] = ExtensionObject.encode(encodingContext, merged);
     }
@@ -903,6 +990,36 @@ public final class DemoValueFilters {
               incomingElements[i]);
       DemoOptionSet current =
           i < currentOptions.length ? currentOptions[i] : DemoOptionSet.of(0, 0);
+      StructWithOptionSet merged =
+          new StructWithOptionSet(
+              written.getName(), DemoOptionSet.mergeWrite(current, written.getOptions()));
+      encoded[i] = ExtensionObject.encode(encodingContext, merged);
+    }
+    return encoded;
+  }
+
+  private static ExtensionObject[] mergeStructWithOptionSetMatrixElements(
+      EncodingContext encodingContext,
+      NodeId expectedBinaryEncodingId,
+      DemoOptionSet[] currentOptions,
+      int @Nullable [] currentDims,
+      Object[] incomingElements,
+      int[] incomingDims)
+      throws UaException {
+
+    ExtensionObject[] encoded = new ExtensionObject[incomingElements.length];
+    for (int i = 0; i < incomingElements.length; i++) {
+      StructWithOptionSet written =
+          decodeExpectedStruct(
+              encodingContext,
+              expectedBinaryEncodingId,
+              StructWithOptionSet.class,
+              incomingElements[i]);
+      int mappedIndex = mapMatrixCoordinate(i, incomingDims, currentDims);
+      DemoOptionSet current =
+          (mappedIndex >= 0 && mappedIndex < currentOptions.length)
+              ? currentOptions[mappedIndex]
+              : DemoOptionSet.of(0, 0);
       StructWithOptionSet merged =
           new StructWithOptionSet(
               written.getName(), DemoOptionSet.mergeWrite(current, written.getOptions()));
@@ -1031,7 +1148,7 @@ public final class DemoValueFilters {
       throw new UaException(
           StatusCodes.Bad_TypeMismatch,
           "Decoded type mismatch: expected " + expectedType.getSimpleName());
-    } catch (UaSerializationException e) {
+    } catch (UaSerializationException | IndexOutOfBoundsException e) {
       throw new UaException(StatusCodes.Bad_TypeMismatch, e);
     }
   }

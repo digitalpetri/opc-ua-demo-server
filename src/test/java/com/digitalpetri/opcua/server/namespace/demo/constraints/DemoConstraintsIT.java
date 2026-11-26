@@ -281,6 +281,28 @@ class DemoConstraintsIT {
       assertEquals(
           StatusCodes.Bad_TypeMismatch,
           writeValue(subtypableId, Variant.ofExtensionObject(encode(unrelated))).getValue());
+
+      // Matching encoding ID with null or undecodable binary body must also be rejected.
+      NodeId concreteEncodingId =
+          ConcreteTestType.BINARY_ENCODING_ID
+              .toNodeId(server.getServer().getNamespaceTable())
+              .orElseThrow();
+      ExtensionObject nullBody = ExtensionObject.of(ByteString.NULL_VALUE, concreteEncodingId);
+      ExtensionObject truncatedBody =
+          ExtensionObject.of(ByteString.of(new byte[] {0x01}), concreteEncodingId);
+
+      assertEquals(
+          StatusCodes.Bad_TypeMismatch,
+          writeValue(noSubId, Variant.ofExtensionObject(nullBody)).getValue());
+      assertEquals(
+          StatusCodes.Bad_TypeMismatch,
+          writeValue(noSubId, Variant.ofExtensionObject(truncatedBody)).getValue());
+      assertEquals(
+          StatusCodes.Bad_TypeMismatch,
+          writeValue(subtypableId, Variant.ofExtensionObject(nullBody)).getValue());
+      assertEquals(
+          StatusCodes.Bad_TypeMismatch,
+          writeValue(subtypableId, Variant.ofExtensionObject(truncatedBody)).getValue());
     }
 
     @Test

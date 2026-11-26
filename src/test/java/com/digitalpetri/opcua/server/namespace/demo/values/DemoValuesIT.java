@@ -331,8 +331,12 @@ class DemoValuesIT {
     // across Scalar, Array, and Matrix variables.
     @Test
     void demoOptionSetAppliesValidBitsMergeAcrossScalarArrayAndMatrix() throws Exception {
-      // Scalar merge
+      // Scalar merge: establish a clean full-mask baseline so this test does not depend on
+      // execution order relative to the concurrent OptionSet test.
       NodeId scalarId = demoNode("Demo.Values.OptionSet.Scalar.DemoOptionSet");
+      assertTrue(
+          writeValue(scalarId, Variant.ofExtensionObject(encode(DemoOptionSet.of(0x03, 0x01))))
+              .isGood());
       DemoOptionSet partial =
           new DemoOptionSet(
               ByteString.of(new byte[] {0x04, 0x02}), ByteString.of(new byte[] {0x05, 0x02}));
@@ -353,9 +357,17 @@ class DemoValuesIT {
           StatusCodes.Bad_OutOfRange,
           writeValue(scalarId, Variant.ofExtensionObject(encode(invalidBit))).getValue());
 
-      // Matrix merge (initial [0][0] is 0x01,0x00 -> partial ValidBits 0x02,0x00 sets bit 1 while
-      // preserving bit 0 -> 0x03,0x00).
+      // Matrix merge: establish 2x2 baseline, verify equal-width merge, then verify width change
+      // (2x2 -> 2x3) preserves unselected bits by coordinate ([1,0] keeps old [1,0], not [1,1]).
       NodeId matrixId = demoNode("Demo.Values.OptionSet.Matrix.DemoOptionSet");
+      Matrix baseline2x2 =
+          Matrix.ofExtensionObject(
+              new ExtensionObject[][] {
+                {encode(DemoOptionSet.of(0x01, 0x00)), encode(DemoOptionSet.of(0x02, 0x01))},
+                {encode(DemoOptionSet.of(0x04, 0x02)), encode(DemoOptionSet.of(0x0F, 0x03))}
+              });
+      assertTrue(writeValue(matrixId, Variant.ofMatrix(baseline2x2)).isGood());
+
       DemoOptionSet m00 =
           new DemoOptionSet(
               ByteString.of(new byte[] {0x02, 0x00}), ByteString.of(new byte[] {0x02, 0x00}));
@@ -374,6 +386,35 @@ class DemoValuesIT {
       ExtensionObject[] flat = (ExtensionObject[]) readBack.getElements();
       DemoOptionSet merged00 = (DemoOptionSet) flat[0].decode(encodingContext);
       assertArrayEquals(new byte[] {0x03, 0x00}, merged00.getValue().bytesOrEmpty());
+
+      // Resize 2x2 -> 2x3 with ValidBits=0 at [1,0] and [0,2]: [1,0] (flat 3) must keep old [1,0]
+      // (0x08, 0x02) rather than old [1,1] (0x01, 0x03), and new column [0,2] starts at 0x00,0x00.
+      DemoOptionSet keepAll =
+          new DemoOptionSet(
+              ByteString.of(new byte[] {0x00, 0x00}), ByteString.of(new byte[] {0x00, 0x00}));
+      Matrix wider =
+          Matrix.ofExtensionObject(
+              new ExtensionObject[][] {
+                {encode(keepAll), encode(keepAll), encode(keepAll)},
+                {encode(keepAll), encode(keepAll), encode(DemoOptionSet.of(0x05, 0x01))}
+              });
+      assertTrue(writeValue(matrixId, Variant.ofMatrix(wider)).isGood());
+
+      Matrix widerRead =
+          assertInstanceOf(
+              Matrix.class,
+              client.readValue(0.0, TimestampsToReturn.Neither, matrixId).value().value());
+      assertArrayEquals(new int[] {2, 3}, widerRead.getDimensions());
+      ExtensionObject[] widerFlat = (ExtensionObject[]) widerRead.getElements();
+      assertArrayEquals(
+          new byte[] {0x00, 0x00},
+          ((DemoOptionSet) widerFlat[2].decode(encodingContext)).getValue().bytesOrEmpty());
+      assertArrayEquals(
+          new byte[] {0x08, 0x02},
+          ((DemoOptionSet) widerFlat[3].decode(encodingContext)).getValue().bytesOrEmpty());
+      assertArrayEquals(
+          new byte[] {0x01, 0x03},
+          ((DemoOptionSet) widerFlat[4].decode(encodingContext)).getValue().bytesOrEmpty());
     }
 
     @Test
@@ -386,6 +427,9 @@ class DemoValuesIT {
       DemoOptionSet setBit2 =
           new DemoOptionSet(
               ByteString.of(new byte[] {0x04, 0x00}), ByteString.of(new byte[] {0x04, 0x00}));
+
+      NodeId arrayId = demoNode("Demo.Values.OptionSet.Array.DemoOptionSet");
+      ExtensionObject[] clearedArray = {encode(clearAll), encode(clearAll)};
 
       ExecutorService executor = Executors.newFixedThreadPool(2);
       try {
@@ -416,6 +460,41 @@ class DemoValuesIT {
                               .value())
                       .decode(encodingContext);
           assertArrayEquals(new byte[] {0x05, 0x00}, merged.getValue().bytesOrEmpty());
+
+          // Concurrent indexed writes to distinct array elements must be serialized before Milo
+          // reads the current array so neither write overwrites the other with a stale element.
+          assertTrue(writeValue(arrayId, Variant.ofExtensionObjectArray(clearedArray)).isGood());
+          CyclicBarrier indexBarrier = new CyclicBarrier(2);
+          Future<StatusCode> idx0 =
+              executor.submit(() -> {
+                indexBarrier.await(5, TimeUnit.SECONDS);
+                return writeValueWithIndexRange(
+                    arrayId,
+                    "0",
+                    Variant.ofExtensionObjectArray(new ExtensionObject[] {encode(setBit0)}));
+              });
+          Future<StatusCode> idx1 =
+              executor.submit(() -> {
+                indexBarrier.await(5, TimeUnit.SECONDS);
+                return writeValueWithIndexRange(
+                    arrayId,
+                    "1",
+                    Variant.ofExtensionObjectArray(new ExtensionObject[] {encode(setBit2)}));
+              });
+
+          assertTrue(idx0.get(10, TimeUnit.SECONDS).isGood());
+          assertTrue(idx1.get(10, TimeUnit.SECONDS).isGood());
+
+          ExtensionObject[] arrayRead =
+              assertInstanceOf(
+                  ExtensionObject[].class,
+                  client.readValue(0.0, TimestampsToReturn.Neither, arrayId).value().value());
+          assertArrayEquals(
+              new byte[] {0x01, 0x00},
+              ((DemoOptionSet) arrayRead[0].decode(encodingContext)).getValue().bytesOrEmpty());
+          assertArrayEquals(
+              new byte[] {0x04, 0x00},
+              ((DemoOptionSet) arrayRead[1].decode(encodingContext)).getValue().bytesOrEmpty());
         }
       } finally {
         executor.shutdownNow();
@@ -425,6 +504,20 @@ class DemoValuesIT {
     @Test
     void structWithOptionSetAndIntegerOptionSetsReadAndWriteAcrossArities() throws Exception {
       NodeId structMatrixId = demoNode("Demo.Values.OptionSet.Matrix.StructWithOptionSet");
+      Matrix baselineStruct2x2 =
+          Matrix.ofExtensionObject(
+              new ExtensionObject[][] {
+                {
+                  encode(new StructWithOptionSet("P00", DemoOptionSet.of(0x01, 0x00))),
+                  encode(new StructWithOptionSet("P01", DemoOptionSet.of(0x02, 0x01)))
+                },
+                {
+                  encode(new StructWithOptionSet("P10", DemoOptionSet.of(0x04, 0x02))),
+                  encode(new StructWithOptionSet("P11", DemoOptionSet.of(0x0F, 0x03)))
+                }
+              });
+      assertTrue(writeValue(structMatrixId, Variant.ofMatrix(baselineStruct2x2)).isGood());
+
       StructWithOptionSet partial =
           new StructWithOptionSet(
               "Updated",
@@ -450,6 +543,45 @@ class DemoValuesIT {
               ((ExtensionObject[]) readMatrix.getElements())[0].decode(encodingContext);
       // Initial P00 had 0x01,0x00; ValidBits 0x02,0x00 preserved bit 0 and set bit 1 -> 0x03,0x00.
       assertArrayEquals(new byte[] {0x03, 0x00}, merged.getOptions().getValue().bytesOrEmpty());
+
+      // Width-changing matrix write (2x2 -> 2x3) preserves [1,0] (0x02, 0x00) at [1,0] (flat 3),
+      // not [1,1] (0x04, 0x00).
+      DemoOptionSet keepAll =
+          new DemoOptionSet(
+              ByteString.of(new byte[] {0x00, 0x00}), ByteString.of(new byte[] {0x00, 0x00}));
+      Matrix widerStruct =
+          Matrix.ofExtensionObject(
+              new ExtensionObject[][] {
+                {
+                  encode(new StructWithOptionSet("W00", keepAll)),
+                  encode(new StructWithOptionSet("W01", keepAll)),
+                  encode(new StructWithOptionSet("W02", keepAll))
+                },
+                {
+                  encode(new StructWithOptionSet("W10", keepAll)),
+                  encode(new StructWithOptionSet("W11", keepAll)),
+                  encode(new StructWithOptionSet("W12", DemoOptionSet.of(0x08, 0x00)))
+                }
+              });
+      assertTrue(writeValue(structMatrixId, Variant.ofMatrix(widerStruct)).isGood());
+
+      Matrix widerStructRead =
+          assertInstanceOf(
+              Matrix.class,
+              client.readValue(0.0, TimestampsToReturn.Neither, structMatrixId).value().value());
+      ExtensionObject[] widerStructFlat = (ExtensionObject[]) widerStructRead.getElements();
+      assertArrayEquals(
+          new byte[] {0x02, 0x00},
+          ((StructWithOptionSet) widerStructFlat[3].decode(encodingContext))
+              .getOptions()
+              .getValue()
+              .bytesOrEmpty());
+      assertArrayEquals(
+          new byte[] {0x04, 0x00},
+          ((StructWithOptionSet) widerStructFlat[4].decode(encodingContext))
+              .getOptions()
+              .getValue()
+              .bytesOrEmpty());
 
       // Integer OptionSets across arities (UInt32 + Byte)
       assertTrue(
@@ -715,9 +847,10 @@ class DemoValuesIT {
       case "Matrix" -> {
         Matrix matrix =
             assertInstanceOf(Matrix.class, raw, () -> nodeId + " expected Matrix payload");
-        assertTrue(
-            matrix.getValueRank() >= 2,
-            () -> nodeId + " expected matrix rank >= 2, got " + matrix.getValueRank());
+        assertEquals(
+            2,
+            matrix.getValueRank(),
+            () -> nodeId + " expected matrix rank 2, got " + matrix.getValueRank());
         ExtensionObject[] flat =
             assertInstanceOf(
                 ExtensionObject[].class,

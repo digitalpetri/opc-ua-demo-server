@@ -105,6 +105,25 @@ class DemoValueFiltersTest {
           assertThrows(UaException.class, () -> DemoOptionSet.mergeWrite(current, written));
       assertEquals(StatusCodes.Bad_OutOfRange, ex.getStatusCode().getValue());
     }
+
+    // Matrix width changes must map each incoming coordinate to the same coordinate in the
+    // previous matrix rather than reusing flat indices across differing row strides.
+    @Test
+    void matrixCoordinateMappingPreservesCoordinatesAcrossWidthChanges() {
+      int[] current2x2 = {2, 2};
+      int[] incoming2x3 = {2, 3};
+
+      assertEquals(0, DemoValueFilters.mapMatrixCoordinate(0, incoming2x3, current2x2)); // [0,0]
+      assertEquals(1, DemoValueFilters.mapMatrixCoordinate(1, incoming2x3, current2x2)); // [0,1]
+      assertEquals(-1, DemoValueFilters.mapMatrixCoordinate(2, incoming2x3, current2x2)); // [0,2]
+      assertEquals(2, DemoValueFilters.mapMatrixCoordinate(3, incoming2x3, current2x2)); // [1,0]
+      assertEquals(3, DemoValueFilters.mapMatrixCoordinate(4, incoming2x3, current2x2)); // [1,1]
+      assertEquals(-1, DemoValueFilters.mapMatrixCoordinate(5, incoming2x3, current2x2)); // [1,2]
+
+      // 3-D coordinate [1,1,1] in 2x3x2 (flat 9) maps to [1,1,1] in 2x2x2 (flat 7).
+      assertEquals(
+          7, DemoValueFilters.mapMatrixCoordinate(9, new int[] {2, 3, 2}, new int[] {2, 2, 2}));
+    }
   }
 
   @Nested

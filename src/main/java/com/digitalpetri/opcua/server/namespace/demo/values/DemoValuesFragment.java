@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.eclipse.milo.opcua.sdk.core.AccessLevel;
@@ -125,6 +126,7 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
   private final DemoNamespace namespace;
   private final UShort namespaceIndex;
   private final SimpleAddressSpaceFilter filter;
+  private final Set<NodeId> optionSetVariableIds = ConcurrentHashMap.newKeySet();
 
   public DemoValuesFragment(OpcUaServer server, DemoNamespace namespace) {
     super(server, namespace);
@@ -143,8 +145,9 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
 
   /**
    * Intercepts {@code Decimal} ({@code i=50}) scalar, array, and matrix binary {@link
-   * ExtensionObject} writes, working around Milo's {@code DataTypeTree} mapping {@code Decimal} to
-   * {@code Number.class}.
+   * ExtensionObject} writes (working around Milo's {@code DataTypeTree} mapping {@code Decimal} to
+   * {@code Number.class}), and acquires the per-node lock around {@code OptionSet} writes so
+   * indexed writes cannot splice from a stale array before the merge filter runs.
    */
   @Override
   public List<StatusCode> write(WriteContext context, List<WriteValue> writeValues) {
@@ -158,10 +161,17 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
       }
 
       if (writeValue.getAttributeId().equals(AttributeId.Value.uid())
-          && node instanceof UaVariableNode variableNode
-          && NodeIds.Decimal.equals(variableNode.getDataType())) {
-        results.add(writeDecimalValue(context, writeValue, variableNode));
-        continue;
+          && node instanceof UaVariableNode variableNode) {
+        if (NodeIds.Decimal.equals(variableNode.getDataType())) {
+          results.add(writeDecimalValue(context, writeValue, variableNode));
+          continue;
+        }
+        if (optionSetVariableIds.contains(variableNode.getNodeId())) {
+          synchronized (variableNode) {
+            results.add(super.write(context, List.of(writeValue)).getFirst());
+          }
+          continue;
+        }
       }
 
       results.add(super.write(context, List.of(writeValue)).getFirst());
@@ -753,6 +763,15 @@ public final class DemoValuesFragment extends DemoAddressSpaceFragment {
         .addLast(
             DemoValueFilters.structWithOptionSetMatrix(
                 encodingContext, structWithOptionSetEncodingId));
+
+    optionSetVariableIds.addAll(
+        List.of(
+            optionSetScalar.getNodeId(),
+            optionSetArray.getNodeId(),
+            optionSetMatrix.getNodeId(),
+            structScalar.getNodeId(),
+            structArray.getNodeId(),
+            structMatrix.getNodeId()));
 
     // DemoOptionSetUInt32 (UInt32 bitmask with gap bit 2)
     addVariable(
